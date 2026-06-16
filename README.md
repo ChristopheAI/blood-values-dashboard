@@ -12,7 +12,8 @@ Planning baseline.
 
 No Laravel app has been scaffolded yet. Do not install Laravel, create routes,
 write migrations, or generate app code until the planning baseline is committed
-and the first-slice execution path is explicitly chosen.
+and the pre-scaffold review gate has been handled, and the first-slice
+execution path is explicitly chosen.
 
 ## Read First
 
@@ -24,6 +25,8 @@ and the first-slice execution path is explicitly chosen.
 - `docs/session-handoff.md`
 - `docs/validation-protocol.md`
 - `docs/ops/production-checklist.md`
+- `docs/reviews/pre-scaffold-review-request.md`
+- `docs/reviews/pre-scaffold-review-scorecard.md`
 
 ## Workflow
 
@@ -70,4 +73,3 @@ Out of scope:
 - supplement/diet/training recommendations;
 - AI interpretation;
 - OCR/lab-provider integrations in the first slice.
-

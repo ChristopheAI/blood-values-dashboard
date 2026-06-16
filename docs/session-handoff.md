@@ -50,6 +50,8 @@ Update this section after each meaningful session.
   - `docs/session-handoff.md`
   - `docs/validation-protocol.md`
   - `docs/ops/production-checklist.md`
+  - `docs/reviews/pre-scaffold-review-request.md`
+  - `docs/reviews/pre-scaffold-review-scorecard.md`
   - `scripts/validate.sh`
   - `.github/workflows/ci.yml`
 - What was validated:
@@ -76,13 +78,18 @@ Update this section after each meaningful session.
     the full control-plane, including `README.md`, validation protocol, and
     production/privacy checklist.
   - `sh scripts/validate.sh` passed after the control-plane coherence repair.
+  - Pre-scaffold reviewer packet and scorecard were added so a senior Laravel
+    architect and application security/privacy reviewer can give a go/no-go
+    before implementation.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
   - No Laravel scaffold yet.
   - No remote is configured yet.
+  - No human external reviewer has filled the pre-scaffold scorecard yet.
 - Next recommended action:
-  - Choose an execution path for the first-slice plan.
+  - Get or perform the pre-scaffold go/no-go review using `docs/reviews/`.
+  - Then choose an execution path for the first-slice plan.
   - Then scaffold Laravel Livewire starter kit and immediately switch
     `scripts/validate.sh` to Laravel-phase checks.
 
@@ -90,7 +97,7 @@ Update this section after each meaningful session.
 
 | Marker | Type | Meaning | How To Resume |
 | --- | --- | --- | --- |
-| planning-baseline | project state | The project is still before Laravel implementation. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v1-spec.md`, the active plan, and run `sh scripts/validate.sh`. |
+| planning-baseline | project state | The project is still before Laravel implementation. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v1-spec.md`, the active plan, review docs, and run `sh scripts/validate.sh`. |
 
 ## Handoff Prompt For A New Codex Thread
 
@@ -98,8 +105,9 @@ Update this section after each meaningful session.
 Read README.md, AGENTS.md, docs/session-handoff.md, docs/validation-protocol.md,
 docs/project-brief.md, docs/v1-spec.md,
 docs/research/laravel-stack-decision.md,
-docs/superpowers/plans/2026-06-16-first-vertical-slice.md, and the latest git
-status/log.
+docs/superpowers/plans/2026-06-16-first-vertical-slice.md,
+docs/reviews/pre-scaffold-review-request.md,
+docs/reviews/pre-scaffold-review-scorecard.md, and the latest git status/log.
 
 Summarize:
 - the product purpose;

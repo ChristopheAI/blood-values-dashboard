@@ -31,6 +31,8 @@ Read these first:
 - `docs/session-handoff.md`
 - `docs/validation-protocol.md`
 - `docs/ops/production-checklist.md`
+- `docs/reviews/pre-scaffold-review-request.md`
+- `docs/reviews/pre-scaffold-review-scorecard.md`
 
 The project brief defines V1 scope. The discovery notes explain why Laravel is
 logical only when data, rules, follow-up, documents, communication, and
@@ -49,6 +51,7 @@ Before implementation:
 - create or update the V1 spec when data model, privacy, validation, or workflow
   decisions need review;
 - create a small task plan for the first vertical slice;
+- handle the pre-scaffold review gate in `docs/reviews/`;
 - keep out-of-scope items out of V1, especially OCR, AI interpretation,
   medical recommendations, wearable integrations, and provider connections.
 

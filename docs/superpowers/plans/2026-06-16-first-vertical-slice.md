@@ -14,7 +14,8 @@
 
 Do not execute this plan until the current planning baseline has been reviewed.
 
-Before Task 1, the repository should contain a planning baseline commit with:
+Before Task 1, the repository should contain a planning baseline and
+pre-scaffold review gate with:
 
 - `laravel-platform-discovery.md`
 - `README.md`
@@ -25,9 +26,14 @@ Before Task 1, the repository should contain a planning baseline commit with:
 - `docs/session-handoff.md`
 - `docs/validation-protocol.md`
 - `docs/ops/production-checklist.md`
+- `docs/reviews/pre-scaffold-review-request.md`
+- `docs/reviews/pre-scaffold-review-scorecard.md`
 - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
 - `scripts/validate.sh`
 - `.github/workflows/ci.yml`
+
+The pre-scaffold review gate should produce a go/no-go decision before Task 1
+scaffolds Laravel.
 
 ## File Structure Map
 
@@ -60,6 +66,8 @@ Expected files after implementation:
 - Verify: `docs/research/laravel-stack-decision.md`
 - Verify: `docs/validation-protocol.md`
 - Verify: `docs/ops/production-checklist.md`
+- Verify: `docs/reviews/pre-scaffold-review-request.md`
+- Verify: `docs/reviews/pre-scaffold-review-scorecard.md`
 - Verify: `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
 - Verify: `scripts/validate.sh`
 
@@ -295,6 +303,8 @@ docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
 docs/validation-protocol.md
 docs/ops/production-checklist.md
+docs/reviews/pre-scaffold-review-request.md
+docs/reviews/pre-scaffold-review-scorecard.md
 composer.json
 artisan
 "

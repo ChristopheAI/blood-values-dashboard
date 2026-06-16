@@ -13,6 +13,8 @@ docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
 docs/validation-protocol.md
 docs/ops/production-checklist.md
+docs/reviews/pre-scaffold-review-request.md
+docs/reviews/pre-scaffold-review-scorecard.md
 laravel-platform-discovery.md
 "
 
@@ -77,6 +79,21 @@ echo "ok: first-slice plan includes validation protocol"
 
 grep -qi "docs/ops/production-checklist.md" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 echo "ok: first-slice plan includes production/privacy checklist"
+
+echo
+echo "== Pre-scaffold review checks =="
+
+grep -qi "Decision: GO / GO WITH CHANGES / NO-GO" docs/reviews/pre-scaffold-review-request.md
+echo "ok: review request requires go/no-go decision"
+
+grep -qi "senior Laravel" docs/reviews/pre-scaffold-review-request.md
+echo "ok: review request names Laravel reviewer profile"
+
+grep -qi "application security/privacy" docs/reviews/pre-scaffold-review-request.md
+echo "ok: review request names security/privacy reviewer profile"
+
+grep -qi "owner-scoped" docs/reviews/pre-scaffold-review-scorecard.md
+echo "ok: scorecard checks owner scoping"
 
 echo
 echo "== Control-plane coherence checks =="
