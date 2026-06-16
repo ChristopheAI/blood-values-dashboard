@@ -37,9 +37,9 @@ Update this section after each meaningful session.
 
 - Branch: `main`
 - Commit state:
-  - No commits yet.
+  - Planning baseline committed locally.
 - Latest meaningful local checkpoint:
-  - Planning baseline in progress.
+  - `80a417b docs: add project planning baseline`
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -77,13 +77,14 @@ Update this section after each meaningful session.
     production/privacy checklist.
   - `sh scripts/validate.sh` passed after the control-plane coherence repair.
 - Known gaps:
-  - No baseline commit yet.
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
+  - No Laravel scaffold yet.
+  - No remote is configured yet.
 - Next recommended action:
-  - Review the first-slice plan.
-  - Commit the planning baseline.
-  - Only after that, choose an execution path and scaffold Laravel.
+  - Choose an execution path for the first-slice plan.
+  - Then scaffold Laravel Livewire starter kit and immediately switch
+    `scripts/validate.sh` to Laravel-phase checks.
 
 ## Active Context Markers
 
