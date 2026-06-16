@@ -37,9 +37,9 @@ Update this section after each meaningful session.
 
 - Branch: `main`
 - Commit state:
-  - Planning baseline committed locally.
+  - Planning baseline and pre-scaffold review gate committed locally.
 - Latest meaningful local checkpoint:
-  - `80a417b docs: add project planning baseline`
+  - `e6fa19c docs: add pre-scaffold review gate`
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -81,6 +81,8 @@ Update this section after each meaningful session.
   - Pre-scaffold reviewer packet and scorecard were added so a senior Laravel
     architect and application security/privacy reviewer can give a go/no-go
     before implementation.
+  - `sh scripts/validate.sh` passed before committing the pre-scaffold review
+    gate.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
