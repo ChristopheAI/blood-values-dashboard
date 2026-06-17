@@ -19,6 +19,7 @@ Scores:
 | Out-of-scope boundaries are explicit. |  |  |
 | First slice proves real product value. |  |  |
 | First slice avoids OCR, AI, integrations, and medical recommendations. |  |  |
+| Product-system check keeps the first slice focused. |  |  |
 
 Minimum to scaffold:
 
@@ -35,6 +36,7 @@ Minimum to scaffold:
 | Data model is coherent for blood tests, biomarkers, and results. |  |  |
 | Compare-two-tests workflow has clear rules. |  |  |
 | Filament is not introduced prematurely. |  |  |
+| ADRs capture the stack and architecture decisions. |  |  |
 
 Minimum to scaffold:
 
@@ -51,6 +53,7 @@ Minimum to scaffold:
 | Export/delete requirements are visible. |  |  |
 | Medical boundary is reflected in copy rules. |  |  |
 | Production/privacy checklist exists before deployment work. |  |  |
+| ADRs capture owner-scoped private health data before scaffold. |  |  |
 
 Minimum to scaffold:
 
@@ -67,6 +70,7 @@ Minimum to scaffold:
 | `scripts/validate.sh` proves current phase. |  |  |
 | Plan updates validation immediately after scaffold. |  |  |
 | CI will run validation after implementation begins. |  |  |
+| Evidence index and ADRs are part of validation. |  |  |
 
 Minimum to scaffold:
 
@@ -98,4 +102,3 @@ Confidence:
 - [ ] High
 - [ ] Medium
 - [ ] Low
-

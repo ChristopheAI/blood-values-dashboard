@@ -20,7 +20,11 @@ execution path is explicitly chosen.
 - `AGENTS.md`
 - `docs/project-brief.md`
 - `docs/v1-spec.md`
+- `docs/product-system-check.md`
+- `docs/evidence/source-index.md`
+- `docs/adr/`
 - `docs/research/laravel-stack-decision.md`
+- `docs/research/ai-architect-program-transfer.md`
 - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
 - `docs/session-handoff.md`
 - `docs/validation-protocol.md`
@@ -31,7 +35,7 @@ execution path is explicitly chosen.
 ## Workflow
 
 ```text
-brief -> spec -> task plan -> baseline commit -> build -> verify -> review -> handoff
+brief -> evidence -> ADR -> spec -> task plan -> baseline commit -> build -> verify -> review -> handoff
 ```
 
 The first implementation target is the first vertical slice:

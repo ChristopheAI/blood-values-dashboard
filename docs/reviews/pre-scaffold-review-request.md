@@ -34,10 +34,11 @@ Branch:
 
 - `main`
 
-Commits to review:
+Scope to review:
 
-- `80a417b docs: add project planning baseline`
-- `2086814 docs: record planning baseline checkpoint`
+- current `main` planning baseline;
+- especially the project brief, V1 spec, ADRs, product-system check, review
+  packet, validation protocol, and first-slice plan.
 
 Current validation command:
 
@@ -65,11 +66,15 @@ Important current fact:
 3. `docs/session-handoff.md`
 4. `docs/project-brief.md`
 5. `docs/v1-spec.md`
-6. `docs/research/laravel-stack-decision.md`
-7. `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
-8. `docs/validation-protocol.md`
-9. `docs/ops/production-checklist.md`
-10. `scripts/validate.sh`
+6. `docs/product-system-check.md`
+7. `docs/evidence/source-index.md`
+8. `docs/adr/`
+9. `docs/research/laravel-stack-decision.md`
+10. `docs/research/ai-architect-program-transfer.md`
+11. `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
+12. `docs/validation-protocol.md`
+13. `docs/ops/production-checklist.md`
+14. `scripts/validate.sh`
 
 ## Product Boundary To Verify
 
@@ -108,6 +113,10 @@ Please answer:
 8. Is SQLite acceptable for the first local slice?
 9. Does the task plan create too much code before proving status logic?
 10. Does the plan contain any irreversible architectural choice too early?
+11. Do the ADRs capture the important decisions clearly enough for a future
+    implementer or reviewer?
+12. Does the product-system check protect the first slice from becoming a
+    generic health dashboard?
 
 ## Security And Privacy Questions
 
@@ -122,6 +131,8 @@ Please answer:
 6. Is the medical boundary clear enough in copy, data model, and workflows?
 7. Should the first slice block document upload until user isolation is proven?
 8. What security check must be added before real personal data is entered?
+9. Do ADR-0001 through ADR-0004 name the right privacy and implementation
+   gates before scaffold?
 
 ## Go / No-Go Output Required
 
@@ -162,4 +173,4 @@ Approve only if:
 - `scripts/validate.sh` has a clear transition from planning checks to Laravel
   implementation checks;
 - the project can be rolled back safely after each task.
-
+- ADRs and evidence notes separate facts, inferences, hypotheses, and unknowns.

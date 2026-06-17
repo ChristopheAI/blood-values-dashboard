@@ -15,6 +15,9 @@ current phase:
 - implementation phase: Laravel tests/build/smoke checks prove the active slice;
 - closeout phase: V1 scope is satisfied and residual gaps are named.
 
+Planning validation also checks that evidence, ADRs, and the product-system
+check exist. This prevents architecture decisions from living only in chat.
+
 ## Marker Resolution
 
 When the user says "validate from `<marker>`", classify the marker before
@@ -86,6 +89,8 @@ Read:
 - `docs/session-handoff.md`;
 - `docs/project-brief.md`;
 - `docs/v1-spec.md`;
+- `docs/product-system-check.md`;
+- ADRs under `docs/adr/`;
 - active plan under `docs/superpowers/plans/`;
 - latest git status/log.
 
@@ -121,4 +126,3 @@ Check:
 - Do not rely on chat-only context when repository handoff should carry context.
 - Do not treat planning validation as implementation validation.
 - Do not scaffold Laravel just to make a validation script pass.
-

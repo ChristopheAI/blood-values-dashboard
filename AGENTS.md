@@ -25,7 +25,14 @@ Read these first:
 - `README.md`
 - `docs/project-brief.md`
 - `docs/v1-spec.md`
+- `docs/product-system-check.md`
+- `docs/evidence/source-index.md`
+- `docs/adr/0001-use-repo-as-project-control-plane.md`
+- `docs/adr/0002-use-adrs-for-architecture-decisions.md`
+- `docs/adr/0003-use-livewire-starter-kit-for-v1.md`
+- `docs/adr/0004-manual-entry-and-owner-scoped-health-data.md`
 - `docs/research/laravel-stack-decision.md`
+- `docs/research/ai-architect-program-transfer.md`
 - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
 - `laravel-platform-discovery.md`
 - `docs/session-handoff.md`
@@ -34,22 +41,26 @@ Read these first:
 - `docs/reviews/pre-scaffold-review-request.md`
 - `docs/reviews/pre-scaffold-review-scorecard.md`
 
-The project brief defines V1 scope. The discovery notes explain why Laravel is
-logical only when data, rules, follow-up, documents, communication, and
-automation come together behind an administrative product motor.
+The project brief defines V1 scope. The source index separates facts,
+inferences, hypotheses, and unknowns. ADRs define durable project decisions.
+The discovery notes explain why Laravel is logical only when data, rules,
+follow-up, documents, communication, and automation come together behind an
+administrative product motor.
 
 ## Workflow
 
 Use this sequence:
 
 ```text
-brief -> spec -> task plan -> baseline commit -> build -> verify -> review -> handoff
+brief -> evidence -> ADR -> spec -> task plan -> baseline commit -> build -> verify -> review -> handoff
 ```
 
 Before implementation:
 
 - create or update the V1 spec when data model, privacy, validation, or workflow
   decisions need review;
+- create or update an ADR when an architecture, privacy, stack, automation, or
+  implementation-gate decision changes;
 - create a small task plan for the first vertical slice;
 - handle the pre-scaffold review gate in `docs/reviews/`;
 - keep out-of-scope items out of V1, especially OCR, AI interpretation,

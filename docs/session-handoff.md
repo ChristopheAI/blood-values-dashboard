@@ -19,7 +19,7 @@ The product boundary is explicit:
 ## Current Operating Model
 
 ```text
-brief -> spec -> task plan -> baseline commit -> build -> verify -> review -> handoff
+brief -> evidence -> ADR -> spec -> task plan -> baseline commit -> build -> verify -> review -> handoff
 ```
 
 The project is following the `ChristopheAI/Codex` starter-kit workflow:
@@ -39,14 +39,24 @@ Update this section after each meaningful session.
 - Remote:
   - `origin` -> `https://github.com/ChristopheAI/blood-values-dashboard.git`
 - Commit state:
-  - Planning baseline and pre-scaffold review gate committed and pushed.
+  - Planning baseline, pre-scaffold review gate, and AI Architect decision layer
+    should be committed and pushed.
 - Latest meaningful local checkpoint:
-  - `8340809 docs: record pre-scaffold review gate checkpoint`
+  - Current HEAD after this session should include:
+    `docs: add AI Architect decision layer`
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
   - `docs/v1-spec.md`
+  - `docs/product-system-check.md`
+  - `docs/evidence/source-index.md`
+  - `docs/templates/adr-template.md`
+  - `docs/adr/0001-use-repo-as-project-control-plane.md`
+  - `docs/adr/0002-use-adrs-for-architecture-decisions.md`
+  - `docs/adr/0003-use-livewire-starter-kit-for-v1.md`
+  - `docs/adr/0004-manual-entry-and-owner-scoped-health-data.md`
   - `docs/research/laravel-stack-decision.md`
+  - `docs/research/ai-architect-program-transfer.md`
   - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
   - `AGENTS.md`
   - `docs/session-handoff.md`
@@ -90,6 +100,11 @@ Update this section after each meaningful session.
   - `main` was pushed to `origin/main`.
   - GitHub issue `#1` was created for the pre-scaffold review gate:
     `https://github.com/ChristopheAI/blood-values-dashboard/issues/1`.
+  - `ChristopheAI/ai-architect-program-research` was reviewed as a reusable
+    research operating-system pattern.
+  - Evidence/source discipline, ADR templates, four ADRs, and a product-system
+    check were added to strengthen the planning baseline.
+  - `scripts/validate.sh` now checks that the evidence and ADR layer exists.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
@@ -111,8 +126,10 @@ Update this section after each meaningful session.
 
 ```text
 Read README.md, AGENTS.md, docs/session-handoff.md, docs/validation-protocol.md,
-docs/project-brief.md, docs/v1-spec.md,
+docs/project-brief.md, docs/v1-spec.md, docs/product-system-check.md,
+docs/evidence/source-index.md, docs/adr/,
 docs/research/laravel-stack-decision.md,
+docs/research/ai-architect-program-transfer.md,
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md,
 docs/reviews/pre-scaffold-review-request.md,
 docs/reviews/pre-scaffold-review-scorecard.md, and the latest git status/log.

@@ -8,7 +8,15 @@ README.md
 AGENTS.md
 docs/project-brief.md
 docs/v1-spec.md
+docs/product-system-check.md
+docs/evidence/source-index.md
+docs/templates/adr-template.md
+docs/adr/0001-use-repo-as-project-control-plane.md
+docs/adr/0002-use-adrs-for-architecture-decisions.md
+docs/adr/0003-use-livewire-starter-kit-for-v1.md
+docs/adr/0004-manual-entry-and-owner-scoped-health-data.md
 docs/research/laravel-stack-decision.md
+docs/research/ai-architect-program-transfer.md
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
 docs/validation-protocol.md
@@ -55,6 +63,40 @@ echo "ok: V1 spec preserves unknown status"
 
 grep -qi "Out of scope" docs/v1-spec.md
 echo "ok: V1 spec defines out-of-scope boundaries"
+
+echo
+echo "== Evidence and ADR checks =="
+
+grep -qi "fact" docs/evidence/source-index.md
+grep -qi "inference" docs/evidence/source-index.md
+grep -qi "hypothesis" docs/evidence/source-index.md
+grep -qi "unknown" docs/evidence/source-index.md
+echo "ok: source index separates claim types"
+
+grep -qi "ai-architect-program-research" docs/research/ai-architect-program-transfer.md
+echo "ok: AI Architect transfer source is documented"
+
+grep -qi "Focus And UX Simplicity" docs/research/ai-architect-program-transfer.md
+echo "ok: AI Architect transfer preserves focus/UX gate"
+
+grep -qi "10-gate model" docs/product-system-check.md
+echo "ok: product-system check uses 10-gate lens"
+
+grep -qi "Verdict: bouwen" docs/product-system-check.md
+echo "ok: product-system check records build verdict"
+
+for adr in docs/adr/*.md; do
+  grep -qi "^## Status" "$adr"
+  grep -qi "^## Decision" "$adr"
+  grep -qi "^## Consequences" "$adr"
+done
+echo "ok: ADRs include status, decision, and consequences"
+
+grep -qi "Livewire starter kit" docs/adr/0003-use-livewire-starter-kit-for-v1.md
+echo "ok: ADR records Livewire starter kit direction"
+
+grep -qi "owner-scoped" docs/adr/0004-manual-entry-and-owner-scoped-health-data.md
+echo "ok: ADR records owner-scoped health data"
 
 echo
 echo "== First-slice plan checks =="
