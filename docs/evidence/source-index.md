@@ -33,9 +33,10 @@ Do not collapse these categories.
 
 - Source: `docs/v1-spec.md`
 - Claim type: fact
-- Summary: V1 includes login-protected manual blood test and biomarker tracking,
-  status calculation, trends, comparison, context notes, consult/export, and
-  privacy controls, while excluding diagnosis, AI, OCR, integrations, and
+- Summary: V1 starts from login-protected lab-PDF intake, private document
+  storage, reviewed or corrected biomarker values, status calculation, trends,
+  comparison, context notes, consult/export, and privacy controls, while
+  excluding diagnosis, AI interpretation, unreviewed OCR, integrations, and
   recommendations.
 
 ### Stack Decision

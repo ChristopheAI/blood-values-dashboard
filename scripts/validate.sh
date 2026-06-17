@@ -15,8 +15,10 @@ docs/adr/0001-use-repo-as-project-control-plane.md
 docs/adr/0002-use-adrs-for-architecture-decisions.md
 docs/adr/0003-use-livewire-starter-kit-for-v1.md
 docs/adr/0004-manual-entry-and-owner-scoped-health-data.md
+docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md
 docs/research/laravel-stack-decision.md
 docs/research/ai-architect-program-transfer.md
+docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
 docs/validation-protocol.md
@@ -44,8 +46,11 @@ echo "ok: project brief excludes diagnosis-machine positioning"
 grep -qi "geen medisch advies" docs/project-brief.md
 echo "ok: project brief excludes medical advice"
 
-grep -qi "manual\\|manueel" docs/project-brief.md
-echo "ok: project brief keeps manual entry in V1"
+grep -qi "PDF-first\\|labo-PDF" docs/project-brief.md
+echo "ok: project brief records PDF-first intake"
+
+grep -qi "review\\|bevestig" docs/project-brief.md
+echo "ok: project brief requires review/confirmation"
 
 grep -qi "export" docs/project-brief.md
 echo "ok: project brief includes export/data control"
@@ -99,41 +104,44 @@ echo "ok: ADR records Livewire starter kit direction"
 grep -qi "owner-scoped" docs/adr/0004-manual-entry-and-owner-scoped-health-data.md
 echo "ok: ADR records owner-scoped health data"
 
+grep -qi "PDF-first intake" docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md
+echo "ok: ADR records PDF-first intake decision"
+
 grep -qi "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
-echo "ok: pre-scaffold review result records decision"
+echo "ok: pre-scaffold review result records PDF-first go-with-changes"
 
 echo
 echo "== First-slice plan checks =="
 
-grep -qi "First Vertical Slice Implementation Plan" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
-echo "ok: first-slice plan exists"
+grep -qi "PDF-First Intake Slice Plan" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
+echo "ok: PDF-first slice plan exists"
 
-grep -qi "Do not execute this plan" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
+grep -qi "Do not execute this plan" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 echo "ok: first-slice plan preserves pre-execution gate"
 
-grep -qi "Pre-Scaffold Gate Checkpoint" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
-echo "ok: first-slice plan matches current pre-scaffold gate"
+grep -qi "private document storage" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
+echo "ok: PDF-first plan covers private document storage"
 
-grep -qi "Biomarker Status Domain Logic" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
+grep -qi "review/confirmation" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
+echo "ok: PDF-first plan covers value review/confirmation"
+
+grep -qi "status logic" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 echo "ok: first-slice plan covers status logic"
 
-grep -qi "Compare Two Tests" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
+grep -qi "compare two blood tests" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 echo "ok: first-slice plan covers comparison"
 
-grep -qi "README.md" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
-echo "ok: first-slice plan preserves README"
-
-grep -qi "docs/validation-protocol.md" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
+grep -qi "sh scripts/validate.sh" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 echo "ok: first-slice plan includes validation protocol"
-
-grep -qi "docs/ops/production-checklist.md" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
-echo "ok: first-slice plan includes production/privacy checklist"
 
 echo
 echo "== Pre-scaffold review checks =="
 
 grep -qi "Decision: GO / GO WITH CHANGES / NO-GO" docs/reviews/pre-scaffold-review-request.md
 echo "ok: review request requires go/no-go decision"
+
+grep -qi "2026-06-17-pdf-first-intake-slice" docs/reviews/pre-scaffold-review-request.md
+echo "ok: review request points to PDF-first slice plan"
 
 grep -qi "senior Laravel" docs/reviews/pre-scaffold-review-request.md
 echo "ok: review request names Laravel reviewer profile"
@@ -158,6 +166,9 @@ echo "ok: production checklist includes privacy baseline"
 
 grep -qi "README.md" AGENTS.md
 echo "ok: AGENTS points to README"
+
+grep -qi "0005-use-pdf-first" AGENTS.md
+echo "ok: AGENTS points to PDF-first ADR"
 
 grep -qi "docs/validation-protocol.md" docs/session-handoff.md
 echo "ok: handoff points to validation protocol"

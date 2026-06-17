@@ -8,7 +8,8 @@ Accepted
 
 The project already has several decisions that affect the future system:
 
-- manual entry before OCR or provider integrations;
+- PDF-first intake with confirmed structured values before unreviewed OCR or
+  provider integrations;
 - Laravel Livewire starter kit as likely V1 foundation;
 - strict medical-advice boundary;
 - owner-scoped private health data;

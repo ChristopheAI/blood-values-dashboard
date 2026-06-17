@@ -6,7 +6,8 @@ This repository is the planning and future implementation workspace for a
 personal blood values dashboard built with Laravel.
 
 The product is a private personal tracking system for blood tests, biomarkers,
-context notes, trends, documents, reminders, and consult preparation.
+lab-result PDFs, context notes, trends, documents, reminders, and consult
+preparation.
 
 It is not a diagnosis machine and must not provide medical advice.
 
@@ -31,9 +32,11 @@ Read these first:
 - `docs/adr/0002-use-adrs-for-architecture-decisions.md`
 - `docs/adr/0003-use-livewire-starter-kit-for-v1.md`
 - `docs/adr/0004-manual-entry-and-owner-scoped-health-data.md`
+- `docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md`
 - `docs/research/laravel-stack-decision.md`
 - `docs/research/ai-architect-program-transfer.md`
-- `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
+- `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
+- `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
 - `laravel-platform-discovery.md`
 - `docs/session-handoff.md`
 - `docs/validation-protocol.md`
@@ -63,8 +66,9 @@ Before implementation:
   implementation-gate decision changes;
 - create a small task plan for the first vertical slice;
 - handle the pre-scaffold review gate in `docs/reviews/`;
-- keep out-of-scope items out of V1, especially OCR, AI interpretation,
-  medical recommendations, wearable integrations, and provider connections.
+- keep out-of-scope items out of V1, especially unreviewed OCR, AI
+  interpretation, medical recommendations, wearable integrations, and provider
+  connections.
 
 ## Validation
 
@@ -80,7 +84,11 @@ task, update it so V1 behavior is proven with Laravel/Pest/browser checks.
 
 ## Product Rules
 
-- Manual biomarker entry is the V1 source of truth.
+- The original lab-result PDF is the V1 intake source.
+- Structured biomarker values become usable dashboard data only after user
+  review or confirmation.
+- Manual entry and correction remain required fallbacks for values that cannot
+  be extracted or trusted.
 - Original lab documents and structured values must remain separate.
 - Status can be `low`, `normal`, `high`, or `unknown`.
 - Use `unknown` when ranges, units, or comparison rules are not trustworthy.

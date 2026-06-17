@@ -6,9 +6,9 @@ Accepted as current V1 direction
 
 ## Context
 
-The project needs a private authenticated Laravel application for manual blood
-test entry, biomarker results, status labels, trend/history views, comparison,
-context notes, and later export/delete behavior.
+The project needs a private authenticated Laravel application for PDF-first
+blood test intake, reviewed biomarker results, status labels, trend/history
+views, comparison, context notes, and later export/delete behavior.
 
 The first version should optimize for clear server-side workflows, boring
 Laravel defaults, and testable domain logic rather than frontend novelty.

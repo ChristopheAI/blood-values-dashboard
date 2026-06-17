@@ -2,7 +2,10 @@
 
 ## One-Line Purpose
 
-Een persoonlijk Laravel-dashboard om bloedtesten, biomarkers, contextnotities, trends, documenten en consultvoorbereiding gestructureerd bij te houden zonder diagnosemachine of medisch advies te worden.
+Een persoonlijk Laravel-dashboard waar een gebruiker eerst zijn labo-PDF oplaadt
+en daarna gecontroleerde biomarkerwaarden, contextnotities, trends,
+vergelijkingen, documenten en consultvoorbereiding gestructureerd bijhoudt
+zonder diagnosemachine of medisch advies te worden.
 
 ## Problem
 
@@ -24,7 +27,9 @@ V1 is voor persoonlijk gebruik door een individuele gebruiker die zijn eigen blo
 Primaire gebruiker:
 
 - wil bloedtesten historisch kunnen terugvinden;
-- voert biomarkers manueel en zorgvuldig in;
+- laadt labo-PDF's op als brondocument;
+- bevestigt of corrigeert biomarkerwaarden zorgvuldig voordat ze in trends en
+  vergelijkingen terechtkomen;
 - wil trends en verschillen tussen testmomenten zien;
 - wil context bewaren rond levensstijl, klachten, supplementen of medicatie;
 - wil een overzicht kunnen meenemen naar een arts;
@@ -55,7 +60,11 @@ Laravel is minder logisch als dit alleen een informatieve health-website zou zij
 
 ## Outcome
 
-V1 werkt wanneer de gebruiker een echte bloedtest kan registreren, de belangrijkste biomarkers manueel kan invoeren, statussen en trends kan bekijken, twee testmomenten kan vergelijken, context kan bewaren en een bruikbaar consultoverzicht kan exporteren.
+V1 werkt wanneer de gebruiker een echte labo-PDF kan opladen, daaruit een
+bloedtest kan laten ontstaan, de belangrijkste biomarkers gecontroleerd kan
+bevestigen of aanvullen, statussen en trends kan bekijken, twee testmomenten
+kan vergelijken, context kan bewaren en een bruikbaar consultoverzicht kan
+exporteren.
 
 De gebruiker moet na V1 kunnen zeggen:
 
@@ -71,8 +80,9 @@ De gebruiker moet na V1 kunnen zeggen:
 In scope voor V1:
 
 - login-afgeschermde persoonlijke omgeving;
-- bloedtest toevoegen met datum, labo en optioneel document;
-- biomarkers manueel invoeren;
+- labo-PDF opladen als startpunt van een bloedtest;
+- bloedtestgegevens zoals datum en labo bevestigen of aanvullen;
+- biomarkerwaarden controleren, bevestigen, corrigeren of manueel aanvullen;
 - biomarker-catalogus met naam, categorie, eenheid en referentierange;
 - status per waarde: laag, normaal, hoog of onbekend;
 - trendgrafiek per biomarker;
@@ -89,7 +99,7 @@ Out of scope voor V1:
 - medische diagnose of behandeladvies;
 - AI-interpretatie van resultaten;
 - supplement-, dieet- of trainingsaanbevelingen;
-- automatische OCR/PDF-extractie;
+- volledig automatische OCR/PDF-extractie zonder menselijke review;
 - automatische koppelingen met labo's, artsenportalen of Apple Health;
 - secure share links voor externe toegang;
 - multi-user, familieprofielen of coach/client-flows;
@@ -105,7 +115,8 @@ Belangrijke data-entiteiten voor V1:
 - gebruiker;
 - bloedtest;
 - labo of bronorganisatie;
-- optioneel document bij een bloedtest;
+- origineel labo-document bij een bloedtest;
+- verwerkingsstatus van de bloedtest;
 - biomarker;
 - biomarker-categorie;
 - meetwaarde;
@@ -122,18 +133,22 @@ Belangrijke datakwaliteitsregels:
 - elke meetwaarde hoort bij exact een bloedtest en een biomarker;
 - status mag "onbekend" zijn wanneer range, eenheid of waarde onvoldoende vergelijkbaar is;
 - originele documenten en gestructureerde waarden blijven gescheiden;
-- handmatige invoer is leidend in V1;
+- de originele PDF is de intakebron, maar gestructureerde waarden worden pas
+  gebruikt na review of bevestiging;
 - onzekerheid wordt zichtbaar gemaakt, niet verstopt.
 
 ## Workflows
 
-### Bloedtest Registreren
+### Labo-PDF Opladen
 
-De gebruiker maakt een bloedtest aan met datum, labo/bron en optioneel document. Daarna kan hij biomarkers toevoegen of later aanvullen.
+De gebruiker laadt een labo-PDF op. Het systeem maakt een bloedtest aan in een
+verwerkingsstatus en bewaart het document privaat als brondocument.
 
-### Biomarkers Invoeren
+### Bloedtest En Biomarkers Bevestigen
 
-De gebruiker kiest of maakt een biomarker, vult waarde, eenheid en referentierange in, en krijgt een status: laag, normaal, hoog of onbekend.
+De gebruiker controleert datum, labo/bron en biomarkerwaarden naast het
+brondocument. Waarden worden bevestigd, gecorrigeerd of manueel aangevuld.
+Daarna krijgt elke waarde een status: laag, normaal, hoog of onbekend.
 
 ### Trends Bekijken
 
@@ -159,7 +174,10 @@ De gebruiker kan data exporteren en verwijderen. Privacy is geen latere polish m
 
 V1 is geslaagd wanneer:
 
-- een gebruiker minstens twee bloedtesten kan registreren met overlappende biomarkers;
+- een gebruiker minstens twee labo-PDF's kan opladen en daaruit bloedtesten met
+  overlappende bevestigde biomarkers kan maken;
+- documenten privaat bewaard worden en gekoppeld blijven aan de juiste
+  bloedtest;
 - statusberekening correct laag, normaal, hoog of onbekend toont op basis van waarde, eenheid en range;
 - een trendgrafiek per biomarker zichtbaar is;
 - twee bloedtesten vergelijkbaar zijn in een overzicht;
@@ -180,8 +198,9 @@ Deze stack is bewust nog niet ingevuld als installatiebeslissing. Eerst brief, d
 
 ## Key Decisions
 
-- Decision: V1 begint met manuele invoer.
-  Reason: OCR en labformat-extractie zijn foutgevoelig. Voor een eerste persoonlijk systeem is betrouwbare structuur belangrijker dan automatisering.
+- Decision: V1 begint met PDF-first intake en menselijke bevestiging.
+  Reason: De echte bloeduitslag moet eerst als bron binnenkomen, maar waarden
+  mogen pas dashboarddata worden nadat ze gecontroleerd of aangevuld zijn.
 
 - Decision: Het product geeft geen medisch advies.
   Reason: De waarde zit in ordenen, opvolgen en consultvoorbereiding. Diagnose en behandeladvies horen bij een arts.
@@ -203,8 +222,9 @@ Deze stack is bewust nog niet ingevuld als installatiebeslissing. Eerst brief, d
 - Risk: De app lijkt per ongeluk op een diagnose- of adviesmachine.
   Mitigation: UI-copy, export en workflows spreken over ordenen, opvolgen en vragen voorbereiden, niet over diagnose of behandeling.
 
-- Risk: Manuele invoer kan fouten bevatten.
-  Mitigation: Waarden blijven bewerkbaar, bron-documenten blijven gekoppeld, en V1 moet invoer reviewbaar maken.
+- Risk: PDF-extractie of manuele overname kan fouten bevatten.
+  Mitigation: Waarden blijven bewerkbaar, bron-documenten blijven gekoppeld, en
+  V1 moet elke gestructureerde waarde reviewbaar of bevestigbaar maken.
 
 - Risk: Scope kruipt richting AI, OCR, wearable-data of supplementadvies.
   Mitigation: Die functies blijven expliciet buiten V1 en vereisen later een aparte spec.
@@ -219,15 +239,25 @@ Deze stack is bewust nog niet ingevuld als installatiebeslissing. Eerst brief, d
 
 ### 1. Wat probeer ik te bouwen?
 
-Een persoonlijk opvolgsysteem voor bloedwaarden: geen medische interpretatiemachine, maar een private omgeving waarin bloedtesten, biomarkers, documenten, context, trends en consultvragen samenkomen.
+Een persoonlijk opvolgsysteem voor bloedwaarden: geen medische
+interpretatiemachine, maar een private omgeving waarin labo-PDF's,
+bevestigde biomarkerwaarden, documenten, context, trends en consultvragen
+samenkomen.
 
 ### 2. Hoe moet dit systeem werken?
 
-De gebruiker voert bloedtesten en biomarkerwaarden in, het systeem bewaart die gestructureerd, berekent eenvoudige statussen waar dat verantwoord is, toont trends en vergelijkingen, en maakt een consultgericht overzicht of export.
+De gebruiker laadt een labo-PDF op, het systeem maakt een bloedtest in
+reviewstatus aan, de gebruiker bevestigt of vult biomarkerwaarden aan, en pas
+daarna toont het systeem statussen, trends, vergelijkingen en
+consult/export-overzichten.
 
 ### 3. Welke componenten heb ik nodig?
 
-Minimaal nodig: authenticatie, bloedtestbeheer, biomarker-catalogus, meetwaarden, statuslogica, trendweergave, compare-flow, pinned biomarkers, contextnotities, documentopslag, export/delete en reminder.
+Minimaal nodig: authenticatie, PDF-upload, private documentopslag,
+bloedtestbeheer met verwerkingsstatus, review/bevestiging van
+biomarkerwaarden, biomarker-catalogus, meetwaarden, statuslogica,
+trendweergave, compare-flow, pinned biomarkers, contextnotities, export/delete
+en reminder.
 
 ### 4. Waar moet deze logica leven?
 
@@ -235,7 +265,11 @@ De domeinregels rond statussen, ranges, vergelijkingen en export horen in de app
 
 ### 5. Waarom breekt dit ding?
 
-Het project breekt als het medisch advies probeert te geven, als ranges te simplistisch worden voorgesteld, als OCR/AI te vroeg wordt toegevoegd, als privacy als polish wordt behandeld, of als de eerste versie een breed health-platform wordt in plaats van een strak bloedwaarden-opvolgsysteem.
+Het project breekt als het medisch advies probeert te geven, als PDF-upload
+zonder private storage of review wordt gebouwd, als ranges te simplistisch
+worden voorgesteld, als OCR/AI te vroeg als waarheid wordt gebruikt, als privacy
+als polish wordt behandeld, of als de eerste versie een breed health-platform
+wordt in plaats van een strak bloedwaarden-opvolgsysteem.
 
 ### 6. Verdict: bouwen
 
@@ -246,20 +280,22 @@ Bouwen is logisch, maar niet meteen. De volgende stap is een V1-spec en planning
 De eerste implementatieslice moet klein maar echt zijn:
 
 - gebruiker kan inloggen;
-- gebruiker kan twee bloedtesten aanmaken;
-- gebruiker kan een beperkte set biomarkers manueel invoeren;
+- gebruiker kan twee labo-PDF's uploaden;
+- gebruiker kan bloedtestdatum en labo bevestigen;
+- gebruiker kan een beperkte set biomarkers uit de PDF reviewen, bevestigen of
+  manueel aanvullen;
 - gebruiker ziet status per waarde;
 - gebruiker kan een eenvoudige trend per biomarker bekijken;
 - gebruiker kan twee bloedtesten vergelijken.
 
 Nog niet in de eerste slice:
 
-- OCR;
+- automatische OCR zonder review;
 - AI-uitleg;
 - consult-PDF;
 - reminders;
 - uitgebreide biomarker-catalogus;
-- documentupload als dat de slice te groot maakt.
+- providerintegraties.
 
 ## Verification
 
@@ -273,7 +309,7 @@ In de latere planning moet dat script minstens meegroeien naar:
 
 - codekwaliteit en tests;
 - domeintests voor statusberekening;
-- test of smoke check voor bloedtest aanmaken;
+- test of smoke check voor PDF-upload en bloedtest aanmaken;
 - test of smoke check voor biomarkerwaarde invoeren;
 - test voor vergelijken van twee bloedtesten;
 - test voor export/delete wanneer die in scope zit;

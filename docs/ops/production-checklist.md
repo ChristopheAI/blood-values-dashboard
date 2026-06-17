@@ -19,6 +19,8 @@ or real health-data use outside a local private development environment.
 - [ ] User A cannot view, edit, compare, export, or delete User B's records.
 - [ ] Uploaded lab documents are stored privately.
 - [ ] Direct public file URLs cannot expose lab documents.
+- [ ] Uploaded document values are reviewed or confirmed before they are used
+      for status, trends, comparison, or export.
 - [ ] Export is available to the owning user.
 - [ ] Deletion behavior is explicit and tested.
 - [ ] No AI/OCR/provider integration processes documents by default.
@@ -55,9 +57,9 @@ or real health-data use outside a local private development environment.
 ## Out Of Scope For First Slice
 
 - OCR extraction.
+- Unreviewed PDF extraction.
 - AI interpretation.
 - Provider integrations.
 - Secure share links.
 - Multi-user roles.
 - Doctor access.
-

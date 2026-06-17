@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted
+Superseded by ADR-0005 for the V1 intake/source-of-truth decision.
+
+Owner scoping, status `unknown`, and privacy rules remain accepted and are
+carried forward.
 
 ## Context
 
@@ -16,7 +19,8 @@ core workflow is proven.
 
 ## Decision
 
-Use manual biomarker entry as the V1 source of truth.
+ADR-0005 replaces the manual-first source-of-truth decision with PDF-first
+intake plus reviewed or confirmed structured values.
 
 Scope all health data to the authenticated owner. Every user-owned record must
 belong to the user directly or through an owned parent record. Tests must prove
@@ -34,8 +38,8 @@ trustworthy.
 
 - Source: `docs/v1-spec.md`
   - Claim type: fact
-  - Summary: Manual entry, owner scoping, status `unknown`, and privacy/export
-    controls are explicit V1 requirements.
+  - Summary: PDF-first intake, reviewed values, owner scoping, status
+    `unknown`, and privacy/export controls are explicit V1 requirements.
 
 - Source: `https://owasp.org/www-project-secure-by-design-framework/`
   - Claim type: fact
@@ -51,13 +55,16 @@ trustworthy.
 
 - Manual entry first.
 - OCR/PDF extraction first.
+- PDF-first intake with human review.
 - Lab/provider integration first.
 - AI interpretation first.
 - Shared doctor or coach access in V1.
 
 ## Decision Drivers
 
-- Manual entry is auditable and easier to validate.
+- Manual entry is auditable and remains a required fallback.
+- PDF-first intake better matches the real user workflow: the lab result exists
+  first as a document.
 - Health-data privacy is a V1 concern, not later polish.
 - Automation can produce wrong values or misleading conclusions.
 - Owner scoping is the foundation for every later feature.
@@ -65,8 +72,8 @@ trustworthy.
 
 ## Consequences
 
-- First implementation must prioritize auth, ownership, and status logic.
-- Document upload should not precede owner-isolation confidence.
+- First implementation must prioritize auth, ownership, private document
+  storage, review, and status logic.
 - AI/OCR/provider integrations require future ADRs and threat modeling.
 - Export/delete workflows must be treated as privacy controls, not convenience
   features.
@@ -77,5 +84,4 @@ High
 
 ## Follow-Up Questions
 
-- Should document upload be delayed until after owner isolation tests pass?
 - What exact export/delete proof should block real personal data entry?

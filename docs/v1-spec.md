@@ -4,8 +4,9 @@ Date: 2026-06-16
 
 ## 1. Purpose
 
-V1 builds a private Laravel application for manually tracking personal blood
-tests and biomarker values.
+V1 builds a private Laravel application where the user uploads a lab-result PDF
+first, then turns reviewed biomarker values into structured personal tracking
+data.
 
 The system helps the user:
 
@@ -47,10 +48,12 @@ Architecture rule:
 In scope:
 
 - login-protected personal dashboard;
+- upload an original lab-result PDF/document as the first blood-test action;
 - create, edit, view, and delete blood tests;
-- optional document attachment per blood test;
+- private document attachment per blood test;
 - create and manage a small biomarker catalog;
-- manually enter biomarker results;
+- review, confirm, correct, or manually add biomarker results from the
+  uploaded document;
 - store units and reference ranges;
 - compute `low`, `normal`, `high`, or `unknown` status;
 - view a biomarker trend over time;
@@ -66,7 +69,7 @@ Out of scope:
 
 - diagnosis, treatment, or medical advice;
 - AI interpretation;
-- OCR or automatic PDF extraction;
+- unreviewed OCR or fully automatic PDF extraction;
 - lab/provider/Apple Health integrations;
 - supplement, diet, or training recommendations;
 - secure share links;
@@ -134,11 +137,14 @@ Important fields:
 - lab/source name;
 - optional title;
 - optional general notes.
+- processing status: `uploaded`, `reviewing`, or `confirmed`.
 
 Rules:
 
-- test date is required;
-- lab/source name is required or must default to `unknown`;
+- a blood test may start as `uploaded` from a document before every field is
+  known;
+- test date is required before the blood test can become `confirmed`;
+- lab/source name is required before confirmation or must default to `unknown`;
 - deleting a blood test deletes or detaches its biomarker results, documents,
   and test-specific context according to the privacy deletion rule.
 
@@ -159,8 +165,11 @@ Important fields:
 Rules:
 
 - file is stored privately, not under a public web path;
-- V1 does not parse the file;
-- the document remains separate from structured biomarker values.
+- the document is the original source, but structured biomarker values remain a
+  separate reviewed layer;
+- automatic parsing is not required in the first slice;
+- no extracted value is trusted for trends, status, or compare until the user
+  reviews or confirms it.
 
 ### Biomarker Category
 
@@ -226,6 +235,8 @@ Important fields:
 - reference range maximum;
 - reference range unit;
 - status;
+- entry source: `manual`, `pdf_reviewed`, or future import source;
+- confirmed timestamp;
 - optional note.
 
 Rules:
@@ -234,6 +245,8 @@ Rules:
   unless a later spec introduces repeat measurements;
 - the result stores the range used at the time of entry so later catalog edits
   do not silently rewrite history;
+- only confirmed or user-saved results are used in status, trend, compare, and
+  export workflows;
 - status can be recalculated only when the user edits value/range/unit;
 - status must be `unknown` when comparison is not trustworthy.
 
@@ -382,40 +395,46 @@ Test cases required later:
 
 ## 7. Core Workflows
 
-### 7.1 Register Blood Test
+### 7.1 Upload Blood Test PDF
 
 User goal:
 
-- record that a blood test happened.
+- start from the original lab-result document.
 
 Steps:
 
 1. User opens blood tests.
-2. User creates a new blood test.
-3. User enters test date and lab/source.
-4. User optionally adds a general note.
-5. User optionally attaches the original document.
-6. System stores the blood test under the authenticated user.
+2. User uploads the lab-result PDF or supported document.
+3. System stores the document privately.
+4. System creates a blood test under the authenticated user with status
+   `uploaded`.
+5. User confirms or fills test date, lab/source, title, and optional note.
+6. System moves the blood test into `reviewing` or `confirmed` depending on
+   whether biomarker values still need review.
 
 Acceptance criteria:
 
 - blood test appears in the user's list;
 - another user cannot access it;
-- document, if present, is private and linked to the test.
+- document is private and linked to the test;
+- unconfirmed blood tests are visibly marked as still needing review.
 
-### 7.2 Enter Biomarker Results
+### 7.2 Review And Confirm Biomarker Results
 
 User goal:
 
-- convert important lab values into structured personal data.
+- convert important lab values from the PDF into structured personal data.
 
 Steps:
 
 1. User opens a blood test.
-2. User chooses an existing biomarker or creates a new catalog item.
-3. User enters value, unit, and reference range.
-4. System calculates status.
-5. User saves the result.
+2. System shows the uploaded document or a download/view action near the entry
+   form.
+3. User chooses an existing biomarker or creates a new catalog item.
+4. User enters, checks, or corrects value, unit, and reference range from the
+   document.
+5. System calculates status.
+6. User saves or confirms the result.
 
 Acceptance criteria:
 
@@ -423,6 +442,7 @@ Acceptance criteria:
 - status is visible;
 - value/range/unit can be edited;
 - original document remains separate from the result.
+- results are not treated as final until saved or confirmed by the user.
 
 ### 7.3 View Biomarker Trend
 
@@ -556,7 +576,7 @@ Primary dashboard blocks:
 - pinned biomarkers;
 - values needing attention because status is `low`, `high`, or `unknown`;
 - next reminder;
-- quick actions: add blood test, add context note, compare tests.
+- quick actions: upload blood-test PDF, add context note, compare tests.
 
 Avoid in V1:
 
@@ -576,7 +596,7 @@ V1 privacy baseline:
 - direct file URLs must not expose documents;
 - export/delete must be available to the owning user;
 - no third-party processing of health documents;
-- no AI, OCR, analytics, or external sharing by default.
+- no unreviewed AI, OCR, analytics, or external sharing by default.
 
 Security tests required later:
 
@@ -615,27 +635,29 @@ Any later AI or interpretation feature requires a separate spec.
 The first implementation slice should prove the core loop:
 
 1. authenticated user exists;
-2. user creates two blood tests;
-3. user creates a small biomarker catalog entry;
-4. user enters biomarker results for both tests;
-5. system calculates status;
-6. user views biomarker history;
-7. user compares two tests.
+2. user uploads two lab-result PDFs/documents;
+3. system stores both documents privately and creates blood tests;
+4. user confirms date/lab details;
+5. user creates or selects a small biomarker catalog entry;
+6. user reviews, enters, or confirms biomarker results for both tests;
+7. system calculates status;
+8. user views biomarker history;
+9. user compares two tests.
 
 Explicitly not in first slice:
 
-- document upload;
 - consult export;
 - reminders;
 - context notes;
 - full dashboard polish;
 - Filament;
-- OCR/AI.
+- automatic OCR/AI extraction without review.
 
 Why:
 
 - This slice proves the hardest product core: structured test data,
-  biomarker identity, status logic, history, and comparison.
+  private source documents, reviewed biomarker identity, status logic, history,
+  and comparison.
 
 ## 12. Validation Plan
 
@@ -653,6 +675,7 @@ npm run build
 Later V1 validation must prove:
 
 - auth-protected access;
+- private document upload and download/view access;
 - blood test create/edit/delete;
 - biomarker catalog create/edit;
 - result entry;
@@ -669,7 +692,8 @@ related feature is implemented:
 
 - Should the first implementation use SQLite for local development and later
   move to MySQL/Postgres, or choose the production database immediately?
-- Should document upload be in V1 proper or V1.1 after the core data loop?
+- Should assisted PDF text extraction be added after PDF-first manual review is
+  proven?
 - Should consult overview start as printable HTML, CSV, or both?
 - Should reminders be in-app only for V1 or include email later?
 - Should biomarker ranges be stored globally on the catalog, per result, or both
@@ -680,21 +704,23 @@ related feature is implemented:
 
 ### 1. Wat probeer ik te bouwen?
 
-Een private Laravel/Livewire-app waarmee een gebruiker eigen bloedtesten en
-biomarkerwaarden structureert, opvolgt, vergelijkt en meeneembaar maakt voor
-consultvoorbereiding.
+Een private Laravel/Livewire-app waarmee een gebruiker labo-PDF's eerst oplaadt
+en daarna bevestigde biomarkerwaarden structureert, opvolgt, vergelijkt en
+meeneembaar maakt voor consultvoorbereiding.
 
 ### 2. Hoe moet dit systeem werken?
 
-De gebruiker registreert bloedtesten, voert biomarkers manueel in, bewaart de
-gebruikte range bij elke waarde, krijgt eenvoudige statuslabels, ziet trends en
-vergelijkingen, en houdt context/export/delete onder eigen controle.
+De gebruiker uploadt een labo-PDF, bevestigt bloedtestgegevens en
+biomarkerwaarden naast het brondocument, bewaart de gebruikte range bij elke
+waarde, krijgt eenvoudige statuslabels, ziet trends en vergelijkingen, en houdt
+context/export/delete onder eigen controle.
 
 ### 3. Welke componenten heb ik nodig?
 
-Voor de eerste slice: auth, bloedtesten, biomarker-catalogus, biomarkerresultaten,
-statuscalculator, biomarkerhistoriek en testvergelijking. Daarna pas documenten,
-contextnotities, exports, reminders en dashboardverfijning.
+Voor de eerste slice: auth, PDF-upload, private documentopslag, bloedteststatus,
+review/bevestiging van biomarkerwaarden, biomarker-catalogus,
+biomarkerresultaten, statuscalculator, biomarkerhistoriek en testvergelijking.
+Daarna pas contextnotities, exports, reminders en dashboardverfijning.
 
 ### 4. Waar moet deze logica leven?
 
@@ -704,12 +730,12 @@ enige plek zijn waar medische grensregels of datakwaliteit bestaan.
 
 ### 5. Waarom breekt dit ding?
 
-Het breekt als we te snel OCR/AI/advies toevoegen, als Livewire-componenten de
-domainlaag worden, als referentieranges als universele waarheid worden
-behandeld, of als de app meer health-platform dan bloedwaarden-opvolger wordt.
+Het breekt als PDF-upload zonder private storage of review gebouwd wordt, als
+we te snel OCR/AI/advies toevoegen, als Livewire-componenten de domainlaag
+worden, als referentieranges als universele waarheid worden behandeld, of als
+de app meer health-platform dan bloedwaarden-opvolger wordt.
 
 ### 6. Verdict: bouwen
 
 Bouwen is logisch na een task plan en planningbaseline commit. Nog niet
 scaffolden voordat die twee bestaan.
-

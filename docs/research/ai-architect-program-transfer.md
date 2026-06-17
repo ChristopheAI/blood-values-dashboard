@@ -61,7 +61,7 @@ The transferable model is:
 ```text
 domain knowledge
 + repeated painful workflow
-+ existing manual process
++ existing document-first process with review
 + small first system
 + real validation
 + review/testing discipline
@@ -70,10 +70,11 @@ domain knowledge
 
 Application here:
 
-- the first build slice remains auth, two blood tests, small biomarker catalog,
-  manual results, status calculation, history, and compare;
-- OCR, AI interpretation, document parsing, integrations, and recommendations
-  remain out of the first slice;
+- the first build slice becomes auth, PDF-first intake, private document
+  storage, small biomarker catalog, reviewed values, status calculation,
+  history, and compare;
+- unreviewed OCR, AI interpretation, provider integrations, and
+  recommendations remain out of the first slice;
 - V1 should prove personal organization and consult preparation, not a broad
   health platform.
 

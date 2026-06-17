@@ -45,7 +45,8 @@ Assessment:
 
 V1 implication:
 
-- Focus first on entry, status, history, compare, and consult preparation.
+- Focus first on PDF intake, review/confirmation, status, history, compare, and
+  consult preparation.
 
 Score: 2
 
@@ -61,11 +62,14 @@ Assessment:
 
 - Data currently lives in lab documents, portals, notes, memory, and possibly
   exports or screenshots.
-- Manual entry is a credible first source of truth.
+- The lab PDF is the credible intake source.
+- Reviewed or manually corrected structured values are the credible dashboard
+  source.
 
 V1 implication:
 
-- Do not start with OCR or provider integrations.
+- Start with PDF upload and human confirmation.
+- Do not start with unreviewed OCR or provider integrations.
 
 Score: 2
 
@@ -79,10 +83,10 @@ Can the first useful build be small?
 
 Assessment:
 
-- Yes, if the first slice stays limited to auth, two blood tests, manual
-  results, status logic, history, and compare.
-- No, if reminders, PDF export, document upload, AI explanation, and large
-  catalogs are all treated as first-slice requirements.
+- Yes, if the first slice stays limited to auth, PDF upload, private storage,
+  review/confirmation of values, status logic, history, and compare.
+- No, if reminders, consult export, AI explanation, automatic OCR, provider
+  integrations, and large catalogs are all treated as first-slice requirements.
 
 V1 implication:
 
@@ -185,8 +189,9 @@ Assessment:
 
 V1 implication:
 
-- Require status-calculation tests, owner-isolation tests, feature tests, and
-  manual workflow QA before real personal data enters the app.
+- Require status-calculation tests, owner-isolation tests, private document
+  access tests, feature tests, and manual workflow QA before real personal data
+  enters the app.
 
 Score: 2
 
@@ -225,18 +230,20 @@ Interpretation:
 
 ### 1. Wat probeer ik te bouwen?
 
-Een private Laravel-app die persoonlijke bloedtesten, biomarkers, context en
+Een private Laravel-app die labo-PDF's, bevestigde biomarkerwaarden, context en
 consultvoorbereiding ordent zonder medische conclusies te trekken.
 
 ### 2. Hoe moet dit systeem werken?
 
-De gebruiker voert bloedtesten en biomarkerwaarden manueel in, het systeem
-bewaart ze owner-scoped, berekent eenvoudige statuslabels, toont geschiedenis
-en vergelijking, en helpt een consultoverzicht voorbereiden.
+De gebruiker uploadt een labo-PDF, het systeem bewaart het document privaat en
+maakt een bloedtest in reviewstatus, de gebruiker bevestigt of corrigeert
+biomarkerwaarden, en pas daarna berekent het systeem statuslabels, geschiedenis
+en vergelijking.
 
 ### 3. Welke componenten heb ik nodig?
 
-Voor de eerste slice: auth, bloedtesten, biomarker-catalogus, biomarker
+Voor de eerste slice: auth, PDF-upload, private document storage,
+bloedteststatus, biomarker-catalogus, review/confirmation flow, biomarker
 results, statuslogica, history view, compare view, tests, en validation script.
 
 ### 4. Waar moet deze logica leven?
@@ -246,8 +253,9 @@ applicatie/domain code, niet alleen in Livewire components of Blade views.
 
 ### 5. Waarom breekt dit ding?
 
-Het breekt als het medisch advies geeft, privacy pas later behandelt, te vroeg
-OCR/AI toevoegt, of de eerste slice volstopt met een generiek health-dashboard.
+Het breekt als het medisch advies geeft, PDF's publiek of zonder owner checks
+opslaat, privacy pas later behandelt, te vroeg OCR/AI als waarheid toevoegt, of
+de eerste slice volstopt met een generiek health-dashboard.
 
 ### 6. Verdict: bouwen
 

@@ -18,7 +18,7 @@ Scores:
 | V1 scope is narrow enough to build. |  |  |
 | Out-of-scope boundaries are explicit. |  |  |
 | First slice proves real product value. |  |  |
-| First slice avoids OCR, AI, integrations, and medical recommendations. |  |  |
+| First slice avoids unreviewed OCR, AI, integrations, and medical recommendations. |  |  |
 | Product-system check keeps the first slice focused. |  |  |
 
 Minimum to scaffold:
@@ -49,7 +49,7 @@ Minimum to scaffold:
 | --- | ---: | --- |
 | All health data is owner-scoped. |  |  |
 | User isolation tests are required. |  |  |
-| Private document storage is specified before upload work. |  |  |
+| Private document storage is specified for PDF-first upload work. |  |  |
 | Export/delete requirements are visible. |  |  |
 | Medical boundary is reflected in copy rules. |  |  |
 | Production/privacy checklist exists before deployment work. |  |  |

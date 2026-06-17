@@ -1,5 +1,10 @@
 # First Vertical Slice Implementation Plan
 
+Status: Superseded by
+`docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md` after the product
+flow was corrected from manual-first entry to PDF-first intake with
+review/confirmation.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the smallest useful Laravel/Livewire slice where an authenticated user can create two blood tests, enter biomarker results, see status calculation, view biomarker history, and compare two tests.
@@ -12,7 +17,8 @@
 
 ## Pre-Execution Rule
 
-Do not execute this plan until the current planning baseline has been reviewed.
+Do not execute this superseded plan. Use
+`docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md` instead.
 
 Before Task 1, the repository should contain a planning baseline and
 pre-scaffold review gate with:

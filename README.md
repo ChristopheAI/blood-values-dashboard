@@ -1,8 +1,9 @@
 # Persoonlijk Bloedwaarden-Dashboard
 
 Planning workspace for a first Laravel project: a private personal dashboard for
-tracking blood tests, biomarker values, context notes, trends, comparisons,
-reminders, documents, and consult preparation.
+uploading lab-result PDFs, turning reviewed biomarker values into structured
+data, tracking context notes, trends, comparisons, reminders, documents, and
+consult preparation.
 
 This is not a diagnosis machine and must not provide medical advice.
 
@@ -25,7 +26,8 @@ execution path is explicitly chosen.
 - `docs/adr/`
 - `docs/research/laravel-stack-decision.md`
 - `docs/research/ai-architect-program-transfer.md`
-- `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
+- `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
+- `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
 - `docs/session-handoff.md`
 - `docs/validation-protocol.md`
 - `docs/ops/production-checklist.md`
@@ -41,9 +43,10 @@ brief -> evidence -> ADR -> spec -> task plan -> baseline commit -> build -> ver
 The first implementation target is the first vertical slice:
 
 - auth;
-- blood tests;
+- PDF-first blood test intake;
+- private lab-document storage;
+- review/confirmation of biomarker values from the uploaded document;
 - small biomarker catalog;
-- manual biomarker results;
 - status calculation;
 - biomarker history;
 - compare two blood tests.
@@ -76,4 +79,4 @@ Out of scope:
 - treatment advice;
 - supplement/diet/training recommendations;
 - AI interpretation;
-- OCR/lab-provider integrations in the first slice.
+- unreviewed OCR/lab-provider integrations in the first slice.

@@ -55,9 +55,11 @@ Update this section after each meaningful session.
   - `docs/adr/0002-use-adrs-for-architecture-decisions.md`
   - `docs/adr/0003-use-livewire-starter-kit-for-v1.md`
   - `docs/adr/0004-manual-entry-and-owner-scoped-health-data.md`
+  - `docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md`
   - `docs/research/laravel-stack-decision.md`
   - `docs/research/ai-architect-program-transfer.md`
-  - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
+  - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
+  - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
   - `AGENTS.md`
   - `docs/session-handoff.md`
   - `docs/validation-protocol.md`
@@ -106,17 +108,20 @@ Update this section after each meaningful session.
   - Evidence/source discipline, ADR templates, four ADRs, and a product-system
     check were added to strengthen the planning baseline.
   - `scripts/validate.sh` now checks that the evidence and ADR layer exists.
-  - Pre-scaffold review result was recorded as `GO WITH CHANGES`.
-  - The first-slice plan was updated so Task 0 matches the current pushed repo
-    state instead of an old no-commits baseline.
+  - Product direction was corrected from manual-first to PDF-first intake with
+    review/confirmation.
+  - ADR-0005 supersedes the manual-first intake decision while preserving
+    owner scoping, `unknown` status, and no-medical-advice boundaries.
+  - The old manual-first pre-scaffold review was reset and replaced with a
+    refreshed PDF-first `GO WITH CHANGES` result.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
   - No Laravel scaffold yet.
-  - The pre-scaffold result is an internal planning review, not an external
-    human review.
+  - The PDF-first pre-scaffold result is an internal planning review, not an
+    external human review.
 - Next recommended action:
-  - Choose an execution path for the first-slice plan.
+  - Commit/push the PDF-first planning correction if remote continuity matters.
   - Scaffold Laravel Livewire starter kit and immediately switch
     `scripts/validate.sh` to Laravel-phase checks.
 
@@ -134,7 +139,8 @@ docs/project-brief.md, docs/v1-spec.md, docs/product-system-check.md,
 docs/evidence/source-index.md, docs/adr/,
 docs/research/laravel-stack-decision.md,
 docs/research/ai-architect-program-transfer.md,
-docs/superpowers/plans/2026-06-16-first-vertical-slice.md,
+docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md,
+docs/superpowers/plans/2026-06-16-first-vertical-slice.md as historical context,
 docs/reviews/pre-scaffold-review-request.md,
 docs/reviews/pre-scaffold-review-scorecard.md,
 docs/reviews/pre-scaffold-review-result.md, and the latest git status/log.

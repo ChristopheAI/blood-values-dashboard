@@ -1,6 +1,6 @@
 # Pre-Scaffold Review Request
 
-Date: 2026-06-16
+Date: 2026-06-17
 
 ## Decision Needed
 
@@ -71,7 +71,7 @@ Important current fact:
 8. `docs/adr/`
 9. `docs/research/laravel-stack-decision.md`
 10. `docs/research/ai-architect-program-transfer.md`
-11. `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
+11. `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
 12. `docs/validation-protocol.md`
 13. `docs/ops/production-checklist.md`
 14. `scripts/validate.sh`
@@ -82,8 +82,8 @@ The app is a private personal blood values dashboard.
 
 It should help the user:
 
-- enter blood tests;
-- manually enter biomarker values;
+- upload blood-test PDFs;
+- review, correct, or confirm biomarker values from the uploaded document;
 - calculate simple status labels from entered ranges;
 - view history and compare two tests;
 - preserve context;
@@ -95,7 +95,7 @@ It must not:
 - diagnose;
 - give medical advice;
 - recommend supplements, diet, training, or treatment;
-- run AI/OCR/provider integrations in the first slice;
+- run unreviewed AI/OCR/provider integrations in the first slice;
 - expose health data outside the authenticated owner.
 
 ## Architecture Questions
@@ -124,14 +124,14 @@ Please answer:
 
 1. Are auth and user isolation treated as first-class requirements?
 2. Does the plan require tests proving User A cannot access User B's records?
-3. Are private lab documents handled cautiously enough for a later V1 slice?
+3. Are private lab documents handled cautiously enough for the PDF-first slice?
 4. Are export and delete requirements visible early enough?
 5. Is any sensitive data likely to leak through logs, public storage, analytics,
    error reports, or generated exports?
 6. Is the medical boundary clear enough in copy, data model, and workflows?
-7. Should the first slice block document upload until user isolation is proven?
+7. What private storage and owner-isolation checks must block real PDF upload?
 8. What security check must be added before real personal data is entered?
-9. Do ADR-0001 through ADR-0004 name the right privacy and implementation
+9. Do ADR-0001 through ADR-0005 name the right privacy and implementation
    gates before scaffold?
 
 ## Go / No-Go Output Required
