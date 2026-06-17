@@ -23,6 +23,7 @@ docs/validation-protocol.md
 docs/ops/production-checklist.md
 docs/reviews/pre-scaffold-review-request.md
 docs/reviews/pre-scaffold-review-scorecard.md
+docs/reviews/pre-scaffold-review-result.md
 laravel-platform-discovery.md
 "
 
@@ -98,6 +99,9 @@ echo "ok: ADR records Livewire starter kit direction"
 grep -qi "owner-scoped" docs/adr/0004-manual-entry-and-owner-scoped-health-data.md
 echo "ok: ADR records owner-scoped health data"
 
+grep -qi "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
+echo "ok: pre-scaffold review result records decision"
+
 echo
 echo "== First-slice plan checks =="
 
@@ -106,6 +110,9 @@ echo "ok: first-slice plan exists"
 
 grep -qi "Do not execute this plan" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 echo "ok: first-slice plan preserves pre-execution gate"
+
+grep -qi "Pre-Scaffold Gate Checkpoint" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
+echo "ok: first-slice plan matches current pre-scaffold gate"
 
 grep -qi "Biomarker Status Domain Logic" docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 echo "ok: first-slice plan covers status logic"

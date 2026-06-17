@@ -43,7 +43,7 @@ Update this section after each meaningful session.
     should be committed and pushed.
 - Latest meaningful local checkpoint:
   - Current HEAD after this session should include:
-    `docs: add AI Architect decision layer`
+    `docs: record pre-scaffold review decision`
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -64,6 +64,7 @@ Update this section after each meaningful session.
   - `docs/ops/production-checklist.md`
   - `docs/reviews/pre-scaffold-review-request.md`
   - `docs/reviews/pre-scaffold-review-scorecard.md`
+  - `docs/reviews/pre-scaffold-review-result.md`
   - `scripts/validate.sh`
   - `.github/workflows/ci.yml`
 - What was validated:
@@ -105,15 +106,18 @@ Update this section after each meaningful session.
   - Evidence/source discipline, ADR templates, four ADRs, and a product-system
     check were added to strengthen the planning baseline.
   - `scripts/validate.sh` now checks that the evidence and ADR layer exists.
+  - Pre-scaffold review result was recorded as `GO WITH CHANGES`.
+  - The first-slice plan was updated so Task 0 matches the current pushed repo
+    state instead of an old no-commits baseline.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
   - No Laravel scaffold yet.
-  - No human external reviewer has filled the pre-scaffold scorecard yet.
+  - The pre-scaffold result is an internal planning review, not an external
+    human review.
 - Next recommended action:
-  - Get or perform the pre-scaffold go/no-go review using `docs/reviews/`.
-  - Then choose an execution path for the first-slice plan.
-  - Then scaffold Laravel Livewire starter kit and immediately switch
+  - Choose an execution path for the first-slice plan.
+  - Scaffold Laravel Livewire starter kit and immediately switch
     `scripts/validate.sh` to Laravel-phase checks.
 
 ## Active Context Markers
@@ -132,7 +136,8 @@ docs/research/laravel-stack-decision.md,
 docs/research/ai-architect-program-transfer.md,
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md,
 docs/reviews/pre-scaffold-review-request.md,
-docs/reviews/pre-scaffold-review-scorecard.md, and the latest git status/log.
+docs/reviews/pre-scaffold-review-scorecard.md,
+docs/reviews/pre-scaffold-review-result.md, and the latest git status/log.
 
 Summarize:
 - the product purpose;

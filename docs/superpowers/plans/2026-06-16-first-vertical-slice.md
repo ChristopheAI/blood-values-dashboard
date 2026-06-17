@@ -22,18 +22,27 @@ pre-scaffold review gate with:
 - `AGENTS.md`
 - `docs/project-brief.md`
 - `docs/v1-spec.md`
+- `docs/product-system-check.md`
+- `docs/evidence/source-index.md`
+- `docs/adr/0001-use-repo-as-project-control-plane.md`
+- `docs/adr/0002-use-adrs-for-architecture-decisions.md`
+- `docs/adr/0003-use-livewire-starter-kit-for-v1.md`
+- `docs/adr/0004-manual-entry-and-owner-scoped-health-data.md`
 - `docs/research/laravel-stack-decision.md`
+- `docs/research/ai-architect-program-transfer.md`
 - `docs/session-handoff.md`
 - `docs/validation-protocol.md`
 - `docs/ops/production-checklist.md`
 - `docs/reviews/pre-scaffold-review-request.md`
 - `docs/reviews/pre-scaffold-review-scorecard.md`
+- `docs/reviews/pre-scaffold-review-result.md`
 - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
 - `scripts/validate.sh`
 - `.github/workflows/ci.yml`
 
-The pre-scaffold review gate should produce a go/no-go decision before Task 1
-scaffolds Laravel.
+The pre-scaffold review gate must produce a go/no-go decision before Task 1
+scaffolds Laravel. Current decision: `GO WITH CHANGES`, recorded in
+`docs/reviews/pre-scaffold-review-result.md`.
 
 ## File Structure Map
 
@@ -56,18 +65,26 @@ Expected files after implementation:
 - Create Livewire pages/components for blood tests, biomarker entry, biomarker history, and comparison.
 - Create feature/unit tests proving auth, ownership, status logic, result entry, history, and comparison.
 
-## Task 0: Planning Baseline Commit
+## Task 0: Pre-Scaffold Gate Checkpoint
 
 **Files:**
 - Verify: `README.md`
 - Verify: `AGENTS.md`
 - Verify: `docs/project-brief.md`
 - Verify: `docs/v1-spec.md`
+- Verify: `docs/product-system-check.md`
+- Verify: `docs/evidence/source-index.md`
+- Verify: `docs/adr/0001-use-repo-as-project-control-plane.md`
+- Verify: `docs/adr/0002-use-adrs-for-architecture-decisions.md`
+- Verify: `docs/adr/0003-use-livewire-starter-kit-for-v1.md`
+- Verify: `docs/adr/0004-manual-entry-and-owner-scoped-health-data.md`
 - Verify: `docs/research/laravel-stack-decision.md`
+- Verify: `docs/research/ai-architect-program-transfer.md`
 - Verify: `docs/validation-protocol.md`
 - Verify: `docs/ops/production-checklist.md`
 - Verify: `docs/reviews/pre-scaffold-review-request.md`
 - Verify: `docs/reviews/pre-scaffold-review-scorecard.md`
+- Verify: `docs/reviews/pre-scaffold-review-result.md`
 - Verify: `docs/superpowers/plans/2026-06-16-first-vertical-slice.md`
 - Verify: `scripts/validate.sh`
 
@@ -96,64 +113,62 @@ git status --short --branch
 Expected:
 
 ```text
-## No commits yet on main
-?? .github/
-?? AGENTS.md
-?? README.md
-?? docs/
-?? laravel-platform-discovery.md
-?? scripts/
+## main...origin/main
 ```
 
-- [ ] **Step 3: Commit the planning baseline**
+- [ ] **Step 3: Confirm latest checkpoint**
 
 Run:
 
 ```bash
-git add .github AGENTS.md README.md docs laravel-platform-discovery.md scripts
-git commit -m "docs: add project planning baseline"
+git log --oneline --decorate -3
 ```
 
 Expected:
 
 ```text
-[main (root-commit) <hash>] docs: add project planning baseline
+<hash> (HEAD -> main, origin/main) docs: record pre-scaffold review decision
+<hash> docs: add AI Architect decision layer
+<hash> docs: record GitHub repository setup
 ```
 
-- [ ] **Step 4: Record the baseline commit**
+- [ ] **Step 4: Confirm the review gate allows scaffold**
 
 Run:
 
 ```bash
-git log --oneline -1
+grep -q "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
 ```
 
-Expected:
+Expected: exit code `0`.
 
-```text
-<hash> docs: add project planning baseline
-```
-
-Modify `docs/session-handoff.md`:
-
-```markdown
-- Latest meaningful local checkpoint:
-  - `<hash> docs: add project planning baseline`
-```
-
-- [ ] **Step 5: Commit the handoff checkpoint**
+- [ ] **Step 5: Confirm no Laravel scaffold exists yet**
 
 Run:
 
 ```bash
-git add docs/session-handoff.md
-git commit -m "docs: record planning baseline checkpoint"
+test ! -f artisan
+test ! -f composer.json
+test ! -d app
+test ! -d routes
+test ! -d database
 ```
 
-Expected:
+Expected: exit code `0`.
+
+- [ ] **Step 6: Proceed to scaffold only the first slice**
+
+Constraint:
 
 ```text
-[main <hash>] docs: record planning baseline checkpoint
+Do not add document upload, OCR, AI interpretation, reminders, exports,
+pinned biomarkers, or consult-PDF work in Task 1.
+```
+
+Expected implementation scope:
+
+```text
+Laravel Livewire starter kit + immediate validation transition only.
 ```
 
 ## Task 1: Scaffold Laravel Livewire Starter Kit
