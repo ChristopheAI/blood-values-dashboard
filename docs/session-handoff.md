@@ -36,10 +36,12 @@ The project is following the `ChristopheAI/Codex` starter-kit workflow:
 Update this section after each meaningful session.
 
 - Branch: `main`
+- Remote:
+  - `origin` -> `https://github.com/ChristopheAI/blood-values-dashboard.git`
 - Commit state:
-  - Planning baseline and pre-scaffold review gate committed locally.
+  - Planning baseline and pre-scaffold review gate committed and pushed.
 - Latest meaningful local checkpoint:
-  - `e6fa19c docs: add pre-scaffold review gate`
+  - `8340809 docs: record pre-scaffold review gate checkpoint`
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -83,11 +85,15 @@ Update this section after each meaningful session.
     before implementation.
   - `sh scripts/validate.sh` passed before committing the pre-scaffold review
     gate.
+  - Private GitHub repository was created:
+    `https://github.com/ChristopheAI/blood-values-dashboard`.
+  - `main` was pushed to `origin/main`.
+  - GitHub issue `#1` was created for the pre-scaffold review gate:
+    `https://github.com/ChristopheAI/blood-values-dashboard/issues/1`.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
   - No Laravel scaffold yet.
-  - No remote is configured yet.
   - No human external reviewer has filled the pre-scaffold scorecard yet.
 - Next recommended action:
   - Get or perform the pre-scaffold go/no-go review using `docs/reviews/`.
