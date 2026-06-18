@@ -26,7 +26,7 @@ it('owner can upload a lab pdf to private storage', function () {
     $document = BloodTestDocument::query()->firstOrFail();
 
     expect($bloodTest->user_id)->toBe($user->id)
-        ->and($bloodTest->status)->toBe('uploaded')
+        ->and($bloodTest->status)->toBe('reviewing')
         ->and($document->blood_test_id)->toBe($bloodTest->id)
         ->and($document->storage_disk)->toBe('local');
 

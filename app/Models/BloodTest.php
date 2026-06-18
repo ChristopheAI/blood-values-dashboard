@@ -70,6 +70,14 @@ class BloodTest extends Model
     }
 
     /**
+     * @return HasMany<ExtractionRun, $this>
+     */
+    public function extractionRuns(): HasMany
+    {
+        return $this->hasMany(ExtractionRun::class);
+    }
+
+    /**
      * @return HasMany<ContextNote, $this>
      */
     public function contextNotes(): HasMany

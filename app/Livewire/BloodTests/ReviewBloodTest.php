@@ -4,6 +4,7 @@ namespace App\Livewire\BloodTests;
 
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
 use App\Models\Biomarker;
+use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,8 @@ use Livewire\Component;
 class ReviewBloodTest extends Component
 {
     public int $bloodTestId;
+
+    public ?int $draftResultId = null;
 
     /** @var array<string, mixed> */
     public array $resultForm = [
@@ -35,6 +38,7 @@ class ReviewBloodTest extends Component
     public function confirmResult(?int $bloodTestId = null): void
     {
         $bloodTest = $this->ownedBloodTest($bloodTestId ?? $this->bloodTestId);
+        $draft = $this->draftResultId === null ? null : $this->ownedDraft($this->draftResultId, $bloodTest);
 
         $validated = $this->validate([
             'resultForm.biomarker_id' => ['nullable', 'integer'],
@@ -57,24 +61,64 @@ class ReviewBloodTest extends Component
             referenceUnit: $form['reference_unit'] ?: $form['unit'],
         );
 
-        $bloodTest->results()->updateOrCreate(
-            ['biomarker_id' => $biomarker->id],
-            [
-                'value' => $form['value'],
-                'unit' => $form['unit'],
-                'reference_min' => $form['reference_min'],
-                'reference_max' => $form['reference_max'],
-                'reference_unit' => $form['reference_unit'] ?: $form['unit'],
-                'status' => $status->value,
-                'entry_source' => 'pdf_reviewed',
-                'confirmed_at' => now(),
-                'note' => $form['note'],
-            ],
-        );
+        $payload = [
+            'biomarker_id' => $biomarker->id,
+            'extracted_name' => $draft?->extracted_name,
+            'value' => $form['value'],
+            'unit' => $form['unit'],
+            'reference_min' => $form['reference_min'],
+            'reference_max' => $form['reference_max'],
+            'reference_unit' => $form['reference_unit'] ?: $form['unit'],
+            'status' => $status->value,
+            'entry_source' => 'pdf_reviewed',
+            'confirmed_at' => now(),
+            'note' => $form['note'],
+        ];
+
+        if ($draft instanceof BiomarkerResult) {
+            $draft->update($payload);
+        } else {
+            $bloodTest->results()->updateOrCreate(['biomarker_id' => $biomarker->id], $payload);
+        }
 
         $bloodTest->update(['status' => 'confirmed']);
 
-        $this->reset('resultForm');
+        $this->resetResultForm();
+    }
+
+    public function useDraft(int $draftResultId): void
+    {
+        $bloodTest = $this->ownedBloodTest($this->bloodTestId);
+        $draft = $this->ownedDraft($draftResultId, $bloodTest);
+
+        $this->draftResultId = $draft->id;
+        $this->resultForm = [
+            'biomarker_id' => $draft->biomarker_id,
+            'name' => $draft->biomarker?->name ?? $draft->extracted_name ?? '',
+            'value' => $this->formatDecimal($draft->value),
+            'unit' => $draft->unit,
+            'reference_min' => $this->formatDecimal($draft->reference_min),
+            'reference_max' => $this->formatDecimal($draft->reference_max),
+            'reference_unit' => $draft->reference_unit,
+            'note' => $draft->note,
+        ];
+    }
+
+    public function deleteDraft(int $draftResultId): void
+    {
+        $bloodTest = $this->ownedBloodTest($this->bloodTestId);
+        $draft = $this->ownedDraft($draftResultId, $bloodTest);
+
+        $draft->delete();
+
+        if ($this->draftResultId === $draftResultId) {
+            $this->resetResultForm();
+        }
+    }
+
+    private function resetResultForm(): void
+    {
+        $this->reset('resultForm', 'draftResultId');
         $this->resultForm = [
             'biomarker_id' => null,
             'name' => '',
@@ -90,7 +134,7 @@ class ReviewBloodTest extends Component
     public function render(): View
     {
         $bloodTest = $this->ownedBloodTest($this->bloodTestId)
-            ->load(['contextNotes', 'documents', 'results.biomarker']);
+            ->load(['contextNotes', 'documents', 'results.biomarker', 'extractionRuns']);
 
         return view('livewire.blood-tests.review-blood-test', [
             'bloodTest' => $bloodTest,
@@ -108,6 +152,20 @@ class ReviewBloodTest extends Component
         abort_unless($bloodTest->user_id === Auth::id(), 403);
 
         return $bloodTest;
+    }
+
+    private function ownedDraft(int $draftResultId, BloodTest $bloodTest): BiomarkerResult
+    {
+        $draft = BiomarkerResult::query()
+            ->with('biomarker')
+            ->whereKey($draftResultId)
+            ->firstOrFail();
+
+        abort_unless($draft->blood_test_id === $bloodTest->id, 403);
+        abort_unless($bloodTest->user_id === Auth::id(), 403);
+        abort_unless($draft->entry_source === 'extracted' && $draft->confirmed_at === null, 403);
+
+        return $draft;
     }
 
     /**
@@ -136,5 +194,14 @@ class ReviewBloodTest extends Component
                 'active' => true,
             ],
         );
+    }
+
+    private function formatDecimal(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return rtrim(rtrim(number_format((float) $value, 4, '.', ''), '0'), '.');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\BloodTests;
 
+use App\Domain\Intake\RunBloodTestExtraction;
 use App\Http\Controllers\Controller;
 use App\Models\BloodTest;
 use Illuminate\Http\RedirectResponse;
@@ -11,7 +12,7 @@ use Illuminate\Support\Str;
 
 class StoreBloodTestController extends Controller
 {
-    public function __invoke(Request $request): RedirectResponse
+    public function __invoke(Request $request, RunBloodTestExtraction $runBloodTestExtraction): RedirectResponse
     {
         $validated = $request->validate([
             'document' => ['required', 'file', 'mimetypes:application/pdf', 'max:12000'],
@@ -33,13 +34,15 @@ class StoreBloodTestController extends Controller
             'status' => 'uploaded',
         ]);
 
-        $bloodTest->documents()->create([
+        $document = $bloodTest->documents()->create([
             'original_filename' => $this->sanitizeFilename($file->getClientOriginalName()),
             'storage_disk' => 'local',
             'storage_path' => $storagePath,
             'mime_type' => $file->getMimeType(),
             'file_size' => $file->getSize(),
         ]);
+
+        $runBloodTestExtraction($document);
 
         return redirect()->route('blood-tests.show', $bloodTest);
     }

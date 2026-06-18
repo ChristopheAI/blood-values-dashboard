@@ -1,3 +1,11 @@
+@php
+    $draftResults = $bloodTest->results
+        ->whereNull('confirmed_at')
+        ->where('entry_source', 'extracted');
+    $confirmedResults = $bloodTest->results->whereNotNull('confirmed_at');
+    $latestExtractionRun = $bloodTest->extractionRuns->sortByDesc('created_at')->first();
+@endphp
+
 <section class="mx-auto flex w-full max-w-5xl flex-col gap-8">
     <header class="flex flex-col gap-2">
         <flux:heading size="xl">{{ $bloodTest->title ?: __('Blood test review') }}</flux:heading>
@@ -30,6 +38,54 @@
             @empty
                 <flux:text>{{ __('No source document is attached.') }}</flux:text>
             @endforelse
+        </section>
+
+        <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="extracted-drafts-panel">
+            <flux:heading size="lg">{{ __('Extracted drafts') }}</flux:heading>
+
+            @if ($latestExtractionRun?->status === 'failed')
+                <flux:text data-test="extraction-status">{{ __('Extraction failed. Manual entry is still available.') }}</flux:text>
+            @elseif ($latestExtractionRun?->status === 'done' && $draftResults->isEmpty())
+                <flux:text data-test="extraction-status">{{ __('No extracted drafts found. Manual entry is still available.') }}</flux:text>
+            @endif
+
+            <div class="space-y-3">
+                @forelse ($draftResults as $draft)
+                    <article class="space-y-3 rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="extracted-draft-row">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <div class="font-medium">{{ $draft->biomarker?->name ?? $draft->extracted_name ?? __('Unknown marker') }}</div>
+                                <div class="text-neutral-600 dark:text-neutral-400">
+                                    {{ (float) $draft->value }} {{ $draft->unit }}
+                                    @if ($draft->reference_min !== null && $draft->reference_max !== null)
+                                        · {{ (float) $draft->reference_min }}-{{ (float) $draft->reference_max }} {{ $draft->reference_unit }}
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2">
+                                <flux:button type="button" size="sm" wire:click="useDraft({{ $draft->id }})" data-test="use-draft-button">
+                                    {{ __('Use draft') }}
+                                </flux:button>
+                                <flux:button type="button" variant="danger" size="sm" wire:click="deleteDraft({{ $draft->id }})" data-test="delete-draft-button">
+                                    {{ __('Delete draft') }}
+                                </flux:button>
+                            </div>
+                        </div>
+
+                        <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                            {{ __('Extracted - please confirm') }}
+                            @if ($draft->extraction_confidence !== null && (float) $draft->extraction_confidence < 0.8)
+                                · {{ __('Low confidence') }}
+                            @endif
+                        </div>
+                    </article>
+                @empty
+                    @if ($latestExtractionRun === null)
+                        <flux:text>{{ __('No extracted drafts yet.') }}</flux:text>
+                    @endif
+                @endforelse
+            </div>
         </section>
 
         <form wire:submit="confirmResult" class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="confirm-biomarker-form">
@@ -70,7 +126,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($bloodTest->results as $result)
+                    @forelse ($confirmedResults as $result)
                         <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="confirmed-value-row">
                             <td class="p-3">{{ $result->biomarker->name }}</td>
                             <td class="p-3">{{ (float) $result->value }} {{ $result->unit }}</td>

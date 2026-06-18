@@ -12,7 +12,8 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $blood_test_id
- * @property int $biomarker_id
+ * @property int|null $biomarker_id
+ * @property string|null $extracted_name
  * @property string $value
  * @property string $unit
  * @property string|null $reference_min
@@ -22,12 +23,15 @@ use Illuminate\Support\Carbon;
  * @property string $entry_source
  * @property Carbon|null $confirmed_at
  * @property string|null $note
+ * @property string|null $extraction_confidence
+ * @property string|null $source_snippet
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[Fillable([
     'blood_test_id',
     'biomarker_id',
+    'extracted_name',
     'value',
     'unit',
     'reference_min',
@@ -37,6 +41,8 @@ use Illuminate\Support\Carbon;
     'entry_source',
     'confirmed_at',
     'note',
+    'extraction_confidence',
+    'source_snippet',
 ])]
 class BiomarkerResult extends Model
 {
