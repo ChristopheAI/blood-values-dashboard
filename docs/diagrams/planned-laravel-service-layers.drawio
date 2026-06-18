@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="30.0.4">
+  <diagram name="Planned Laravel Service Layers">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1180" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Planned Laravel Service Layers For Blood Values Dashboard V1&#xa;Based on docs only: no Laravel app scaffold exists yet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=18;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="320" y="30" width="1060" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="actor" value="Authenticated owner&#xa;personal blood-test data only" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="260" width="80" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uiLayer" value="Presentation / Workflow Layer" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="130" width="1180" height="135" as="geometry" />
+        </mxCell>
+        <mxCell id="ui1" value="Laravel Livewire starter kit&#xa;auth shell + Blade / Livewire screens" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="uiLayer">
+          <mxGeometry x="40" y="54" width="290" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="ui2" value="Blood-test intake UI&#xa;upload PDF, confirm date/lab/title" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="uiLayer">
+          <mxGeometry x="370" y="54" width="260" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="ui3" value="Review / confirmation UI&#xa;enter biomarker values beside source document" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="uiLayer">
+          <mxGeometry x="670" y="54" width="280" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="ui4" value="History + compare UI&#xa;confirmed values only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="uiLayer">
+          <mxGeometry x="990" y="54" width="150" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="boundaryLayer" value="HTTP, Auth, Validation, Authorization Boundary" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="310" width="1180" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="b1" value="Authenticated routes&#xa;no health data for guests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="boundaryLayer">
+          <mxGeometry x="40" y="56" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="b2" value="Server-side validation&#xa;PDF type/size, dates, units, ranges" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="boundaryLayer">
+          <mxGeometry x="310" y="56" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="b3" value="Policies / owner checks&#xa;view, mutate, download, delete, export" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="boundaryLayer">
+          <mxGeometry x="610" y="56" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="b4" value="Livewire tamper defense&#xa;public properties and action parameters are untrusted" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="boundaryLayer">
+          <mxGeometry x="920" y="56" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="appLayer" value="Application Service / Use-Case Layer" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="500" width="1180" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="a1" value="UploadLabPdf&#xa;create blood test in uploaded/reviewing state" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="appLayer">
+          <mxGeometry x="40" y="60" width="250" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="a2" value="ReviewBloodTestDocument&#xa;confirm date, lab, and source metadata" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="appLayer">
+          <mxGeometry x="330" y="60" width="260" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="a3" value="ConfirmBiomarkerResult&#xa;save reviewed value/range/unit/status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="appLayer">
+          <mxGeometry x="630" y="60" width="260" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="a4" value="CompareBloodTests / BuildHistory&#xa;use confirmed values, handle missing or mismatched units" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="appLayer">
+          <mxGeometry x="930" y="60" width="210" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="domainLayer" value="Domain Rule Layer" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="700" width="1180" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" value="DetermineBiomarkerStatus&#xa;low / normal / high / unknown" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="domainLayer">
+          <mxGeometry x="40" y="60" width="240" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" value="Trust boundary&#xa;PDF is source document&#xa;structured value is trusted only after user review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="domainLayer">
+          <mxGeometry x="320" y="60" width="280" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="d3" value="Comparison rules&#xa;same biomarker + same unit = delta&#xa;otherwise not comparable / unknown" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="domainLayer">
+          <mxGeometry x="640" y="60" width="260" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="d4" value="Medical boundary&#xa;no diagnosis&#xa;no treatment or supplement advice" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="domainLayer">
+          <mxGeometry x="940" y="60" width="200" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dataLayer" value="Persistence And Private File Layer" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="900" width="1180" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="p1" value="Eloquent records&#xa;User, BloodTest, BloodTestDocument, Biomarker, BiomarkerResult" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="dataLayer">
+          <mxGeometry x="40" y="55" width="290" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" value="Private disk storage&#xa;generated path&#xa;sanitized display filename" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="dataLayer">
+          <mxGeometry x="390" y="55" width="250" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" value="Download / delete routes&#xa;owner-authorized&#xa;no public storage URL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="dataLayer">
+          <mxGeometry x="700" y="60" width="240" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" value="Export / delete baseline&#xa;V1 privacy concern, not polish" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="dataLayer">
+          <mxGeometry x="1000" y="60" width="140" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="externalLayer" value="Explicit External / Future Boundaries" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1440" y="310" width="220" height="745" as="geometry" />
+        </mxCell>
+        <mxCell id="x1" value="No runtime Exa / Firecrawl for private lab PDFs or biomarker data" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="externalLayer">
+          <mxGeometry x="25" y="70" width="170" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="x2" value="No unreviewed OCR / parser as truth in V1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="externalLayer">
+          <mxGeometry x="25" y="230" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="x3" value="No runtime AI agent in V1&#xa;future only proposal-only + human-approved" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="externalLayer">
+          <mxGeometry x="25" y="380" width="170" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="x4" value="No provider / Apple Health / wearable sync in V1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="externalLayer">
+          <mxGeometry x="25" y="550" width="170" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tests" value="Test contract before build&#xa;PDF upload, private storage, owner isolation, Livewire tamper denial, no external runtime processors" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="1090" width="660" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="actorToUi" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="actor" target="uiLayer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eUiBoundary" value="submits browser input" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="uiLayer" target="boundaryLayer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eBoundaryApp" value="authorized use cases" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="boundaryLayer" target="appLayer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eAppDomain" value="calls pure rules" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="appLayer" target="domainLayer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eDomainData" value="persists confirmed facts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="domainLayer" target="dataLayer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eTests" value="must prove before real personal data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="dataLayer" target="tests">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eExternal" value="forbidden runtime paths in V1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=block;strokeColor=#b85450;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="appLayer" target="externalLayer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
