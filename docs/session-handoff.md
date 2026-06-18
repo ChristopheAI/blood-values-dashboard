@@ -42,9 +42,11 @@ Update this section after each meaningful session.
   - Planning baseline, pre-scaffold review gate, AI Architect decision layer,
     future AI-agent boundary, Freek/Spatie engineering profile, and engineering
     source radar should be committed and pushed.
+  - The PDF-first intake test contract should be committed and pushed as the
+    latest planning-content checkpoint.
 - Latest meaningful local checkpoint:
   - Current HEAD after this session should include:
-    `docs: add engineering source radar`
+    `20e7421 docs: map PDF intake guardrails to tests`
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -206,6 +208,8 @@ docs/project-brief.md, docs/v1-spec.md, docs/product-system-check.md,
 docs/evidence/source-index.md, docs/adr/,
 docs/research/laravel-stack-decision.md,
 docs/research/ai-architect-program-transfer.md,
+docs/research/2026-06-18-engineering-source-radar.md,
+docs/testing/pdf-first-intake-test-conversion.md,
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md,
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md as historical context,
 docs/reviews/pre-scaffold-review-request.md,
