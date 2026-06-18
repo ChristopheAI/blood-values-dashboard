@@ -89,14 +89,28 @@ Out of this slice:
 
 ## Validation
 
+The implementation-phase test contract is defined in:
+
+- `docs/testing/pdf-first-intake-test-conversion.md`
+
 The slice is not complete until `sh scripts/validate.sh` proves:
 
 - auth-protected access;
 - owner isolation;
 - private document access;
+- lab-PDF upload validation;
+- generated storage names;
+- sanitized original display filename;
+- owner-authorized download route;
+- no public storage URL exposure;
+- Livewire action-parameter tamper denial;
+- Livewire public-property tamper denial;
 - blood test upload/review flow;
 - biomarker result confirmation;
 - status edge cases;
 - biomarker history ordering;
 - compare-two-tests behavior;
+- deletion removes or blocks document access;
+- no runtime Exa, Firecrawl, or AI processing of lab PDFs;
+- package review before sensitive dependencies;
 - frontend build.

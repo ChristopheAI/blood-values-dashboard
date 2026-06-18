@@ -30,6 +30,7 @@ docs/research/2026-06-18-nuno-maduro-laravel-quality-deep-dive.md
 docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md
 docs/research/2026-06-18-freek-spatie-laravel-engineering-profile.md
 docs/research/2026-06-18-engineering-source-radar.md
+docs/testing/pdf-first-intake-test-conversion.md
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
@@ -180,6 +181,14 @@ grep -qi "Lab PDFs are private source documents" docs/research/2026-06-18-engine
 grep -qi "Engineering Source Radar" docs/evidence/source-index.md
 echo "ok: engineering source radar records Livewire and private file guardrails"
 
+grep -qi "PDF-First Intake Test Conversion" docs/testing/pdf-first-intake-test-conversion.md
+grep -qi "owner_can_upload_a_lab_pdf_to_private_storage" docs/testing/pdf-first-intake-test-conversion.md
+grep -qi "lab_pdf_storage_path_does_not_use_original_filename" docs/testing/pdf-first-intake-test-conversion.md
+grep -qi "tampered_livewire_action_parameter_cannot_confirm_another_users_blood_test" docs/testing/pdf-first-intake-test-conversion.md
+grep -qi "tampered_livewire_public_property_cannot_switch_owner_context" docs/testing/pdf-first-intake-test-conversion.md
+grep -qi "lab_pdf_intake_has_no_runtime_exa_firecrawl_or_ai_processor" docs/testing/pdf-first-intake-test-conversion.md
+echo "ok: PDF-intake test conversion records future test contract"
+
 grep -qi "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
 echo "ok: pre-scaffold review result records PDF-first go-with-changes"
 
@@ -203,6 +212,11 @@ echo "ok: first-slice plan covers status logic"
 
 grep -qi "compare two blood tests" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 echo "ok: first-slice plan covers comparison"
+
+grep -qi "docs/testing/pdf-first-intake-test-conversion.md" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
+grep -qi "Livewire action-parameter tamper denial" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
+grep -qi "generated storage names" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
+echo "ok: first-slice plan references PDF-intake test contract"
 
 grep -qi "sh scripts/validate.sh" docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 echo "ok: first-slice plan includes validation protocol"
@@ -261,8 +275,10 @@ echo "ok: AGENTS records package-review discipline"
 
 grep -qi "Livewire public properties and action parameters" AGENTS.md
 grep -qi "Lab PDFs must be stored as private source documents" AGENTS.md
+grep -qi "pdf-first-intake-test-conversion" AGENTS.md
 grep -qi "Livewire public properties and action parameters" docs/validation-protocol.md
 grep -qi "lab PDFs stored on private disks" docs/validation-protocol.md
+grep -qi "pdf-first-intake-test-conversion" docs/validation-protocol.md
 echo "ok: AGENTS and validation protocol record Livewire/file guardrails"
 
 grep -qi "docs/validation-protocol.md" docs/session-handoff.md

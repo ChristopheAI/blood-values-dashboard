@@ -39,6 +39,7 @@ Read these first:
 - `docs/research/laravel-stack-decision.md`
 - `docs/research/ai-architect-program-transfer.md`
 - `docs/research/2026-06-18-engineering-source-radar.md`
+- `docs/testing/pdf-first-intake-test-conversion.md`
 - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
 - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
 - `laravel-platform-discovery.md`
@@ -125,6 +126,9 @@ task, update it so V1 behavior is proven with Laravel/Pest/browser checks.
 - Lab PDFs must be stored as private source documents with generated storage
   names and owner-authorized download routes. Original filenames may be kept as
   sanitized metadata, not trusted paths.
+- When Laravel implementation resumes, convert
+  `docs/testing/pdf-first-intake-test-conversion.md` into real Pest/Livewire
+  tests before implementing the matching PDF-intake behavior.
 
 ## Truth-First Working Rules
 

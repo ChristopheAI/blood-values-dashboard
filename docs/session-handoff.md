@@ -71,6 +71,7 @@ Update this section after each meaningful session.
   - `docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md`
   - `docs/research/2026-06-18-freek-spatie-laravel-engineering-profile.md`
   - `docs/research/2026-06-18-engineering-source-radar.md`
+  - `docs/testing/pdf-first-intake-test-conversion.md`
   - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
   - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
   - `AGENTS.md`
@@ -170,6 +171,12 @@ Update this section after each meaningful session.
     storage, generated filenames, owner-authorized downloads, Livewire
     public-property/action-parameter distrust, cross-user denial tests, and
     package review before sensitive dependencies.
+  - The engineering source radar was converted into an explicit first-slice test
+    contract in `docs/testing/pdf-first-intake-test-conversion.md`. It names the
+    future Pest/Livewire test files, test cases, reasons, and expected proof for
+    PDF upload, private storage, owner authorization, Livewire tamper denial,
+    deletion access blocking, package review, and no runtime Exa/Firecrawl/AI
+    processing of lab PDFs.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
@@ -181,8 +188,9 @@ Update this section after each meaningful session.
     implementation.
   - Before installing any Composer package that touches auth, files, exports,
     jobs, logs, or health data, create a package review note or ADR.
-  - Convert the engineering source radar into first-slice PDF intake tests when
-    Laravel implementation resumes.
+  - When Laravel implementation resumes, create the future Pest/Livewire tests
+    named in `docs/testing/pdf-first-intake-test-conversion.md` before building
+    the matching behavior.
 
 ## Active Context Markers
 

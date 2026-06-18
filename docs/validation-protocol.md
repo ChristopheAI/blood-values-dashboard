@@ -115,6 +115,11 @@ Critical implementation checks should eventually cover:
   display filenames, owner-authorized download routes, and upload/download tests
   using fake files/disks.
 
+The first PDF-intake implementation must use
+`docs/testing/pdf-first-intake-test-conversion.md` as the test contract. That
+document maps the engineering source radar to concrete future Pest/Livewire
+tests and explains why each test exists.
+
 ### Continuation Check
 
 Use when resuming from another thread.
