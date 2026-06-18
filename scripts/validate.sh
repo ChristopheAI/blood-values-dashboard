@@ -16,6 +16,7 @@ docs/adr/0002-use-adrs-for-architecture-decisions.md
 docs/adr/0003-use-livewire-starter-kit-for-v1.md
 docs/adr/0004-manual-entry-and-owner-scoped-health-data.md
 docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md
+docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md
 docs/research/laravel-stack-decision.md
 docs/research/ai-architect-program-transfer.md
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
@@ -107,6 +108,13 @@ echo "ok: ADR records owner-scoped health data"
 grep -qi "PDF-first intake" docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md
 echo "ok: ADR records PDF-first intake decision"
 
+grep -qi "public research tools" docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md
+grep -qi "Do not use Exa or Firecrawl for private health data in V1" docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md
+echo "ok: ADR records Exa and Firecrawl public-research boundary"
+
+grep -qi "Exa And Firecrawl Research Boundary" docs/evidence/source-index.md
+echo "ok: source index records Exa and Firecrawl boundary"
+
 grep -qi "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
 echo "ok: pre-scaffold review result records PDF-first go-with-changes"
 
@@ -169,6 +177,10 @@ echo "ok: AGENTS points to README"
 
 grep -qi "0005-use-pdf-first" AGENTS.md
 echo "ok: AGENTS points to PDF-first ADR"
+
+grep -qi "0006-use-exa-and-firecrawl" AGENTS.md
+grep -qi "must not process private lab PDFs" AGENTS.md
+echo "ok: AGENTS points to Exa and Firecrawl research boundary"
 
 grep -qi "docs/validation-protocol.md" docs/session-handoff.md
 echo "ok: handoff points to validation protocol"

@@ -56,6 +56,7 @@ Update this section after each meaningful session.
   - `docs/adr/0003-use-livewire-starter-kit-for-v1.md`
   - `docs/adr/0004-manual-entry-and-owner-scoped-health-data.md`
   - `docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md`
+  - `docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md`
   - `docs/research/laravel-stack-decision.md`
   - `docs/research/ai-architect-program-transfer.md`
   - `docs/research/competitor-analysis.md`
@@ -124,6 +125,9 @@ Update this section after each meaningful session.
     wearable sync in V1.
   - `sh scripts/validate.sh` passed after adding the Firecrawl competitor
     analysis and source-index entry.
+  - ADR-0006 was added to define Exa as the public source-discovery tool and
+    Firecrawl as the public extraction/monitoring tool, while forbidding both
+    from processing private health data in V1.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.

@@ -33,6 +33,7 @@ Read these first:
 - `docs/adr/0003-use-livewire-starter-kit-for-v1.md`
 - `docs/adr/0004-manual-entry-and-owner-scoped-health-data.md`
 - `docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md`
+- `docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md`
 - `docs/research/laravel-stack-decision.md`
 - `docs/research/ai-architect-program-transfer.md`
 - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
@@ -69,6 +70,8 @@ Before implementation:
 - keep out-of-scope items out of V1, especially unreviewed OCR, AI
   interpretation, medical recommendations, wearable integrations, and provider
   connections.
+- use Exa and Firecrawl only as public research tools unless a later ADR,
+  privacy review, and explicit approval allow runtime use.
 
 ## Validation
 
@@ -95,6 +98,10 @@ task, update it so V1 behavior is proven with Laravel/Pest/browser checks.
 - Privacy, export, and deletion are V1 concerns, not later polish.
 - Any language that sounds like diagnosis, treatment, or supplement advice is
   out of scope unless a later spec deliberately changes the product boundary.
+- Exa and Firecrawl may support public research, competitor analysis, and
+  documentation review, but must not process private lab PDFs, biomarker data,
+  Apple Health exports, medication notes, symptoms, consult exports, or account
+  data in V1.
 
 ## Truth-First Working Rules
 

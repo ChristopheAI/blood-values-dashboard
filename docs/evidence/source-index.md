@@ -57,6 +57,14 @@ Do not collapse these categories.
   keeping AI advice, optimal ranges, action plans, provider connections, and
   wearable sync out of scope until later ADRs.
 
+### Exa And Firecrawl Research Boundary
+
+- Source: `docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md`
+- Claim type: inference
+- Summary: Exa and Firecrawl are accepted as public research tools for source
+  discovery, extraction, and monitoring, while private health data remains out
+  of their scope unless a later ADR and privacy review explicitly change that.
+
 ## External Workflow Sources
 
 ### Codex Starter Kit
