@@ -2,8 +2,8 @@
 
 ## Project
 
-This repository is the planning and future implementation workspace for a
-personal blood values dashboard built with Laravel.
+This repository is the planning and implementation workspace for a personal
+blood values dashboard built with Laravel.
 
 The product is a private personal tracking system for blood tests, biomarkers,
 lab-result PDFs, context notes, trends, documents, reminders, and consult
@@ -13,11 +13,12 @@ It is not a diagnosis machine and must not provide medical advice.
 
 ## Current Phase
 
-Planning baseline.
+First PDF-first intake implementation slice.
 
-Do not install Laravel, generate routes, write migrations, scaffold UI, or add
-application code until the planning baseline is complete and the next task
-explicitly asks for implementation.
+The Laravel Livewire starter scaffold exists on the implementation branch. Keep
+new work inside the reviewed V1 boundary unless a spec, ADR, and task plan
+explicitly expand it. Do not add runtime AI interpretation, unreviewed OCR,
+provider integrations, wearable sync, or medical-advice features to this slice.
 
 ## Source Of Truth
 
@@ -94,9 +95,9 @@ Current validation command:
 sh scripts/validate.sh
 ```
 
-At this planning stage, the command validates project-control files and checks
-that no Laravel app has been scaffolded yet. Before the first implementation
-task, update it so V1 behavior is proven with Laravel/Pest/browser checks.
+At this implementation stage, the command validates scaffold integrity, runs the
+Laravel test/quality suite, builds frontend assets, and checks whitespace. Add
+browser checks when a task changes the user-facing workflow.
 
 ## Product Rules
 
@@ -127,9 +128,8 @@ task, update it so V1 behavior is proven with Laravel/Pest/browser checks.
 - Lab PDFs must be stored as private source documents with generated storage
   names and owner-authorized download routes. Original filenames may be kept as
   sanitized metadata, not trusted paths.
-- When Laravel implementation resumes, convert
-  `docs/testing/pdf-first-intake-test-conversion.md` into real Pest/Livewire
-  tests before implementing the matching PDF-intake behavior.
+- Keep `docs/testing/pdf-first-intake-test-conversion.md` aligned with the real
+  Pest/Livewire tests that prove the PDF-intake behavior.
 
 ## Truth-First Working Rules
 

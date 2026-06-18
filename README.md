@@ -1,20 +1,19 @@
 # Persoonlijk Bloedwaarden-Dashboard
 
-Planning workspace for a first Laravel project: a private personal dashboard for
-uploading lab-result PDFs, turning reviewed biomarker values into structured
-data, tracking context notes, trends, comparisons, reminders, documents, and
-consult preparation.
+Laravel workspace for a private personal dashboard for uploading lab-result
+PDFs, turning reviewed biomarker values into structured data, tracking context
+notes, trends, comparisons, reminders, documents, and consult preparation.
 
 This is not a diagnosis machine and must not provide medical advice.
 
 ## Current Phase
 
-Planning baseline.
+First PDF-first intake implementation slice.
 
-No Laravel app has been scaffolded yet. Do not install Laravel, create routes,
-write migrations, or generate app code until the planning baseline is committed
-and the pre-scaffold review gate has been handled, and the first-slice
-execution path is explicitly chosen.
+The Laravel Livewire starter scaffold now exists on the implementation branch.
+Keep new work inside the reviewed V1 boundary unless a spec, ADR, and task plan
+explicitly expand it. Do not add runtime AI interpretation, unreviewed OCR,
+provider integrations, wearable sync, or medical-advice features to this slice.
 
 ## Read First
 
@@ -54,15 +53,14 @@ The first implementation target is the first vertical slice:
 
 ## Validation
 
-Current planning-stage validation:
+Current implementation-stage validation:
 
 ```bash
 sh scripts/validate.sh
 ```
 
-This currently proves that the planning/control-plane files exist and that no
-Laravel scaffold has been created yet. After Laravel is scaffolded, the script
-must be updated to run Laravel tests and frontend build checks.
+This currently proves scaffold integrity, runs the Laravel test/quality suite,
+builds frontend assets, and checks whitespace.
 
 ## Product Boundary
 

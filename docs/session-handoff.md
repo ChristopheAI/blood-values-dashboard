@@ -35,7 +35,9 @@ The project is following the `ChristopheAI/Codex` starter-kit workflow:
 
 Update this section after each meaningful session.
 
-- Branch: `main`
+- Branch: `codex/pdf-first-intake-slice`
+- Worktree:
+  `/Users/christophe/.config/superpowers/worktrees/laravel-1st-project/pdf-first-intake-slice`
 - Remote:
   - `origin` -> `https://github.com/ChristopheAI/blood-values-dashboard.git`
 - Commit state:
@@ -45,8 +47,12 @@ Update this section after each meaningful session.
   - The PDF-first intake test contract, repo/service layer diagrams, and
     workflow-value evidence should be committed as planning-content checkpoints.
 - Latest meaningful local checkpoint:
-  - Current HEAD after this session should include the workflow-value evidence
-    doc and a passing `sh scripts/validate.sh` planning check.
+  - The Laravel Livewire starter scaffold exists on this branch.
+  - The first PDF-first intake slice is implemented with private PDF upload,
+    owner-authorized document download, manual biomarker value confirmation,
+    status calculation, biomarker history, blood-test comparison, and deletion
+    access blocking.
+  - `sh scripts/validate.sh` is now implementation-stage validation and passes.
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -189,26 +195,39 @@ Update this section after each meaningful session.
     review-confirmed V1 slice and does not justify AI interpretation,
     unreviewed OCR, wearable sync, provider integrations, or medical advice in
     V1.
+  - The planning baseline was committed before implementation.
+  - Laravel was scaffolded from the Livewire starter kit on branch
+    `codex/pdf-first-intake-slice`.
+  - The PDF-first intake test contract was converted into real Pest/Livewire
+    coverage before implementing the behavior.
+  - `scripts/validate.sh` now validates the implementation phase: scaffold
+    files, `composer test`, `npm run build`, and `git diff --check`.
+  - `sh scripts/validate.sh` passed with 54 tests, 565 assertions, Pint,
+    PHPStan, frontend build, and whitespace checks.
 - Known gaps:
-  - `scripts/validate.sh` is still planning-stage only and must be upgraded
-    before implementation.
-  - No Laravel scaffold yet.
   - The PDF-first pre-scaffold result is an internal planning review, not an
     external human review.
+  - The first slice is manual-confirmation-first. It does not implement OCR,
+    lab-provider import, wearable import, export/delete account flows,
+    reminders, or consult exports yet.
+  - Browser workflow proof should be added before calling the user-facing slice
+    polished; current validation is automated tests, static analysis, build,
+    and whitespace checks.
 - Next recommended action:
+  - Run a browser smoke pass against upload, review/confirm, download, history,
+    compare, and delete flows.
   - Keep Apple Health or wearable import as a separate V2 ADR/spec before any
     implementation.
   - Before installing any Composer package that touches auth, files, exports,
     jobs, logs, or health data, create a package review note or ADR.
-  - When Laravel implementation resumes, create the future Pest/Livewire tests
-    named in `docs/testing/pdf-first-intake-test-conversion.md` before building
-    the matching behavior.
+  - Keep new implementation inside the PDF-first V1 boundary unless a spec, ADR,
+    and task plan deliberately expand it.
 
 ## Active Context Markers
 
 | Marker | Type | Meaning | How To Resume |
 | --- | --- | --- | --- |
-| planning-baseline | project state | The project is still before Laravel implementation. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v1-spec.md`, the active plan, review docs, and run `sh scripts/validate.sh`. |
+| pdf-first-intake-slice | project state | Laravel scaffold exists and the first PDF-first intake slice is implemented on `codex/pdf-first-intake-slice`. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v1-spec.md`, the active plan, review docs, and run `sh scripts/validate.sh`. |
 
 ## Handoff Prompt For A New Codex Thread
 
@@ -229,12 +248,13 @@ docs/reviews/pre-scaffold-review-result.md, and the latest git status/log.
 
 Summarize:
 - the product purpose;
-- the current planning checkpoint;
+- the current implementation checkpoint;
 - what has been validated;
 - what the next smallest action is.
 
-Do not implement Laravel until Christophe explicitly chooses an execution path
-for the first-slice plan.
+Do not expand beyond the PDF-first V1 boundary without a spec, ADR, and task
+plan. Runtime AI interpretation, unreviewed OCR, provider integrations, wearable
+sync, and medical advice remain out of scope.
 ```
 
 ## End-Of-Session Update Checklist
