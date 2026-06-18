@@ -40,11 +40,11 @@ Update this section after each meaningful session.
   - `origin` -> `https://github.com/ChristopheAI/blood-values-dashboard.git`
 - Commit state:
   - Planning baseline, pre-scaffold review gate, AI Architect decision layer,
-    future AI-agent boundary, and Freek/Spatie engineering profile should be
-    committed and pushed.
+    future AI-agent boundary, Freek/Spatie engineering profile, and engineering
+    source radar should be committed and pushed.
 - Latest meaningful local checkpoint:
   - Current HEAD after this session should include:
-    `docs: add Freek Spatie engineering profile`
+    `docs: add engineering source radar`
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -70,6 +70,7 @@ Update this section after each meaningful session.
   - `docs/research/2026-06-18-nuno-maduro-laravel-quality-deep-dive.md`
   - `docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md`
   - `docs/research/2026-06-18-freek-spatie-laravel-engineering-profile.md`
+  - `docs/research/2026-06-18-engineering-source-radar.md`
   - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
   - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
   - `AGENTS.md`
@@ -163,6 +164,12 @@ Update this section after each meaningful session.
     transfer is package discipline, living project guidelines, AI-as-helper not
     reviewer, architecture testing later, and no Spatie package by reputation
     alone. Packages touching private data require explicit review.
+  - Additional engineering-source research was run with Exa and Firecrawl across
+    Laravel, Livewire, Pest, security, file-upload, and architecture sources.
+    This produced a source radar for implementation guardrails: private lab-PDF
+    storage, generated filenames, owner-authorized downloads, Livewire
+    public-property/action-parameter distrust, cross-user denial tests, and
+    package review before sensitive dependencies.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
@@ -174,6 +181,8 @@ Update this section after each meaningful session.
     implementation.
   - Before installing any Composer package that touches auth, files, exports,
     jobs, logs, or health data, create a package review note or ADR.
+  - Convert the engineering source radar into first-slice PDF intake tests when
+    Laravel implementation resumes.
 
 ## Active Context Markers
 

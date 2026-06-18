@@ -29,6 +29,7 @@ docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md
 docs/research/2026-06-18-nuno-maduro-laravel-quality-deep-dive.md
 docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md
 docs/research/2026-06-18-freek-spatie-laravel-engineering-profile.md
+docs/research/2026-06-18-engineering-source-radar.md
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
@@ -172,6 +173,13 @@ grep -qi "Private health-data dependencies require explicit review" docs/researc
 grep -qi "Freek / Spatie Laravel Engineering Profile" docs/evidence/source-index.md
 echo "ok: Freek/Spatie research records package discipline"
 
+grep -qi "Engineering Source Radar" docs/research/2026-06-18-engineering-source-radar.md
+grep -qi "Firecrawl was executed" docs/research/2026-06-18-engineering-source-radar.md
+grep -qi "Treat Livewire public properties and action parameters as untrusted input" docs/research/2026-06-18-engineering-source-radar.md
+grep -qi "Lab PDFs are private source documents" docs/research/2026-06-18-engineering-source-radar.md
+grep -qi "Engineering Source Radar" docs/evidence/source-index.md
+echo "ok: engineering source radar records Livewire and private file guardrails"
+
 grep -qi "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
 echo "ok: pre-scaffold review result records PDF-first go-with-changes"
 
@@ -250,6 +258,12 @@ echo "ok: AGENTS and validation protocol point to future AI boundary"
 grep -qi "Composer packages by reputation alone" AGENTS.md
 grep -qi "Spatie/Freek material" AGENTS.md
 echo "ok: AGENTS records package-review discipline"
+
+grep -qi "Livewire public properties and action parameters" AGENTS.md
+grep -qi "Lab PDFs must be stored as private source documents" AGENTS.md
+grep -qi "Livewire public properties and action parameters" docs/validation-protocol.md
+grep -qi "lab PDFs stored on private disks" docs/validation-protocol.md
+echo "ok: AGENTS and validation protocol record Livewire/file guardrails"
 
 grep -qi "docs/validation-protocol.md" docs/session-handoff.md
 echo "ok: handoff points to validation protocol"

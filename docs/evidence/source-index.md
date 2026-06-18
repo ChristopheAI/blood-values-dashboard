@@ -135,6 +135,17 @@ Do not collapse these categories.
   package touching auth, files, exports, jobs, logs, or health data needs an
   explicit fit, privacy, maintenance, and validation review before adoption.
 
+### Engineering Source Radar
+
+- Source: `docs/research/2026-06-18-engineering-source-radar.md`
+- Claim type: inference
+- Summary: Exa and Firecrawl research across Laravel, Livewire, Pest, security,
+  file-upload, and practitioner architecture sources supports strict first-slice
+  guardrails: private lab-PDF storage, generated filenames, owner-authorized
+  downloads, Livewire public-property/action-parameter distrust, cross-user
+  denial tests, upload/download tests, and package review before sensitive
+  dependencies.
+
 ## External Workflow Sources
 
 ### Codex Starter Kit

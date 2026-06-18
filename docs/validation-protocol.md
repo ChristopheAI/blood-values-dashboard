@@ -108,6 +108,12 @@ Critical implementation checks should eventually cover:
   health records without proposal-only human approval;
 - dependency/security review for packages touching files, auth, exports,
   background jobs, external APIs, or health data.
+- Livewire public properties and action parameters treated as untrusted browser
+  input, with server-side validation and authorization before mutations,
+  downloads, exports, deletion, or confirmation;
+- lab PDFs stored on private disks with generated storage names, sanitized
+  display filenames, owner-authorized download routes, and upload/download tests
+  using fake files/disks.
 
 ### Continuation Check
 

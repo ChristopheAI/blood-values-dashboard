@@ -38,6 +38,7 @@ Read these first:
 - `docs/adr/0008-future-ai-agents-must-be-proposal-only.md`
 - `docs/research/laravel-stack-decision.md`
 - `docs/research/ai-architect-program-transfer.md`
+- `docs/research/2026-06-18-engineering-source-radar.md`
 - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
 - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
 - `laravel-platform-discovery.md`
@@ -118,6 +119,12 @@ task, update it so V1 behavior is proven with Laravel/Pest/browser checks.
   data after explicit user review or confirmation.
 - Spatie/Freek material is a Laravel engineering quality reference, not a
   blanket approval to add Spatie packages to V1.
+- Treat Livewire public properties and action parameters as untrusted browser
+  input. Any value that determines ownership, authorization, export, download,
+  deletion, or confirmation must be validated and authorized server-side.
+- Lab PDFs must be stored as private source documents with generated storage
+  names and owner-authorized download routes. Original filenames may be kept as
+  sanitized metadata, not trusted paths.
 
 ## Truth-First Working Rules
 
