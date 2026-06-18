@@ -126,6 +126,15 @@ Do not collapse these categories.
   or propose but must never directly mutate, confirm, export, or interpret
   private health records without explicit human approval.
 
+### Freek / Spatie Laravel Engineering Profile
+
+- Source: `docs/research/2026-06-18-freek-spatie-laravel-engineering-profile.md`
+- Claim type: inference
+- Summary: Public Freek.dev and Spatie research supports using Spatie as a
+  Laravel engineering quality reference, not as a package shopping list. Any
+  package touching auth, files, exports, jobs, logs, or health data needs an
+  explicit fit, privacy, maintenance, and validation review before adoption.
+
 ## External Workflow Sources
 
 ### Codex Starter Kit

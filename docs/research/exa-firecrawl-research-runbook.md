@@ -87,6 +87,11 @@ Firecrawl:
 
 - Never commit API keys.
 - Prefer runtime environment variables.
+- Do not paste API keys into shell commands, project files, docs, or committed
+  temporary artifacts.
+- If no local Firecrawl MCP, keychain entry, or environment variable is
+  available, record Firecrawl as not executed rather than weakening secret
+  hygiene.
 - Do not store raw Firecrawl dumps unless deliberately sanitized.
 - Remove temporary scrape files after summarizing findings.
 

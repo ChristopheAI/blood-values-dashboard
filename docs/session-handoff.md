@@ -39,11 +39,12 @@ Update this section after each meaningful session.
 - Remote:
   - `origin` -> `https://github.com/ChristopheAI/blood-values-dashboard.git`
 - Commit state:
-  - Planning baseline, pre-scaffold review gate, and AI Architect decision layer
-    should be committed and pushed.
+  - Planning baseline, pre-scaffold review gate, AI Architect decision layer,
+    future AI-agent boundary, and Freek/Spatie engineering profile should be
+    committed and pushed.
 - Latest meaningful local checkpoint:
   - Current HEAD after this session should include:
-    `docs: add Firecrawl competitor analysis`
+    `docs: add Freek Spatie engineering profile`
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -68,6 +69,7 @@ Update this section after each meaningful session.
   - `docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md`
   - `docs/research/2026-06-18-nuno-maduro-laravel-quality-deep-dive.md`
   - `docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md`
+  - `docs/research/2026-06-18-freek-spatie-laravel-engineering-profile.md`
   - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
   - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
   - `AGENTS.md`
@@ -157,6 +159,10 @@ Update this section after each meaningful session.
     V1, but it produced ADR-0008: future AI agents must be proposal-only,
     owner-scoped, idempotent, auditable, human-approved, and unable to directly
     mutate or interpret private health records.
+  - Freek.dev and Spatie public engineering material were reviewed. The useful
+    transfer is package discipline, living project guidelines, AI-as-helper not
+    reviewer, architecture testing later, and no Spatie package by reputation
+    alone. Packages touching private data require explicit review.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
@@ -164,10 +170,10 @@ Update this section after each meaningful session.
   - The PDF-first pre-scaffold result is an internal planning review, not an
     external human review.
 - Next recommended action:
-  - Add ADR-0009 for the competitor-informed product boundary if this analysis
-    should become a durable architecture/product decision.
   - Keep Apple Health or wearable import as a separate V2 ADR/spec before any
     implementation.
+  - Before installing any Composer package that touches auth, files, exports,
+    jobs, logs, or health data, create a package review note or ADR.
 
 ## Active Context Markers
 

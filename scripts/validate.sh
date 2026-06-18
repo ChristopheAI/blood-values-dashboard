@@ -28,6 +28,7 @@ docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md
 docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md
 docs/research/2026-06-18-nuno-maduro-laravel-quality-deep-dive.md
 docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md
+docs/research/2026-06-18-freek-spatie-laravel-engineering-profile.md
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
@@ -126,6 +127,7 @@ echo "ok: source index records Exa and Firecrawl boundary"
 
 grep -qi "Standard Workflow" docs/research/exa-firecrawl-research-runbook.md
 grep -qi "Forbidden in V1" docs/research/exa-firecrawl-research-runbook.md
+grep -qi "Do not paste API keys" docs/research/exa-firecrawl-research-runbook.md
 echo "ok: Exa and Firecrawl research runbook records workflow and boundary"
 
 grep -qi "Apple Health Context Import" docs/research/2026-06-18-apple-health-context-import.md
@@ -163,6 +165,12 @@ grep -qi "proposal-only" docs/adr/0008-future-ai-agents-must-be-proposal-only.md
 grep -qi "Do not add a runtime AI agent to V1" docs/adr/0008-future-ai-agents-must-be-proposal-only.md
 grep -qi "Future AI Agent Boundary" docs/evidence/source-index.md
 echo "ok: ADR records future AI agent boundary"
+
+grep -qi "Freek / Spatie Laravel Engineering Profile" docs/research/2026-06-18-freek-spatie-laravel-engineering-profile.md
+grep -qi "Spatie is a quality signal, not an approval stamp" docs/research/2026-06-18-freek-spatie-laravel-engineering-profile.md
+grep -qi "Private health-data dependencies require explicit review" docs/research/2026-06-18-freek-spatie-laravel-engineering-profile.md
+grep -qi "Freek / Spatie Laravel Engineering Profile" docs/evidence/source-index.md
+echo "ok: Freek/Spatie research records package discipline"
 
 grep -qi "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
 echo "ok: pre-scaffold review result records PDF-first go-with-changes"
@@ -238,6 +246,10 @@ echo "ok: AGENTS and validation protocol point to Laravel quality ladder"
 grep -qi "0008-future-ai-agents" AGENTS.md
 grep -qi "proposal-only" docs/validation-protocol.md
 echo "ok: AGENTS and validation protocol point to future AI boundary"
+
+grep -qi "Composer packages by reputation alone" AGENTS.md
+grep -qi "Spatie/Freek material" AGENTS.md
+echo "ok: AGENTS records package-review discipline"
 
 grep -qi "docs/validation-protocol.md" docs/session-handoff.md
 echo "ok: handoff points to validation protocol"

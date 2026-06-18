@@ -79,6 +79,9 @@ Before implementation:
 - keep runtime AI agents out of V1; any later AI agent must be proposal-only,
   human-approved, owner-scoped, idempotent, auditable, and covered by a new
   spec/privacy review.
+- do not install Composer packages by reputation alone. Any package touching
+  auth, private files, exports, jobs, logs, external APIs, or health data needs
+  an explicit fit, privacy, maintenance, and validation review first.
 
 ## Validation
 
@@ -113,6 +116,8 @@ task, update it so V1 behavior is proven with Laravel/Pest/browser checks.
   and privacy expectations through the staged Laravel quality ladder.
 - AI output is not trusted health data. It may only become structured health
   data after explicit user review or confirmation.
+- Spatie/Freek material is a Laravel engineering quality reference, not a
+  blanket approval to add Spatie packages to V1.
 
 ## Truth-First Working Rules
 
