@@ -23,6 +23,7 @@ docs/research/competitor-analysis.md
 docs/research/exa-firecrawl-research-runbook.md
 docs/research/2026-06-18-apple-health-context-import.md
 docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md
+docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
@@ -132,6 +133,12 @@ grep -qi "Andrew Codesmith Public Thinking Profile" docs/research/2026-06-18-and
 grep -qi "not as an architecture authority" docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md
 grep -qi "Andrew Codesmith Public Thinking Profile" docs/evidence/source-index.md
 echo "ok: Andrew Codesmith research run records public-source boundary"
+
+grep -qi "Nuno Maduro Public Engineering Profile" docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md
+grep -qi "Pest" docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md
+grep -qi "Larastan" docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md
+grep -qi "AI may help write code, but validation owns trust" docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md
+echo "ok: Nuno Maduro research run records Laravel quality guardrails"
 
 grep -qi "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
 echo "ok: pre-scaffold review result records PDF-first go-with-changes"

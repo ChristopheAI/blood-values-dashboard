@@ -83,6 +83,15 @@ Do not collapse these categories.
   learning loops, and product-building energy, but not as authority for
   medical-data privacy architecture or project scope.
 
+### Nuno Maduro Public Engineering Profile
+
+- Source: `docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md`
+- Claim type: inference
+- Summary: Public-source research on Nuno Maduro supports strengthening the
+  Laravel implementation validation bar with Pest-style behavior tests, Pint
+  formatting, Larastan/PHPStan static analysis, architecture tests, browser
+  checks, conservative dependency review, and CI guardrails.
+
 ## External Workflow Sources
 
 ### Codex Starter Kit
