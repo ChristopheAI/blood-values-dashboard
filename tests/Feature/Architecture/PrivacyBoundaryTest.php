@@ -15,8 +15,8 @@ it('lab pdf intake has no runtime exa firecrawl or ai processor', function () {
         $contents = File::get($file->getRealPath());
 
         foreach ($forbiddenTerms as $term) {
-            expect($contents)
-                ->not->toContain($term, "Runtime file {$file->getRelativePathname()} references {$term}.");
+            expect(str_contains($contents, $term))
+                ->toBeFalse("Runtime file {$file->getRelativePathname()} references {$term}.");
         }
     }
 });

@@ -21,28 +21,28 @@
             @endforelse
         </section>
 
-        <form wire:submit="confirmResult" class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700">
+        <form wire:submit="confirmResult" class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="confirm-biomarker-form">
             <flux:heading size="lg">{{ __('Confirm a biomarker value') }}</flux:heading>
 
-            <flux:select wire:model="resultForm.biomarker_id" :label="__('Existing biomarker')">
+            <flux:select wire:model="resultForm.biomarker_id" :label="__('Existing biomarker')" data-test="existing-biomarker-select">
                 <option value="">{{ __('Create new') }}</option>
                 @foreach ($biomarkers as $biomarker)
                     <option value="{{ $biomarker->id }}">{{ $biomarker->name }}</option>
                 @endforeach
             </flux:select>
 
-            <flux:input wire:model="resultForm.name" :label="__('Biomarker name')" />
-            <flux:input wire:model="resultForm.value" :label="__('Value')" inputmode="decimal" />
-            <flux:input wire:model="resultForm.unit" :label="__('Unit')" />
+            <flux:input wire:model="resultForm.name" :label="__('Biomarker name')" data-test="biomarker-name-input" />
+            <flux:input wire:model="resultForm.value" :label="__('Value')" inputmode="decimal" data-test="biomarker-value-input" />
+            <flux:input wire:model="resultForm.unit" :label="__('Unit')" data-test="biomarker-unit-input" />
 
             <div class="grid gap-4 md:grid-cols-3">
-                <flux:input wire:model="resultForm.reference_min" :label="__('Range min')" inputmode="decimal" />
-                <flux:input wire:model="resultForm.reference_max" :label="__('Range max')" inputmode="decimal" />
-                <flux:input wire:model="resultForm.reference_unit" :label="__('Range unit')" />
+                <flux:input wire:model="resultForm.reference_min" :label="__('Range min')" inputmode="decimal" data-test="reference-min-input" />
+                <flux:input wire:model="resultForm.reference_max" :label="__('Range max')" inputmode="decimal" data-test="reference-max-input" />
+                <flux:input wire:model="resultForm.reference_unit" :label="__('Range unit')" data-test="reference-unit-input" />
             </div>
 
-            <flux:textarea wire:model="resultForm.note" :label="__('Note')" />
-            <flux:button type="submit" variant="primary">{{ __('Confirm value') }}</flux:button>
+            <flux:textarea wire:model="resultForm.note" :label="__('Note')" data-test="result-note-input" />
+            <flux:button type="submit" variant="primary" data-test="confirm-value-button">{{ __('Confirm value') }}</flux:button>
         </form>
     </div>
 
@@ -60,7 +60,7 @@
                 </thead>
                 <tbody>
                     @forelse ($bloodTest->results as $result)
-                        <tr class="border-t border-neutral-200 dark:border-neutral-700">
+                        <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="confirmed-value-row">
                             <td class="p-3">{{ $result->biomarker->name }}</td>
                             <td class="p-3">{{ (float) $result->value }} {{ $result->unit }}</td>
                             <td class="p-3">{{ $result->status }}</td>

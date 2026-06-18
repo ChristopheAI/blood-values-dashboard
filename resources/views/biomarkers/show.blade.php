@@ -5,7 +5,7 @@
             <flux:text>{{ __('Confirmed values over time.') }}</flux:text>
         </header>
 
-        <div class="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700">
+        <div class="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700" data-test="biomarker-history-table">
             <table class="w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
                     <tr>
@@ -16,7 +16,7 @@
                 </thead>
                 <tbody>
                     @forelse ($results as $result)
-                        <tr class="border-t border-neutral-200 dark:border-neutral-700">
+                        <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="biomarker-history-row">
                             <td class="p-3">{{ $result->bloodTest->test_date?->toDateString() ?? __('No date') }}</td>
                             <td class="p-3">{{ (float) $result->value }} {{ $result->unit }}</td>
                             <td class="p-3">{{ $result->status }}</td>

@@ -1,6 +1,21 @@
 #!/bin/sh
 set -eu
 
+DUSK_ENV_CREATED=0
+
+cleanup() {
+    if [ -n "${DUSK_SERVER_PID:-}" ] && kill -0 "$DUSK_SERVER_PID" 2>/dev/null; then
+        kill "$DUSK_SERVER_PID" 2>/dev/null || true
+        wait "$DUSK_SERVER_PID" 2>/dev/null || true
+    fi
+
+    if [ "$DUSK_ENV_CREATED" = "1" ]; then
+        rm -f .env.dusk.local database/dusk.sqlite
+    fi
+}
+
+trap cleanup EXIT INT TERM
+
 echo "== Scaffold files =="
 test -f artisan
 test -f composer.json
@@ -17,6 +32,70 @@ composer test
 echo
 echo "== Frontend build =="
 npm run build
+
+echo
+echo "== Browser smoke =="
+mkdir -p database storage/logs
+rm -f .env.dusk.local database/dusk.sqlite
+touch database/dusk.sqlite
+DUSK_ENV_CREATED=1
+
+APP_KEY_VALUE="$(grep '^APP_KEY=' .env | cut -d= -f2-)"
+DUSK_DATABASE="$(pwd)/database/dusk.sqlite"
+DUSK_APP_URL="http://127.0.0.1:8010"
+
+cat > .env.dusk.local <<EOF
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=${APP_KEY_VALUE}
+APP_DEBUG=true
+APP_URL=${DUSK_APP_URL}
+APP_LOCALE=en
+APP_FALLBACK_LOCALE=en
+APP_FAKER_LOCALE=en_US
+LOG_CHANNEL=single
+DB_CONNECTION=sqlite
+DB_DATABASE=${DUSK_DATABASE}
+SESSION_DRIVER=file
+CACHE_STORE=array
+QUEUE_CONNECTION=sync
+MAIL_MAILER=array
+BCRYPT_ROUNDS=4
+EOF
+
+php artisan dusk:chrome-driver --detect
+
+APP_KEY="$APP_KEY_VALUE" \
+APP_ENV=local \
+APP_DEBUG=true \
+APP_URL="$DUSK_APP_URL" \
+DB_CONNECTION=sqlite \
+DB_DATABASE="$DUSK_DATABASE" \
+SESSION_DRIVER=file \
+CACHE_STORE=array \
+QUEUE_CONNECTION=sync \
+MAIL_MAILER=array \
+BCRYPT_ROUNDS=4 \
+    php artisan serve --host=127.0.0.1 --port=8010 --no-reload > storage/logs/dusk-server.log 2>&1 &
+DUSK_SERVER_PID=$!
+
+tries=0
+until curl -fsS "$DUSK_APP_URL" >/dev/null 2>&1; do
+    tries=$((tries + 1))
+
+    if [ "$tries" -ge 30 ]; then
+        echo "Dusk server did not start on ${DUSK_APP_URL}."
+        tail -80 storage/logs/dusk-server.log || true
+        exit 1
+    fi
+
+    sleep 1
+done
+
+if ! php artisan dusk --without-tty; then
+    tail -80 storage/logs/dusk-server.log || true
+    exit 1
+fi
 
 echo
 echo "== Whitespace checks =="

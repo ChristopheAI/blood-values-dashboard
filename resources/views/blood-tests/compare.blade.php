@@ -9,7 +9,7 @@
             </flux:text>
         </header>
 
-        <div class="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700">
+        <div class="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700" data-test="blood-test-comparison-table">
             <table class="w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
                     <tr>
@@ -22,7 +22,7 @@
                 </thead>
                 <tbody>
                     @forelse ($rows as $row)
-                        <tr class="border-t border-neutral-200 dark:border-neutral-700">
+                        <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="blood-test-comparison-row">
                             <td class="p-3">{{ $row['biomarker'] }}</td>
                             <td class="p-3">{{ $row['previous_value'] }} {{ $row['unit'] }}</td>
                             <td class="p-3">{{ $row['current_value'] }} {{ $row['unit'] }}</td>
