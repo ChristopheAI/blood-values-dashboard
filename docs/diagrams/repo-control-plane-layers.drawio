@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="30.0.4">
+  <diagram name="Repo Control Plane Layers">
+    <mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1260" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Laravel Blood Values Dashboard Repo Layers&#xa;Current state: planning/control-plane, no Laravel app scaffold yet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=18;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="260" y="30" width="980" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="layer1" value="1. Orientation And Guardrails" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="140" width="1260" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="l1a" value="AGENTS.md&#xa;truth-first rules&#xa;privacy boundaries" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="layer1">
+          <mxGeometry x="40" y="54" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="l1b" value="README.md&#xa;project purpose&#xa;current phase" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="layer1">
+          <mxGeometry x="360" y="54" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="l1c" value="docs/session-handoff.md&#xa;latest checkpoint&#xa;next action" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="layer1">
+          <mxGeometry x="670" y="54" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="l1d" value="docs/validation-protocol.md&#xa;phase-specific proof" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="layer1">
+          <mxGeometry x="990" y="54" width="230" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="layer2" value="2. Evidence And Research Inputs" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="310" width="1260" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="l2a" value="docs/evidence/source-index.md&#xa;fact / inference / hypothesis / unknown" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="layer2">
+          <mxGeometry x="40" y="58" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l2b" value="laravel-platform-discovery.md&#xa;why Laravel fits platform workflows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="layer2">
+          <mxGeometry x="370" y="58" width="280" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l2c" value="docs/research/*.md&#xa;stack, competitors, engineering sources" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="layer2">
+          <mxGeometry x="690" y="58" width="280" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l2d" value="Public tools only&#xa;Exa / Firecrawl never process private health data in V1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="layer2">
+          <mxGeometry x="1010" y="58" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="layer3" value="3. Architecture Decisions" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="500" width="1260" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="l3a" value="ADR-0001 / 0002&#xa;repo as control plane&#xa;ADRs for decisions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="layer3">
+          <mxGeometry x="40" y="56" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l3b" value="ADR-0003&#xa;Livewire starter kit direction&#xa;domain logic outside UI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="layer3">
+          <mxGeometry x="340" y="56" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l3c" value="ADR-0004 / 0005&#xa;owner-scoped health data&#xa;PDF-first confirmed values" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="layer3">
+          <mxGeometry x="640" y="56" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l3d" value="ADR-0006 / 0007 / 0008&#xa;research boundary&#xa;quality ladder&#xa;AI proposal-only later" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="layer3">
+          <mxGeometry x="940" y="56" width="280" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="layer4" value="4. Product Spec And Implementation Plan" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="685" width="1260" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="l4a" value="docs/project-brief.md&#xa;problem, user, scope" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="layer4">
+          <mxGeometry x="40" y="58" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l4b" value="docs/v1-spec.md&#xa;data model, workflows, status rules" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="layer4">
+          <mxGeometry x="330" y="58" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l4c" value="docs/superpowers/plans/&#xa;PDF-first intake slice&#xa;manual-first plan superseded" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="layer4">
+          <mxGeometry x="630" y="58" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l4d" value="docs/testing/pdf-first-intake-test-conversion.md&#xa;future Pest / Livewire test contract" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="layer4">
+          <mxGeometry x="940" y="58" width="280" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="layer5" value="5. Review, Validation, And CI" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="875" width="1260" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="l5a" value="scripts/validate.sh&#xa;planning files&#xa;no scaffold check&#xa;whitespace check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="layer5">
+          <mxGeometry x="40" y="56" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l5b" value=".github/workflows/ci.yml&#xa;runs validation remotely" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="layer5">
+          <mxGeometry x="350" y="56" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l5c" value="docs/reviews/*&#xa;GO WITH CHANGES&#xa;pre-scaffold result" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="layer5">
+          <mxGeometry x="630" y="56" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l5d" value="docs/ops/production-checklist.md&#xa;privacy / deployment baseline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="layer5">
+          <mxGeometry x="920" y="56" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="layer6" value="6. Future Laravel Implementation Gate" style="swimlane;startSize=34;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1060" width="1260" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="l6a" value="Explicit user choice required&#xa;implementation phase not opened by default" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="layer6">
+          <mxGeometry x="40" y="58" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l6b" value="First code move&#xa;convert PDF-intake contract into real Pest / Livewire tests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="layer6">
+          <mxGeometry x="350" y="58" width="280" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l6c" value="Then scaffold Livewire app&#xa;private PDF storage&#xa;owner-authorized downloads" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="layer6">
+          <mxGeometry x="670" y="58" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l6d" value="Runtime exclusions&#xa;no diagnosis&#xa;no unreviewed OCR / AI&#xa;no private Exa / Firecrawl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="layer6">
+          <mxGeometry x="980" y="58" width="240" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e12" value="feeds" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="layer1" target="layer2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" value="supports" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="layer2" target="layer3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e34" value="constrains" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="layer3" target="layer4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e45" value="proves" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="layer4" target="layer5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e56" value="gates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="layer5" target="layer6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
