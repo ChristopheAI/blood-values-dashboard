@@ -5,6 +5,7 @@ use App\Http\Controllers\Biomarkers\ShowBiomarkerController;
 use App\Http\Controllers\Biomarkers\UnpinBiomarkerController;
 use App\Http\Controllers\BloodTests\CompareBloodTestsController;
 use App\Http\Controllers\BloodTests\DestroyBloodTestController;
+use App\Http\Controllers\BloodTests\DestroyBloodTestDocumentController;
 use App\Http\Controllers\BloodTests\DownloadBloodTestDocumentController;
 use App\Http\Controllers\BloodTests\StoreBloodTestController;
 use App\Http\Controllers\ConsultOverview\ExportConsultOverviewCsvController;
@@ -30,6 +31,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('blood-test-documents/{bloodTestDocument}/download', DownloadBloodTestDocumentController::class)
         ->name('blood-test-documents.download');
+    Route::delete('blood-test-documents/{bloodTestDocument}', DestroyBloodTestDocumentController::class)
+        ->name('blood-test-documents.destroy');
 
     Route::get('context-notes', IndexContextNotesController::class)->name('context-notes.index');
     Route::post('context-notes', StoreContextNoteController::class)->name('context-notes.store');

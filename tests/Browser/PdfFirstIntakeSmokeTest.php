@@ -3,6 +3,7 @@
 use App\Models\Biomarker;
 use App\Models\BloodTest;
 use App\Models\User;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Laravel\Dusk\Browser;
 
@@ -74,6 +75,8 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
         pinBiomarker($browser, $biomarker->id);
         addContextNote($browser, $bloodTests[1]->id);
         buildConsultOverview($browser);
+        downloadDataExport($browser, $password);
+        deleteAllHealthData($browser);
     });
 });
 
@@ -163,6 +166,74 @@ function buildConsultOverview(Browser $browser): void
         ->assertSee('What changed between these tests?');
 
     assertNoForbiddenMedicalCopyAppears($browser);
+}
+
+function downloadDataExport(Browser $browser, string $password): void
+{
+    resetDuskDownloads();
+
+    $browser->visit(route('data.edit', [], false))
+        ->waitForText('Confirm password')
+        ->type('password', $password)
+        ->click('[data-test="confirm-password-button"]')
+        ->waitForLocation('/settings/data')
+        ->waitForText('Data and privacy')
+        ->assertSee('Download my data')
+        ->click('[data-test="download-data-button"]');
+
+    $browser->waitUsing(10, 100, function (): bool {
+        return duskDownloadedExportPath() !== null;
+    }, 'The data export JSON file was not downloaded.');
+
+    $downloadedExportPath = duskDownloadedExportPath();
+
+    expect($downloadedExportPath)->not->toBeNull();
+
+    $payload = json_decode(File::get($downloadedExportPath), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($payload['blood_tests'])->toHaveCount(2);
+    expect($payload['biomarker_results'])->toHaveCount(2);
+    expect($payload['documents'])->toHaveCount(2);
+    expect($payload['pinned_biomarkers'])->toHaveCount(1);
+    expect($payload['context_notes'])->toHaveCount(1);
+
+    assertNoForbiddenMedicalCopyAppears($browser);
+}
+
+function deleteAllHealthData(Browser $browser): void
+{
+    $browser->visit(route('data.edit', [], false))
+        ->waitForText('Data and privacy')
+        ->type('[data-test="delete-all-confirmation-input"]', 'DELETE ALL')
+        ->click('[data-test="delete-all-health-data-button"]')
+        ->waitForText('Your personal tracking records were deleted.')
+        ->visit('/dashboard')
+        ->waitForText('No blood tests yet.')
+        ->assertSee('No pinned biomarkers yet.')
+        ->assertSee('No confirmed low, high, or unknown values yet.');
+
+    assertNoForbiddenMedicalCopyAppears($browser);
+}
+
+function resetDuskDownloads(): void
+{
+    File::ensureDirectoryExists(duskDownloadDirectory());
+
+    foreach (File::glob(duskDownloadDirectory().'/*') ?: [] as $file) {
+        File::delete($file);
+    }
+}
+
+function duskDownloadedExportPath(): ?string
+{
+    $paths = File::glob(duskDownloadDirectory().'/blood-values-data-export-*.json') ?: [];
+
+    return $paths[0] ?? null;
+}
+
+function duskDownloadDirectory(): string
+{
+    return storage_path('framework/testing/dusk-downloads');
 }
 
 function assertNoForbiddenMedicalCopyAppears(Browser $browser): void

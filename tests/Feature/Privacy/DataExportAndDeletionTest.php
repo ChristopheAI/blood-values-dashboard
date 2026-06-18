@@ -1,0 +1,270 @@
+<?php
+
+use App\Enums\ContextNoteCategory;
+use App\Models\Biomarker;
+use App\Models\BiomarkerCategory;
+use App\Models\BiomarkerResult;
+use App\Models\BloodTest;
+use App\Models\BloodTestDocument;
+use App\Models\ContextNote;
+use App\Models\PinnedBiomarker;
+use App\Models\User;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
+
+it('exports owned health data as a downloadable json file without other users rows', function () {
+    Storage::fake('local');
+    Carbon::setTestNow('2026-06-18 10:15:00');
+
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+
+    $category = BiomarkerCategory::factory()->for($user)->create(['name' => 'Inflammation']);
+    $biomarker = Biomarker::factory()->for($user)->for($category, 'category')->create([
+        'name' => 'Ferritin',
+        'short_name' => 'FER',
+        'default_unit' => 'ug/L',
+        'reference_min' => 30,
+        'reference_max' => 150,
+        'reference_unit' => 'ug/L',
+        'range_note' => 'Lab range copied by user.',
+    ]);
+    $draftBiomarker = Biomarker::factory()->for($user)->for($category, 'category')->create([
+        'name' => 'Draft marker',
+    ]);
+    $bloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => '2026-06-01',
+        'lab_name' => 'Owner Lab',
+        'title' => 'Owner June test',
+        'notes' => 'Fasted before draw.',
+        'status' => 'confirmed',
+    ]);
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'original_filename' => 'owner-lab.pdf',
+        'storage_path' => 'blood-test-documents/owner-lab.pdf',
+        'mime_type' => 'application/pdf',
+        'file_size' => 2048,
+        'created_at' => '2026-06-01 08:00:00',
+    ]);
+    Storage::disk('local')->put($document->storage_path, 'owner pdf bytes');
+
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'reference_min' => 30,
+        'reference_max' => 150,
+        'reference_unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'pdf_reviewed',
+        'confirmed_at' => '2026-06-01 09:00:00',
+        'note' => 'Confirmed from PDF.',
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($draftBiomarker)->create([
+        'value' => 999,
+        'unit' => 'ug/L',
+        'status' => 'high',
+        'confirmed_at' => null,
+        'note' => 'Draft extraction should stay out.',
+    ]);
+    PinnedBiomarker::factory()->for($user)->for($biomarker)->create(['note' => 'Track before consult']);
+    ContextNote::factory()->for($user)->for($bloodTest)->create([
+        'note_date' => '2026-06-01',
+        'category' => ContextNoteCategory::Sleep->value,
+        'body' => 'Short sleep before test.',
+    ]);
+
+    $otherCategory = BiomarkerCategory::factory()->for($otherUser)->create(['name' => 'Other category']);
+    $otherBiomarker = Biomarker::factory()->for($otherUser)->for($otherCategory, 'category')->create(['name' => 'Other marker']);
+    $otherBloodTest = BloodTest::factory()->for($otherUser)->create(['title' => 'Other user test']);
+    $otherDocument = BloodTestDocument::factory()->for($otherBloodTest)->create(['original_filename' => 'other-lab.pdf']);
+    Storage::disk('local')->put($otherDocument->storage_path, 'other pdf bytes');
+    BiomarkerResult::factory()->for($otherBloodTest)->for($otherBiomarker)->create(['value' => 123]);
+    PinnedBiomarker::factory()->for($otherUser)->for($otherBiomarker)->create(['note' => 'Other pin']);
+    ContextNote::factory()->for($otherUser)->create(['body' => 'Other context']);
+
+    $response = $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('data.export'));
+
+    $response
+        ->assertOk()
+        ->assertHeader('content-type', 'application/json')
+        ->assertDownload('blood-values-data-export-2026-06-18.json');
+
+    $payload = json_decode($response->streamedContent(), true, flags: JSON_THROW_ON_ERROR);
+
+    expect(array_column($payload['blood_tests'], 'title'))->toContain('Owner June test')->not->toContain('Other user test');
+    expect(array_column($payload['biomarker_categories'], 'name'))->toContain('Inflammation')->not->toContain('Other category');
+    expect(array_column($payload['biomarkers'], 'name'))->toContain('Ferritin')->not->toContain('Other marker');
+    expect(array_column($payload['biomarker_results'], 'note'))->toContain('Confirmed from PDF.')->not->toContain('Draft extraction should stay out.');
+    expect(array_column($payload['documents'], 'original_filename'))->toContain('owner-lab.pdf')->not->toContain('other-lab.pdf');
+    expect(array_column($payload['pinned_biomarkers'], 'note'))->toContain('Track before consult')->not->toContain('Other pin');
+    expect(array_column($payload['context_notes'], 'body'))->toContain('Short sleep before test.')->not->toContain('Other context');
+    expect($payload['documents'][0])->not->toHaveKey('storage_path');
+    expect($payload['documents'][0])->not->toHaveKey('binary');
+    expect($payload['reminders'])->toBe([]);
+    expect(privacyExportKeys($payload))->not->toContain('diagnosis', 'treatment', 'advice', 'recommendation', 'score');
+});
+
+it('requires password confirmation before accessing data privacy actions', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('data.edit'))
+        ->assertRedirect(route('password.confirm'));
+
+    $this->actingAs($user)
+        ->post(route('data.export'))
+        ->assertRedirect(route('password.confirm'));
+
+    $this->actingAs($user)
+        ->delete(route('data.destroy'), ['confirmation' => 'DELETE ALL'])
+        ->assertRedirect(route('password.confirm'));
+});
+
+it('deletes all owned health data and private documents without deleting the account or another user data', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create(['email' => 'owner@example.test']);
+    $otherUser = User::factory()->create(['email' => 'other@example.test']);
+
+    $category = BiomarkerCategory::factory()->for($user)->create();
+    $biomarker = Biomarker::factory()->for($user)->for($category, 'category')->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_path' => 'blood-test-documents/owner-delete-all.pdf',
+    ]);
+    Storage::disk('local')->put($document->storage_path, 'owner pdf bytes');
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create();
+    PinnedBiomarker::factory()->for($user)->for($biomarker)->create();
+    ContextNote::factory()->for($user)->for($bloodTest)->create();
+
+    $otherCategory = BiomarkerCategory::factory()->for($otherUser)->create();
+    $otherBiomarker = Biomarker::factory()->for($otherUser)->for($otherCategory, 'category')->create();
+    $otherBloodTest = BloodTest::factory()->for($otherUser)->create();
+    $otherDocument = BloodTestDocument::factory()->for($otherBloodTest)->create([
+        'storage_path' => 'blood-test-documents/other-delete-all.pdf',
+    ]);
+    Storage::disk('local')->put($otherDocument->storage_path, 'other pdf bytes');
+    BiomarkerResult::factory()->for($otherBloodTest)->for($otherBiomarker)->create();
+    PinnedBiomarker::factory()->for($otherUser)->for($otherBiomarker)->create();
+    ContextNote::factory()->for($otherUser)->for($otherBloodTest)->create();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->delete(route('data.destroy'), ['confirmation' => 'DELETE ALL'])
+        ->assertRedirect(route('data.edit'));
+
+    expect(BloodTest::query()->where('user_id', $user->id)->count())->toBe(0);
+    expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(0);
+    expect(BiomarkerCategory::query()->where('user_id', $user->id)->count())->toBe(0);
+    expect(PinnedBiomarker::query()->where('user_id', $user->id)->count())->toBe(0);
+    expect(ContextNote::query()->where('user_id', $user->id)->count())->toBe(0);
+    expect(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeFalse();
+    Storage::disk('local')->assertMissing($document->storage_path);
+
+    expect(User::query()->whereKey($user->id)->exists())->toBeTrue();
+    expect(BloodTest::query()->where('user_id', $otherUser->id)->count())->toBe(1);
+    expect(Biomarker::query()->where('user_id', $otherUser->id)->count())->toBe(1);
+    expect(BiomarkerCategory::query()->where('user_id', $otherUser->id)->count())->toBe(1);
+    expect(PinnedBiomarker::query()->where('user_id', $otherUser->id)->count())->toBe(1);
+    expect(ContextNote::query()->where('user_id', $otherUser->id)->count())->toBe(1);
+    expect(BloodTestDocument::query()->whereKey($otherDocument->id)->exists())->toBeTrue();
+    Storage::disk('local')->assertExists($otherDocument->storage_path);
+
+    $this->post(route('logout'));
+    $this->post(route('login.store'), [
+        'email' => 'owner@example.test',
+        'password' => 'password',
+    ])->assertRedirect(route('dashboard', absolute: false));
+    $this->assertAuthenticatedAs($user);
+});
+
+it('requires explicit typed confirmation before delete all removes health data', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->delete(route('data.destroy'), ['confirmation' => 'delete all'])
+        ->assertSessionHasErrors('confirmation');
+
+    expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue();
+});
+
+it('deletes a single owned document and blocks download afterward', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_path' => 'blood-test-documents/single-delete.pdf',
+    ]);
+    Storage::disk('local')->put($document->storage_path, 'pdf bytes');
+
+    $this->actingAs($user)
+        ->delete(route('blood-test-documents.destroy', $document))
+        ->assertRedirect(route('blood-tests.show', $bloodTest));
+
+    expect(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeFalse();
+    Storage::disk('local')->assertMissing($document->storage_path);
+
+    $this->actingAs($user)
+        ->get(route('blood-test-documents.download', $document))
+        ->assertNotFound();
+});
+
+it('blocks deleting another users document', function () {
+    Storage::fake('local');
+
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($owner)->create();
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_path' => 'blood-test-documents/other-single-delete.pdf',
+    ]);
+    Storage::disk('local')->put($document->storage_path, 'pdf bytes');
+
+    $this->actingAs($otherUser)
+        ->delete(route('blood-test-documents.destroy', $document))
+        ->assertForbidden();
+
+    expect(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
+    Storage::disk('local')->assertExists($document->storage_path);
+});
+
+it('renders the password confirmed settings data page with export and delete controls', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->get(route('data.edit'))
+        ->assertOk()
+        ->assertSee('Data and privacy')
+        ->assertSee('action="'.route('data.export').'"', false)
+        ->assertSee('action="'.route('data.destroy').'"', false)
+        ->assertSee('method="POST"', false)
+        ->assertSee('name="_method" value="DELETE"', false)
+        ->assertSee('name="confirmation"', false)
+        ->assertSee('DELETE ALL')
+        ->assertSee('data-test="download-data-button"', false)
+        ->assertSee('data-test="delete-all-health-data-button"', false);
+});
+
+/**
+ * @return list<string>
+ */
+function privacyExportKeys(array $payload): array
+{
+    $keys = [];
+
+    foreach ($payload as $key => $value) {
+        $keys[] = $key;
+
+        if (is_array($value)) {
+            array_push($keys, ...privacyExportKeys($value));
+        }
+    }
+
+    return $keys;
+}

@@ -6,6 +6,7 @@ use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
 use Laravel\Dusk\TestCase as BaseTestCase;
 use PHPUnit\Framework\Attributes\BeforeClass;
 
@@ -27,7 +28,18 @@ abstract class DuskTestCase extends BaseTestCase
      */
     protected function driver(): RemoteWebDriver
     {
-        $options = (new ChromeOptions)->addArguments(collect([
+        $downloadDirectory = storage_path('framework/testing/dusk-downloads');
+
+        File::ensureDirectoryExists($downloadDirectory);
+
+        $options = (new ChromeOptions);
+        $options->setExperimentalOption('prefs', [
+            'download.default_directory' => $downloadDirectory,
+            'download.directory_upgrade' => true,
+            'download.prompt_for_download' => false,
+            'safebrowsing.enabled' => true,
+        ]);
+        $options->addArguments(collect([
             $this->shouldStartMaximized() ? '--start-maximized' : '--window-size=1920,1080',
             '--disable-search-engine-choice-screen',
             '--disable-dev-shm-usage',

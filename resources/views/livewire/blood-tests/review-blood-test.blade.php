@@ -13,9 +13,20 @@
             <flux:heading size="lg">{{ __('Source document') }}</flux:heading>
 
             @forelse ($bloodTest->documents as $document)
-                <a class="inline-flex text-sm font-medium text-blue-700 underline dark:text-blue-300" href="{{ route('blood-test-documents.download', $document) }}">
-                    {{ $document->original_filename }}
-                </a>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-test="source-document-row">
+                    <a class="inline-flex text-sm font-medium text-blue-700 underline dark:text-blue-300" href="{{ route('blood-test-documents.download', $document) }}">
+                        {{ $document->original_filename }}
+                    </a>
+
+                    <form method="POST" action="{{ route('blood-test-documents.destroy', $document) }}">
+                        @csrf
+                        @method('DELETE')
+
+                        <flux:button type="submit" variant="danger" size="sm" data-test="delete-document-button">
+                            {{ __('Delete document') }}
+                        </flux:button>
+                    </form>
+                </div>
             @empty
                 <flux:text>{{ __('No source document is attached.') }}</flux:text>
             @endforelse
