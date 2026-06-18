@@ -35,6 +35,7 @@ Read these first:
 - `docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md`
 - `docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md`
 - `docs/adr/0007-use-staged-laravel-quality-ladder.md`
+- `docs/adr/0008-future-ai-agents-must-be-proposal-only.md`
 - `docs/research/laravel-stack-decision.md`
 - `docs/research/ai-architect-program-transfer.md`
 - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
@@ -75,6 +76,9 @@ Before implementation:
   privacy review, and explicit approval allow runtime use.
 - when implementation resumes, follow the staged Laravel quality ladder in
   ADR-0007 instead of treating a locally running app as complete.
+- keep runtime AI agents out of V1; any later AI agent must be proposal-only,
+  human-approved, owner-scoped, idempotent, auditable, and covered by a new
+  spec/privacy review.
 
 ## Validation
 
@@ -107,6 +111,8 @@ task, update it so V1 behavior is proven with Laravel/Pest/browser checks.
   data in V1.
 - AI-assisted code is not trusted until validation proves behavior, boundaries,
   and privacy expectations through the staged Laravel quality ladder.
+- AI output is not trusted health data. It may only become structured health
+  data after explicit user review or confirmation.
 
 ## Truth-First Working Rules
 

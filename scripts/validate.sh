@@ -18,6 +18,7 @@ docs/adr/0004-manual-entry-and-owner-scoped-health-data.md
 docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md
 docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md
 docs/adr/0007-use-staged-laravel-quality-ladder.md
+docs/adr/0008-future-ai-agents-must-be-proposal-only.md
 docs/research/laravel-stack-decision.md
 docs/research/ai-architect-program-transfer.md
 docs/research/competitor-analysis.md
@@ -26,6 +27,7 @@ docs/research/2026-06-18-apple-health-context-import.md
 docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md
 docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md
 docs/research/2026-06-18-nuno-maduro-laravel-quality-deep-dive.md
+docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
@@ -152,6 +154,16 @@ grep -qi "Pint" docs/adr/0007-use-staged-laravel-quality-ladder.md
 grep -qi "Larastan/PHPStan" docs/adr/0007-use-staged-laravel-quality-ladder.md
 echo "ok: ADR records staged Laravel quality ladder"
 
+grep -qi "Relaticle Laravel AI Agent Patterns" docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md
+grep -qi "proposal-only" docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md
+grep -qi "Human-confirmed data is trusted" docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md
+echo "ok: Relaticle AI-agent research records proposal-only transfer"
+
+grep -qi "proposal-only" docs/adr/0008-future-ai-agents-must-be-proposal-only.md
+grep -qi "Do not add a runtime AI agent to V1" docs/adr/0008-future-ai-agents-must-be-proposal-only.md
+grep -qi "Future AI Agent Boundary" docs/evidence/source-index.md
+echo "ok: ADR records future AI agent boundary"
+
 grep -qi "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
 echo "ok: pre-scaffold review result records PDF-first go-with-changes"
 
@@ -222,6 +234,10 @@ echo "ok: AGENTS points to Exa and Firecrawl research boundary"
 grep -qi "0007-use-staged-laravel-quality-ladder" AGENTS.md
 grep -qi "staged Laravel quality ladder" docs/validation-protocol.md
 echo "ok: AGENTS and validation protocol point to Laravel quality ladder"
+
+grep -qi "0008-future-ai-agents" AGENTS.md
+grep -qi "proposal-only" docs/validation-protocol.md
+echo "ok: AGENTS and validation protocol point to future AI boundary"
 
 grep -qi "docs/validation-protocol.md" docs/session-handoff.md
 echo "ok: handoff points to validation protocol"

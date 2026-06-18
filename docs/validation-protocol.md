@@ -104,6 +104,8 @@ Critical implementation checks should eventually cover:
 - export/delete behavior;
 - no diagnosis, treatment, supplement, or medical-advice language;
 - no runtime Exa or Firecrawl processing of private health data;
+- no runtime AI agent mutating, confirming, exporting, or interpreting private
+  health records without proposal-only human approval;
 - dependency/security review for packages touching files, auth, exports,
   background jobs, external APIs, or health data.
 

@@ -110,6 +110,22 @@ Do not collapse these categories.
   tests, browser proof, dependency/security checks, CI, and later type
   coverage/mutation testing for critical domain rules.
 
+### Relaticle Laravel AI Agent Patterns
+
+- Source: `docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md`
+- Claim type: inference
+- Summary: Public Reddit, Relaticle source, and Laravel AI SDK research show
+  that any future AI agent for this project should be proposal-only,
+  owner-scoped, idempotent, auditable, human-approved, and out of V1.
+
+### Future AI Agent Boundary
+
+- Source: `docs/adr/0008-future-ai-agents-must-be-proposal-only.md`
+- Claim type: inference
+- Summary: Runtime AI agents remain out of V1; if added later, they may draft
+  or propose but must never directly mutate, confirm, export, or interpret
+  private health records without explicit human approval.
+
 ## External Workflow Sources
 
 ### Codex Starter Kit

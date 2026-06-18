@@ -58,6 +58,7 @@ Update this section after each meaningful session.
   - `docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md`
   - `docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md`
   - `docs/adr/0007-use-staged-laravel-quality-ladder.md`
+  - `docs/adr/0008-future-ai-agents-must-be-proposal-only.md`
   - `docs/research/laravel-stack-decision.md`
   - `docs/research/ai-architect-program-transfer.md`
   - `docs/research/competitor-analysis.md`
@@ -66,6 +67,7 @@ Update this section after each meaningful session.
   - `docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md`
   - `docs/research/2026-06-18-nuno-maduro-public-engineering-profile.md`
   - `docs/research/2026-06-18-nuno-maduro-laravel-quality-deep-dive.md`
+  - `docs/research/2026-06-18-relaticle-laravel-ai-agent-patterns.md`
   - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
   - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
   - `AGENTS.md`
@@ -151,6 +153,10 @@ Update this section after each meaningful session.
     integrity to behavior tests, Pint, Larastan/PHPStan, architecture tests,
     browser workflow proof, dependency/security checks, CI, and later
     type-coverage/mutation testing for critical rules.
+  - The Relaticle Laravel AI-agent case study was reviewed. It does not change
+    V1, but it produced ADR-0008: future AI agents must be proposal-only,
+    owner-scoped, idempotent, auditable, human-approved, and unable to directly
+    mutate or interpret private health records.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
