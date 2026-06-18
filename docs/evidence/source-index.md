@@ -65,6 +65,15 @@ Do not collapse these categories.
   discovery, extraction, and monitoring, while private health data remains out
   of their scope unless a later ADR and privacy review explicitly change that.
 
+### Apple Health Context Import Research
+
+- Source: `docs/research/2026-06-18-apple-health-context-import.md`
+- Claim type: inference
+- Summary: Exa discovery and Firecrawl extraction across public Apple Health
+  import tools suggest that later wearable support should start as local,
+  streaming, deduplicated Apple Health export import for context summaries
+  around blood-test dates, not as V1 live sync or external API processing.
+
 ## External Workflow Sources
 
 ### Codex Starter Kit

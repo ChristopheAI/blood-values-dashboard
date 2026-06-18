@@ -19,6 +19,9 @@ docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md
 docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md
 docs/research/laravel-stack-decision.md
 docs/research/ai-architect-program-transfer.md
+docs/research/competitor-analysis.md
+docs/research/exa-firecrawl-research-runbook.md
+docs/research/2026-06-18-apple-health-context-import.md
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
@@ -114,6 +117,15 @@ echo "ok: ADR records Exa and Firecrawl public-research boundary"
 
 grep -qi "Exa And Firecrawl Research Boundary" docs/evidence/source-index.md
 echo "ok: source index records Exa and Firecrawl boundary"
+
+grep -qi "Standard Workflow" docs/research/exa-firecrawl-research-runbook.md
+grep -qi "Forbidden in V1" docs/research/exa-firecrawl-research-runbook.md
+echo "ok: Exa and Firecrawl research runbook records workflow and boundary"
+
+grep -qi "Apple Health Context Import" docs/research/2026-06-18-apple-health-context-import.md
+grep -qi "streaming parser" docs/research/2026-06-18-apple-health-context-import.md
+grep -qi "not as V1 live sync" docs/evidence/source-index.md
+echo "ok: Apple Health research run records V2 context-import direction"
 
 grep -qi "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
 echo "ok: pre-scaffold review result records PDF-first go-with-changes"

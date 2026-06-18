@@ -60,6 +60,8 @@ Update this section after each meaningful session.
   - `docs/research/laravel-stack-decision.md`
   - `docs/research/ai-architect-program-transfer.md`
   - `docs/research/competitor-analysis.md`
+  - `docs/research/exa-firecrawl-research-runbook.md`
+  - `docs/research/2026-06-18-apple-health-context-import.md`
   - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
   - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
   - `AGENTS.md`
@@ -128,6 +130,10 @@ Update this section after each meaningful session.
   - ADR-0006 was added to define Exa as the public source-discovery tool and
     Firecrawl as the public extraction/monitoring tool, while forbidding both
     from processing private health data in V1.
+  - The first Exa plus Firecrawl research run was started for Apple Health
+    context import. It found public evidence for large Apple Health exports,
+    streaming XML parsing, local database imports, deduplication, and treating
+    wearable data as V2 context rather than V1 biomarker data.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
