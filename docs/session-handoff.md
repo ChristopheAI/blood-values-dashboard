@@ -43,7 +43,7 @@ Update this section after each meaningful session.
     should be committed and pushed.
 - Latest meaningful local checkpoint:
   - Current HEAD after this session should include:
-    `docs: record pre-scaffold review decision`
+    `docs: add Firecrawl competitor analysis`
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -58,6 +58,7 @@ Update this section after each meaningful session.
   - `docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md`
   - `docs/research/laravel-stack-decision.md`
   - `docs/research/ai-architect-program-transfer.md`
+  - `docs/research/competitor-analysis.md`
   - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
   - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
   - `AGENTS.md`
@@ -114,6 +115,15 @@ Update this section after each meaningful session.
     owner scoping, `unknown` status, and no-medical-advice boundaries.
   - The old manual-first pre-scaffold review was reset and replaced with a
     refreshed PDF-first `GO WITH CHANGES` result.
+  - Firecrawl competitor research was added across lab trackers, health
+    timeline products, optimization platforms, open-source/local-first tools,
+    and practitioner search surfaces.
+  - The competitor analysis reinforces the V1 boundary: PDF-first intake,
+    reviewed/confirmed values, trends, comparison, context, consult export,
+    privacy/export/delete, no AI advice, no optimal-range claims, and no
+    wearable sync in V1.
+  - `sh scripts/validate.sh` passed after adding the Firecrawl competitor
+    analysis and source-index entry.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
@@ -121,9 +131,10 @@ Update this section after each meaningful session.
   - The PDF-first pre-scaffold result is an internal planning review, not an
     external human review.
 - Next recommended action:
-  - Commit/push the PDF-first planning correction if remote continuity matters.
-  - Scaffold Laravel Livewire starter kit and immediately switch
-    `scripts/validate.sh` to Laravel-phase checks.
+  - Add ADR-0009 for the competitor-informed product boundary if this analysis
+    should become a durable architecture/product decision.
+  - Keep Apple Health or wearable import as a separate V2 ADR/spec before any
+    implementation.
 
 ## Active Context Markers
 

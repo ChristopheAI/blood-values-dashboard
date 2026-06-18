@@ -47,6 +47,16 @@ Do not collapse these categories.
   product is private, authenticated, workflow-heavy, and only moderately
   interactive.
 
+### Competitor Analysis
+
+- Source: `docs/research/competitor-analysis.md`
+- Claim type: inference
+- Summary: Firecrawl research across lab trackers, health timeline products,
+  optimization platforms, open-source/local-first tools, and practitioner
+  discussions supports a PDF-first, user-confirmed, privacy-first V1 while
+  keeping AI advice, optimal ranges, action plans, provider connections, and
+  wearable sync out of scope until later ADRs.
+
 ## External Workflow Sources
 
 ### Codex Starter Kit
