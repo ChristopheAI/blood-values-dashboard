@@ -92,6 +92,24 @@ Do not collapse these categories.
   formatting, Larastan/PHPStan static analysis, architecture tests, browser
   checks, conservative dependency review, and CI guardrails.
 
+### Nuno Maduro Laravel Quality Deep Dive
+
+- Source: `docs/research/2026-06-18-nuno-maduro-laravel-quality-deep-dive.md`
+- Claim type: inference
+- Summary: Deeper Exa and Firecrawl research across Pest docs, Laravel quality
+  tooling, Nuno public profile surfaces, browser-testing discussion, and
+  Composer/Packagist security writing supports a staged Laravel quality ladder
+  instead of copying strict tooling wholesale or stopping at a running app.
+
+### Staged Laravel Quality Ladder
+
+- Source: `docs/adr/0007-use-staged-laravel-quality-ladder.md`
+- Claim type: inference
+- Summary: The project accepts a staged implementation validation model:
+  scaffold integrity, behavior tests, Pint, Larastan/PHPStan, architecture
+  tests, browser proof, dependency/security checks, CI, and later type
+  coverage/mutation testing for critical domain rules.
+
 ## External Workflow Sources
 
 ### Codex Starter Kit

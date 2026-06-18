@@ -34,6 +34,7 @@ Read these first:
 - `docs/adr/0004-manual-entry-and-owner-scoped-health-data.md`
 - `docs/adr/0005-use-pdf-first-intake-with-confirmed-values.md`
 - `docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md`
+- `docs/adr/0007-use-staged-laravel-quality-ladder.md`
 - `docs/research/laravel-stack-decision.md`
 - `docs/research/ai-architect-program-transfer.md`
 - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
@@ -72,6 +73,8 @@ Before implementation:
   connections.
 - use Exa and Firecrawl only as public research tools unless a later ADR,
   privacy review, and explicit approval allow runtime use.
+- when implementation resumes, follow the staged Laravel quality ladder in
+  ADR-0007 instead of treating a locally running app as complete.
 
 ## Validation
 
@@ -102,6 +105,8 @@ task, update it so V1 behavior is proven with Laravel/Pest/browser checks.
   documentation review, but must not process private lab PDFs, biomarker data,
   Apple Health exports, medication notes, symptoms, consult exports, or account
   data in V1.
+- AI-assisted code is not trusted until validation proves behavior, boundaries,
+  and privacy expectations through the staged Laravel quality ladder.
 
 ## Truth-First Working Rules
 

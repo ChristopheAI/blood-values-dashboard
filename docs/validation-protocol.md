@@ -78,6 +78,35 @@ At minimum, implementation validation should run:
 - whitespace checks;
 - any browser or smoke check required by the active slice.
 
+Implementation validation should follow the staged Laravel quality ladder in
+`docs/adr/0007-use-staged-laravel-quality-ladder.md`:
+
+1. scaffold integrity;
+2. domain and feature behavior tests;
+3. formatting with Pint or equivalent;
+4. static analysis with Larastan/PHPStan;
+5. architecture tests for privacy and product boundaries;
+6. browser workflow proof;
+7. dependency/security checks and CI;
+8. type coverage and mutation testing for critical domain rules when stable.
+
+The ladder is staged. Do not block the first usable vertical slice by requiring
+every strict tool immediately, but do not call V1 complete until validation
+proves the sensitive workflows and boundaries.
+
+Critical implementation checks should eventually cover:
+
+- owner-scoped health records;
+- private document storage;
+- PDF-first intake and review/confirmation;
+- status calculation;
+- trend and compare views;
+- export/delete behavior;
+- no diagnosis, treatment, supplement, or medical-advice language;
+- no runtime Exa or Firecrawl processing of private health data;
+- dependency/security review for packages touching files, auth, exports,
+  background jobs, external APIs, or health data.
+
 ### Continuation Check
 
 Use when resuming from another thread.
