@@ -2,6 +2,7 @@
 set -eu
 
 DUSK_ENV_CREATED=0
+DUSK_PRESERVED_ENV_BACKUP=""
 
 cleanup() {
     if [ -n "${DUSK_SERVER_PID:-}" ] && kill -0 "$DUSK_SERVER_PID" 2>/dev/null; then
@@ -10,6 +11,14 @@ cleanup() {
     fi
 
     if [ "$DUSK_ENV_CREATED" = "1" ]; then
+        if [ -f .env.backup ]; then
+            mv .env.backup .env
+        fi
+
+        if [ -n "$DUSK_PRESERVED_ENV_BACKUP" ] && [ -f "$DUSK_PRESERVED_ENV_BACKUP" ]; then
+            mv "$DUSK_PRESERVED_ENV_BACKUP" .env.backup
+        fi
+
         rm -f .env.dusk.local database/dusk.sqlite
     fi
 }
@@ -43,6 +52,11 @@ DUSK_ENV_CREATED=1
 APP_KEY_VALUE="$(grep '^APP_KEY=' .env | cut -d= -f2-)"
 DUSK_DATABASE="$(pwd)/database/dusk.sqlite"
 DUSK_APP_URL="http://127.0.0.1:8010"
+
+if [ -f .env.backup ]; then
+    DUSK_PRESERVED_ENV_BACKUP=".env.backup.validate.$$"
+    mv .env.backup "$DUSK_PRESERVED_ENV_BACKUP"
+fi
 
 cat > .env.dusk.local <<EOF
 APP_NAME=Laravel
