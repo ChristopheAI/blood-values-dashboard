@@ -70,6 +70,10 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
             ->assertSee('normal');
 
         assertNoForbiddenMedicalCopyAppears($browser);
+
+        pinBiomarker($browser, $biomarker->id);
+        addContextNote($browser, $bloodTests[1]->id);
+        buildConsultOverview($browser);
     });
 });
 
@@ -109,6 +113,53 @@ function confirmBiomarkerValue(
         ->waitForText("{$value} {$unit}")
         ->assertSee($name)
         ->assertSee('normal');
+
+    assertNoForbiddenMedicalCopyAppears($browser);
+}
+
+function pinBiomarker(Browser $browser, int $biomarkerId): void
+{
+    $browser->visit(route('biomarkers.show', $biomarkerId, false))
+        ->waitForText('Ferritin')
+        ->type('[data-test="pin-note-input"]', 'Follow around consults')
+        ->click('[data-test="pin-biomarker-button"]')
+        ->waitForText('Unpin')
+        ->assertSee('Ferritin');
+
+    assertNoForbiddenMedicalCopyAppears($browser);
+}
+
+function addContextNote(Browser $browser, int $bloodTestId): void
+{
+    $browser->visit('/context-notes')
+        ->waitForText('Context notes')
+        ->value('input[name="note_date"]', '2026-06-01')
+        ->select('category', 'sleep')
+        ->select('blood_test_id', (string) $bloodTestId)
+        ->type('body', 'Slept poorly before the June test.')
+        ->click('[data-test="save-context-note-button"]')
+        ->waitForText('Slept poorly before the June test.');
+
+    assertNoForbiddenMedicalCopyAppears($browser);
+}
+
+function buildConsultOverview(Browser $browser): void
+{
+    $browser->visit(route('consult-overview.index', [
+        'from' => '2026-05-01',
+        'to' => '2026-06-01',
+        'include_pinned' => '1',
+        'include_trends' => '1',
+        'include_context' => '1',
+        'questions' => 'What changed between these tests?',
+    ], false))
+        ->waitForText('Consult overview')
+        ->assertSee('Self-entered personal tracking data')
+        ->assertSee('not medical advice')
+        ->assertSee('Ferritin')
+        ->assertSee('Follow around consults')
+        ->assertSee('Slept poorly before the June test.')
+        ->assertSee('What changed between these tests?');
 
     assertNoForbiddenMedicalCopyAppears($browser);
 }

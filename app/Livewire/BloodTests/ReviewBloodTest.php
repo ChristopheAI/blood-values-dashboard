@@ -90,7 +90,7 @@ class ReviewBloodTest extends Component
     public function render(): View
     {
         $bloodTest = $this->ownedBloodTest($this->bloodTestId)
-            ->load(['documents', 'results.biomarker']);
+            ->load(['contextNotes', 'documents', 'results.biomarker']);
 
         return view('livewire.blood-tests.review-blood-test', [
             'bloodTest' => $bloodTest,

@@ -68,4 +68,12 @@ class BloodTest extends Model
     {
         return $this->results()->whereNotNull('confirmed_at');
     }
+
+    /**
+     * @return HasMany<ContextNote, $this>
+     */
+    public function contextNotes(): HasMany
+    {
+        return $this->hasMany(ContextNote::class);
+    }
 }

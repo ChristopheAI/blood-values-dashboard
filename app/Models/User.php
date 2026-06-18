@@ -76,4 +76,20 @@ class User extends Authenticatable implements PasskeyUser
     {
         return $this->hasMany(Biomarker::class);
     }
+
+    /**
+     * @return HasMany<PinnedBiomarker, $this>
+     */
+    public function pinnedBiomarkers(): HasMany
+    {
+        return $this->hasMany(PinnedBiomarker::class);
+    }
+
+    /**
+     * @return HasMany<ContextNote, $this>
+     */
+    public function contextNotes(): HasMany
+    {
+        return $this->hasMany(ContextNote::class);
+    }
 }

@@ -26,12 +26,12 @@ test -d database
 echo "ok: Laravel scaffold detected"
 
 echo
-echo "== Laravel tests, formatting, and static analysis =="
-composer test
-
-echo
 echo "== Frontend build =="
 npm run build
+
+echo
+echo "== Laravel tests, formatting, and static analysis =="
+composer test
 
 echo
 echo "== Browser smoke =="

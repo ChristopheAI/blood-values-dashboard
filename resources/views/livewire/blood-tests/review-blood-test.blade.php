@@ -74,4 +74,24 @@
             </table>
         </div>
     </section>
+
+    <section class="space-y-4" data-test="blood-test-context-notes">
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <flux:heading size="lg">{{ __('Context notes') }}</flux:heading>
+            <flux:button :href="route('context-notes.index')" variant="outline">{{ __('Add context note') }}</flux:button>
+        </div>
+
+        <div class="space-y-3">
+            @forelse ($bloodTest->contextNotes as $note)
+                <article class="rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="blood-test-context-note-row">
+                    <div class="font-medium">{{ $note->note_date->toDateString() }} · {{ ucfirst($note->category->value) }}</div>
+                    <p class="mt-2 text-neutral-700 dark:text-neutral-300">{{ $note->body }}</p>
+                </article>
+            @empty
+                <div class="rounded-lg border border-dashed border-neutral-300 p-6 text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
+                    {{ __('No context notes linked to this blood test yet.') }}
+                </div>
+            @endforelse
+        </div>
+    </section>
 </section>

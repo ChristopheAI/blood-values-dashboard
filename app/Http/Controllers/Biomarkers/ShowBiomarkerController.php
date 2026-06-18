@@ -22,6 +22,7 @@ class ShowBiomarkerController extends Controller
 
         return view('biomarkers.show', [
             'biomarker' => $biomarker,
+            'pin' => $biomarker->pins()->where('user_id', Auth::id())->first(),
             'results' => $results,
         ]);
     }

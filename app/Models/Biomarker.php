@@ -75,4 +75,12 @@ class Biomarker extends Model
     {
         return $this->hasMany(BiomarkerResult::class);
     }
+
+    /**
+     * @return HasMany<PinnedBiomarker, $this>
+     */
+    public function pins(): HasMany
+    {
+        return $this->hasMany(PinnedBiomarker::class);
+    }
 }

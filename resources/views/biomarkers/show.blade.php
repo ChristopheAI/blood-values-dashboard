@@ -1,8 +1,26 @@
 <x-layouts::app :title="$biomarker->name">
     <section class="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <header>
-            <flux:heading size="xl">{{ $biomarker->name }}</flux:heading>
-            <flux:text>{{ __('Confirmed values over time.') }}</flux:text>
+        <header class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+                <flux:heading size="xl">{{ $biomarker->name }}</flux:heading>
+                <flux:text>{{ __('Confirmed values over time.') }}</flux:text>
+            </div>
+
+            @if ($pin)
+                <form method="POST" action="{{ route('biomarkers.unpin', $biomarker) }}">
+                    @csrf
+                    @method('DELETE')
+
+                    <flux:button type="submit" variant="outline" data-test="unpin-biomarker-button">{{ __('Unpin') }}</flux:button>
+                </form>
+            @else
+                <form method="POST" action="{{ route('biomarkers.pin', $biomarker) }}" class="flex flex-col gap-2 md:min-w-64">
+                    @csrf
+
+                    <flux:input name="note" :label="__('Pin note')" data-test="pin-note-input" />
+                    <flux:button type="submit" variant="primary" data-test="pin-biomarker-button">{{ __('Pin') }}</flux:button>
+                </form>
+            @endif
         </header>
 
         <div class="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700" data-test="biomarker-history-table">
