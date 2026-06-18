@@ -42,11 +42,11 @@ Update this section after each meaningful session.
   - Planning baseline, pre-scaffold review gate, AI Architect decision layer,
     future AI-agent boundary, Freek/Spatie engineering profile, and engineering
     source radar should be committed and pushed.
-  - The PDF-first intake test contract should be committed and pushed as the
-    latest planning-content checkpoint.
+  - The PDF-first intake test contract, repo/service layer diagrams, and
+    workflow-value evidence should be committed as planning-content checkpoints.
 - Latest meaningful local checkpoint:
-  - Current HEAD after this session should include:
-    `20e7421 docs: map PDF intake guardrails to tests`
+  - Current HEAD after this session should include the workflow-value evidence
+    doc and a passing `sh scripts/validate.sh` planning check.
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -65,6 +65,7 @@ Update this section after each meaningful session.
   - `docs/research/laravel-stack-decision.md`
   - `docs/research/ai-architect-program-transfer.md`
   - `docs/research/competitor-analysis.md`
+  - `docs/research/2026-06-18-blood-values-workflow-value-evidence.md`
   - `docs/research/exa-firecrawl-research-runbook.md`
   - `docs/research/2026-06-18-apple-health-context-import.md`
   - `docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md`
@@ -179,6 +180,15 @@ Update this section after each meaningful session.
     PDF upload, private storage, owner authorization, Livewire tamper denial,
     deletion access blocking, package review, and no runtime Exa/Firecrawl/AI
     processing of lab PDFs.
+  - Exa public-source research was added to answer which workflow costs time,
+    money, people, or chaos. The evidence points to retrieval, normalization,
+    confirmation, longitudinal comparison, and consult preparation across
+    scattered lab documents and portals. Firecrawl was requested but not
+    available as a callable tool in that session, so it was not used.
+  - The workflow-value evidence reinforces the existing PDF-first,
+    review-confirmed V1 slice and does not justify AI interpretation,
+    unreviewed OCR, wearable sync, provider integrations, or medical advice in
+    V1.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.
@@ -208,6 +218,7 @@ docs/project-brief.md, docs/v1-spec.md, docs/product-system-check.md,
 docs/evidence/source-index.md, docs/adr/,
 docs/research/laravel-stack-decision.md,
 docs/research/ai-architect-program-transfer.md,
+docs/research/2026-06-18-blood-values-workflow-value-evidence.md,
 docs/research/2026-06-18-engineering-source-radar.md,
 docs/testing/pdf-first-intake-test-conversion.md,
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md,

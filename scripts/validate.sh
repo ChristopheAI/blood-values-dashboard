@@ -22,6 +22,7 @@ docs/adr/0008-future-ai-agents-must-be-proposal-only.md
 docs/research/laravel-stack-decision.md
 docs/research/ai-architect-program-transfer.md
 docs/research/competitor-analysis.md
+docs/research/2026-06-18-blood-values-workflow-value-evidence.md
 docs/research/exa-firecrawl-research-runbook.md
 docs/research/2026-06-18-apple-health-context-import.md
 docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md
@@ -126,6 +127,14 @@ echo "ok: ADR records Exa and Firecrawl public-research boundary"
 
 grep -qi "Exa And Firecrawl Research Boundary" docs/evidence/source-index.md
 echo "ok: source index records Exa and Firecrawl boundary"
+
+grep -qi "Blood Values Workflow Value Evidence" docs/research/2026-06-18-blood-values-workflow-value-evidence.md
+grep -qi "Exa was used" docs/research/2026-06-18-blood-values-workflow-value-evidence.md
+grep -qi "Firecrawl was requested" docs/research/2026-06-18-blood-values-workflow-value-evidence.md
+grep -qi "costly workflow" docs/research/2026-06-18-blood-values-workflow-value-evidence.md
+grep -qi "normalization, confirmation" docs/research/2026-06-18-blood-values-workflow-value-evidence.md
+grep -qi "Blood Values Workflow Value Evidence" docs/evidence/source-index.md
+echo "ok: blood-values workflow evidence records public value proof"
 
 grep -qi "Standard Workflow" docs/research/exa-firecrawl-research-runbook.md
 grep -qi "Forbidden in V1" docs/research/exa-firecrawl-research-runbook.md

@@ -57,6 +57,18 @@ Do not collapse these categories.
   keeping AI advice, optimal ranges, action plans, provider connections, and
   wearable sync out of scope until later ADRs.
 
+### Blood Values Workflow Value Evidence
+
+- Source: `docs/research/2026-06-18-blood-values-workflow-value-evidence.md`
+- Claim type: inference
+- Summary: Exa public-source research across user complaints, competitor
+  positioning, market activity, and local-first builder projects shows that the
+  costly workflow is retrieval, normalization, confirmation, longitudinal
+  comparison, and consult preparation across scattered lab documents and
+  portals. This supports the current PDF-first, review-confirmed V1 slice
+  without broadening into AI interpretation, unreviewed OCR, wearables, provider
+  integrations, or medical advice.
+
 ### Exa And Firecrawl Research Boundary
 
 - Source: `docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md`

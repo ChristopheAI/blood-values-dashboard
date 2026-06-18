@@ -26,6 +26,7 @@ execution path is explicitly chosen.
 - `docs/adr/`
 - `docs/research/laravel-stack-decision.md`
 - `docs/research/ai-architect-program-transfer.md`
+- `docs/research/2026-06-18-blood-values-workflow-value-evidence.md`
 - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
 - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
 - `docs/session-handoff.md`
