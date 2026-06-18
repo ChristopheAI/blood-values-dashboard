@@ -36,10 +36,10 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
         assertNoForbiddenMedicalCopyAppears($browser);
 
         uploadBloodTestPdf($browser, 'tests/Fixtures/lab-result-one.pdf', '2026-05-01', 'Labo Een', 'Mei 2026');
-        confirmBiomarkerValue($browser, 'Ferritin', '42', 'ug/L', '30', '150', 'ug/L');
+        confirmExtractedDraft($browser, 'Ferritin', '42', 'ug/L');
 
         uploadBloodTestPdf($browser, 'tests/Fixtures/lab-result-two.pdf', '2026-06-01', 'Labo Twee', 'Juni 2026');
-        confirmBiomarkerValue($browser, 'Ferritin', '48', 'ug/L', '30', '150', 'ug/L');
+        confirmExtractedDraft($browser, 'Ferritin', '48', 'ug/L');
 
         $user = User::query()->where('email', $email)->firstOrFail();
         $biomarker = Biomarker::query()
@@ -92,7 +92,27 @@ function uploadBloodTestPdf(Browser $browser, string $fixturePath, string $date,
         ->scrollIntoView('[data-test="upload-pdf-button"]')
         ->click('[data-test="upload-pdf-button"]')
         ->waitForText('Confirm a biomarker value')
+        ->waitForText('EXTRACTED - PLEASE CONFIRM')
         ->assertSee($title);
+
+    assertNoForbiddenMedicalCopyAppears($browser);
+}
+
+function confirmExtractedDraft(Browser $browser, string $name, string $value, string $unit): void
+{
+    $browser->assertSee($name)
+        ->assertSee("{$value} {$unit}")
+        ->click('[data-test="use-draft-button"]');
+
+    $browser->waitUsing(5, 100, function () use ($browser, $value): bool {
+        return $browser->value('[data-test="biomarker-value-input"]') === $value;
+    }, 'The extracted draft value was not loaded into the review form.');
+
+    $browser->scrollIntoView('[data-test="confirm-value-button"]')
+        ->click('[data-test="confirm-value-button"]')
+        ->waitForText("{$value} {$unit}")
+        ->assertSee($name)
+        ->assertSee('normal');
 
     assertNoForbiddenMedicalCopyAppears($browser);
 }

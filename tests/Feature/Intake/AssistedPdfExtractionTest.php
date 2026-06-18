@@ -2,6 +2,7 @@
 
 use App\Domain\Intake\ExtractBiomarkerDrafts;
 use App\Domain\Intake\RunBloodTestExtraction;
+use App\Domain\Privacy\BuildDataExport;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
@@ -202,7 +203,7 @@ it('keeps extracted drafts out of confirmed-only workflows and export until conf
         ->assertOk()
         ->assertDontSee('42 ug/L');
 
-    $export = app(App\Domain\Privacy\BuildDataExport::class)($user);
+    $export = app(BuildDataExport::class)($user);
 
     expect($export['biomarker_results'])->toHaveCount(1)
         ->and((float) $export['biomarker_results'][0]['value'])->toBe(35.0);

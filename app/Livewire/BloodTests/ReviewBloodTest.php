@@ -90,11 +90,14 @@ class ReviewBloodTest extends Component
     {
         $bloodTest = $this->ownedBloodTest($this->bloodTestId);
         $draft = $this->ownedDraft($draftResultId, $bloodTest);
+        $biomarkerName = $draft->biomarker_id === null
+            ? null
+            : Biomarker::query()->whereKey($draft->biomarker_id)->value('name');
 
         $this->draftResultId = $draft->id;
         $this->resultForm = [
             'biomarker_id' => $draft->biomarker_id,
-            'name' => $draft->biomarker?->name ?? $draft->extracted_name ?? '',
+            'name' => $biomarkerName ?? $draft->extracted_name ?? '',
             'value' => $this->formatDecimal($draft->value),
             'unit' => $draft->unit,
             'reference_min' => $this->formatDecimal($draft->reference_min),
