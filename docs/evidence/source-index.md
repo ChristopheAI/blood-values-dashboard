@@ -74,6 +74,15 @@ Do not collapse these categories.
   streaming, deduplicated Apple Health export import for context summaries
   around blood-test dates, not as V1 live sync or external API processing.
 
+### Andrew Codesmith Public Thinking Profile
+
+- Source: `docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md`
+- Claim type: inference
+- Summary: Exa and Firecrawl public-source research suggests Andrew Codesmith
+  is useful as an inspiration source for pragmatic AI-assisted app building,
+  learning loops, and product-building energy, but not as authority for
+  medical-data privacy architecture or project scope.
+
 ## External Workflow Sources
 
 ### Codex Starter Kit

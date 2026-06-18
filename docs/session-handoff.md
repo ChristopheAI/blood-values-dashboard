@@ -62,6 +62,7 @@ Update this section after each meaningful session.
   - `docs/research/competitor-analysis.md`
   - `docs/research/exa-firecrawl-research-runbook.md`
   - `docs/research/2026-06-18-apple-health-context-import.md`
+  - `docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md`
   - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
   - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
   - `AGENTS.md`
@@ -134,6 +135,10 @@ Update this section after each meaningful session.
     context import. It found public evidence for large Apple Health exports,
     streaming XML parsing, local database imports, deduplication, and treating
     wearable data as V2 context rather than V1 biomarker data.
+  - Exa and Firecrawl were used to build a public-source Andrew Codesmith
+    thinking profile. The useful transfer is pragmatic AI-assisted app
+    building, learning loops, and product-building energy; he is not treated as
+    authority for medical-data privacy architecture.
 - Known gaps:
   - `scripts/validate.sh` is still planning-stage only and must be upgraded
     before implementation.

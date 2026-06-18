@@ -22,6 +22,7 @@ docs/research/ai-architect-program-transfer.md
 docs/research/competitor-analysis.md
 docs/research/exa-firecrawl-research-runbook.md
 docs/research/2026-06-18-apple-health-context-import.md
+docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md
 docs/session-handoff.md
@@ -126,6 +127,11 @@ grep -qi "Apple Health Context Import" docs/research/2026-06-18-apple-health-con
 grep -qi "streaming parser" docs/research/2026-06-18-apple-health-context-import.md
 grep -qi "not as V1 live sync" docs/evidence/source-index.md
 echo "ok: Apple Health research run records V2 context-import direction"
+
+grep -qi "Andrew Codesmith Public Thinking Profile" docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md
+grep -qi "not as an architecture authority" docs/research/2026-06-18-andrew-codesmith-public-thinking-profile.md
+grep -qi "Andrew Codesmith Public Thinking Profile" docs/evidence/source-index.md
+echo "ok: Andrew Codesmith research run records public-source boundary"
 
 grep -qi "Decision: GO WITH CHANGES" docs/reviews/pre-scaffold-review-result.md
 echo "ok: pre-scaffold review result records PDF-first go-with-changes"
