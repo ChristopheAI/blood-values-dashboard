@@ -5,7 +5,7 @@
             <flux:text>{{ __('Review confirmed blood-test data, pinned markers, and context before a consult.') }}</flux:text>
         </header>
 
-        <div class="grid gap-6 lg:grid-cols-3">
+        <div class="grid gap-6 lg:grid-cols-4">
             <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="dashboard-recent-blood-tests">
                 <flux:heading size="lg">{{ __('Recent blood tests') }}</flux:heading>
 
@@ -34,12 +34,30 @@
                 </div>
             </section>
 
+            <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="dashboard-next-reminder">
+                <flux:heading size="lg">{{ __('Next reminder') }}</flux:heading>
+
+                @if ($nextReminder)
+                    <div class="space-y-2 text-sm">
+                        <div class="font-medium">{{ $nextReminder->title }}</div>
+                        <div class="text-neutral-600 dark:text-neutral-400">{{ $nextReminder->due_date->toDateString() }}</div>
+
+                        @if ($nextReminder->note)
+                            <p class="text-neutral-700 dark:text-neutral-300">{{ $nextReminder->note }}</p>
+                        @endif
+                    </div>
+                @else
+                    <flux:text>{{ __('No reminders yet.') }}</flux:text>
+                @endif
+            </section>
+
             <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="dashboard-quick-actions">
                 <flux:heading size="lg">{{ __('Quick actions') }}</flux:heading>
 
                 <div class="flex flex-col gap-2">
                     <flux:button :href="route('blood-tests.index')" variant="primary">{{ __('Upload blood-test PDF') }}</flux:button>
                     <flux:button :href="route('context-notes.index')" variant="outline">{{ __('Add context note') }}</flux:button>
+                    <flux:button :href="route('reminders.index')" variant="outline">{{ __('Add reminder') }}</flux:button>
                     <flux:button :href="route('consult-overview.index')" variant="outline">{{ __('Prepare consult overview') }}</flux:button>
                 </div>
             </section>

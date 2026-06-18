@@ -92,4 +92,12 @@ class User extends Authenticatable implements PasskeyUser
     {
         return $this->hasMany(ContextNote::class);
     }
+
+    /**
+     * @return HasMany<Reminder, $this>
+     */
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(Reminder::class);
+    }
 }

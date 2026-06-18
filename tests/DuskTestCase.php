@@ -20,7 +20,27 @@ abstract class DuskTestCase extends BaseTestCase
     {
         if (! static::runningInSail()) {
             static::startChromeDriver(['--port=9515']);
+            static::waitForChromeDriver();
         }
+    }
+
+    private static function waitForChromeDriver(): void
+    {
+        $deadline = microtime(true) + 5;
+
+        do {
+            $connection = @stream_socket_client('tcp://127.0.0.1:9515', timeout: 0.1);
+
+            if ($connection !== false) {
+                fclose($connection);
+
+                return;
+            }
+
+            usleep(100000);
+        } while (microtime(true) < $deadline);
+
+        throw new \RuntimeException('ChromeDriver did not become ready on port 9515.');
     }
 
     /**

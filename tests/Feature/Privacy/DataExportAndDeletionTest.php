@@ -8,6 +8,7 @@ use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
 use App\Models\ContextNote;
 use App\Models\PinnedBiomarker;
+use App\Models\Reminder;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -72,6 +73,12 @@ it('exports owned health data as a downloadable json file without other users ro
         'category' => ContextNoteCategory::Sleep->value,
         'body' => 'Short sleep before test.',
     ]);
+    Reminder::factory()->for($user)->create([
+        'due_date' => '2026-07-15',
+        'title' => 'Owner reminder',
+        'note' => 'Plan next lab.',
+        'completed_at' => null,
+    ]);
 
     $otherCategory = BiomarkerCategory::factory()->for($otherUser)->create(['name' => 'Other category']);
     $otherBiomarker = Biomarker::factory()->for($otherUser)->for($otherCategory, 'category')->create(['name' => 'Other marker']);
@@ -81,6 +88,10 @@ it('exports owned health data as a downloadable json file without other users ro
     BiomarkerResult::factory()->for($otherBloodTest)->for($otherBiomarker)->create(['value' => 123]);
     PinnedBiomarker::factory()->for($otherUser)->for($otherBiomarker)->create(['note' => 'Other pin']);
     ContextNote::factory()->for($otherUser)->create(['body' => 'Other context']);
+    Reminder::factory()->for($otherUser)->create([
+        'title' => 'Other reminder',
+        'note' => 'Other reminder note.',
+    ]);
 
     $response = $this->actingAs($user)
         ->withSession(['auth.password_confirmed_at' => time()])
@@ -100,9 +111,12 @@ it('exports owned health data as a downloadable json file without other users ro
     expect(array_column($payload['documents'], 'original_filename'))->toContain('owner-lab.pdf')->not->toContain('other-lab.pdf');
     expect(array_column($payload['pinned_biomarkers'], 'note'))->toContain('Track before consult')->not->toContain('Other pin');
     expect(array_column($payload['context_notes'], 'body'))->toContain('Short sleep before test.')->not->toContain('Other context');
+    expect(array_column($payload['reminders'], 'title'))->toContain('Owner reminder')->not->toContain('Other reminder');
+    expect($payload['reminders'][0]['due_date'])->toBe('2026-07-15');
+    expect($payload['reminders'][0]['note'])->toBe('Plan next lab.');
+    expect($payload['reminders'][0]['completed_at'])->toBeNull();
     expect($payload['documents'][0])->not->toHaveKey('storage_path');
     expect($payload['documents'][0])->not->toHaveKey('binary');
-    expect($payload['reminders'])->toBe([]);
     expect(privacyExportKeys($payload))->not->toContain('diagnosis', 'treatment', 'advice', 'recommendation', 'score');
 });
 
@@ -138,6 +152,7 @@ it('deletes all owned health data and private documents without deleting the acc
     BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create();
     PinnedBiomarker::factory()->for($user)->for($biomarker)->create();
     ContextNote::factory()->for($user)->for($bloodTest)->create();
+    Reminder::factory()->for($user)->create(['title' => 'Owner reminder']);
 
     $otherCategory = BiomarkerCategory::factory()->for($otherUser)->create();
     $otherBiomarker = Biomarker::factory()->for($otherUser)->for($otherCategory, 'category')->create();
@@ -149,6 +164,7 @@ it('deletes all owned health data and private documents without deleting the acc
     BiomarkerResult::factory()->for($otherBloodTest)->for($otherBiomarker)->create();
     PinnedBiomarker::factory()->for($otherUser)->for($otherBiomarker)->create();
     ContextNote::factory()->for($otherUser)->for($otherBloodTest)->create();
+    Reminder::factory()->for($otherUser)->create(['title' => 'Other reminder']);
 
     $this->actingAs($user)
         ->withSession(['auth.password_confirmed_at' => time()])
@@ -160,6 +176,7 @@ it('deletes all owned health data and private documents without deleting the acc
     expect(BiomarkerCategory::query()->where('user_id', $user->id)->count())->toBe(0);
     expect(PinnedBiomarker::query()->where('user_id', $user->id)->count())->toBe(0);
     expect(ContextNote::query()->where('user_id', $user->id)->count())->toBe(0);
+    expect(Reminder::query()->where('user_id', $user->id)->count())->toBe(0);
     expect(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeFalse();
     Storage::disk('local')->assertMissing($document->storage_path);
 
@@ -169,6 +186,7 @@ it('deletes all owned health data and private documents without deleting the acc
     expect(BiomarkerCategory::query()->where('user_id', $otherUser->id)->count())->toBe(1);
     expect(PinnedBiomarker::query()->where('user_id', $otherUser->id)->count())->toBe(1);
     expect(ContextNote::query()->where('user_id', $otherUser->id)->count())->toBe(1);
+    expect(Reminder::query()->where('user_id', $otherUser->id)->count())->toBe(1);
     expect(BloodTestDocument::query()->whereKey($otherDocument->id)->exists())->toBeTrue();
     Storage::disk('local')->assertExists($otherDocument->storage_path);
 

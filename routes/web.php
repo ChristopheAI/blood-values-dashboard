@@ -15,6 +15,10 @@ use App\Http\Controllers\ContextNotes\IndexContextNotesController;
 use App\Http\Controllers\ContextNotes\StoreContextNoteController;
 use App\Http\Controllers\ContextNotes\UpdateContextNoteController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Reminders\DestroyReminderController;
+use App\Http\Controllers\Reminders\IndexRemindersController;
+use App\Http\Controllers\Reminders\StoreReminderController;
+use App\Http\Controllers\Reminders\UpdateReminderController;
 use App\Livewire\BloodTests\ReviewBloodTest;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +42,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('context-notes', StoreContextNoteController::class)->name('context-notes.store');
     Route::patch('context-notes/{contextNote}', UpdateContextNoteController::class)->name('context-notes.update');
     Route::delete('context-notes/{contextNote}', DestroyContextNoteController::class)->name('context-notes.destroy');
+
+    Route::get('reminders', IndexRemindersController::class)->name('reminders.index');
+    Route::post('reminders', StoreReminderController::class)->name('reminders.store');
+    Route::patch('reminders/{reminder}', UpdateReminderController::class)->name('reminders.update');
+    Route::delete('reminders/{reminder}', DestroyReminderController::class)->name('reminders.destroy');
 
     Route::match(['get', 'post'], 'consult-overview', ShowConsultOverviewController::class)->name('consult-overview.index');
     Route::post('consult-overview.csv', ExportConsultOverviewCsvController::class)->name('consult-overview.csv');

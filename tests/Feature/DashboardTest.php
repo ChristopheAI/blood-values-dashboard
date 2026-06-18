@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Models\Reminder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -64,5 +65,44 @@ class DashboardTest extends TestCase
             ->assertDontSee('Normal marker')
             ->assertDontSee('Draft marker')
             ->assertDontSee('Other marker');
+    }
+
+    public function test_dashboard_shows_the_next_open_reminder_only(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        Reminder::factory()->for($user)->create([
+            'due_date' => '2026-08-01',
+            'title' => 'Later open reminder',
+            'completed_at' => null,
+        ]);
+        Reminder::factory()->for($user)->create([
+            'due_date' => '2026-07-01',
+            'title' => 'Next open reminder',
+            'note' => 'Plan the next blood test.',
+            'completed_at' => null,
+        ]);
+        Reminder::factory()->for($user)->create([
+            'due_date' => '2026-06-01',
+            'title' => 'Completed reminder',
+            'completed_at' => now(),
+        ]);
+        Reminder::factory()->for($otherUser)->create([
+            'due_date' => '2026-05-01',
+            'title' => 'Other user reminder',
+            'completed_at' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Next reminder')
+            ->assertSee('Next open reminder')
+            ->assertSee('2026-07-01')
+            ->assertSee('Plan the next blood test.')
+            ->assertDontSee('Later open reminder')
+            ->assertDontSee('Completed reminder')
+            ->assertDontSee('Other user reminder');
     }
 }

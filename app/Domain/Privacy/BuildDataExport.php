@@ -9,6 +9,7 @@ use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
 use App\Models\ContextNote;
 use App\Models\PinnedBiomarker;
+use App\Models\Reminder;
 use App\Models\User;
 
 class BuildDataExport
@@ -39,7 +40,7 @@ class BuildDataExport
             'documents' => $this->documents($user),
             'pinned_biomarkers' => $this->pinnedBiomarkers($user),
             'context_notes' => $this->contextNotes($user),
-            'reminders' => [],
+            'reminders' => $this->reminders($user),
         ];
     }
 
@@ -203,6 +204,28 @@ class BuildDataExport
                 'body' => $note->body,
                 'created_at' => $note->created_at?->toISOString(),
                 'updated_at' => $note->updated_at?->toISOString(),
+            ])
+            ->all());
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function reminders(User $user): array
+    {
+        return array_values(Reminder::query()
+            ->where('user_id', $user->id)
+            ->orderBy('due_date')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (Reminder $reminder): array => [
+                'id' => $reminder->id,
+                'due_date' => $reminder->due_date->toDateString(),
+                'title' => $reminder->title,
+                'note' => $reminder->note,
+                'completed_at' => $reminder->completed_at?->toISOString(),
+                'created_at' => $reminder->created_at?->toISOString(),
+                'updated_at' => $reminder->updated_at?->toISOString(),
             ])
             ->all());
     }

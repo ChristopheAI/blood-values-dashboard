@@ -8,6 +8,7 @@ use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
 use App\Models\ContextNote;
 use App\Models\PinnedBiomarker;
+use App\Models\Reminder;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -26,6 +27,10 @@ class DeleteAllHealthData
 
         DB::transaction(function () use ($user): void {
             ContextNote::query()
+                ->where('user_id', $user->id)
+                ->delete();
+
+            Reminder::query()
                 ->where('user_id', $user->id)
                 ->delete();
 

@@ -74,6 +74,7 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
 
         pinBiomarker($browser, $biomarker->id);
         addContextNote($browser, $bloodTests[1]->id);
+        addReminder($browser);
         buildConsultOverview($browser);
         downloadDataExport($browser, $password);
         deleteAllHealthData($browser);
@@ -146,6 +147,23 @@ function addContextNote(Browser $browser, int $bloodTestId): void
     assertNoForbiddenMedicalCopyAppears($browser);
 }
 
+function addReminder(Browser $browser): void
+{
+    $browser->visit('/reminders')
+        ->waitForText('Reminders')
+        ->value('input[name="due_date"]', '2026-07-15')
+        ->type('title', 'Plan next blood test')
+        ->type('note', 'Check calendar for a morning slot.')
+        ->click('[data-test="save-reminder-button"]')
+        ->waitForText('Plan next blood test')
+        ->visit('/dashboard')
+        ->waitForText('Next reminder')
+        ->assertSee('Plan next blood test')
+        ->assertSee('2026-07-15');
+
+    assertNoForbiddenMedicalCopyAppears($browser);
+}
+
 function buildConsultOverview(Browser $browser): void
 {
     $browser->visit(route('consult-overview.index', [], false))
@@ -196,6 +214,7 @@ function downloadDataExport(Browser $browser, string $password): void
     expect($payload['documents'])->toHaveCount(2);
     expect($payload['pinned_biomarkers'])->toHaveCount(1);
     expect($payload['context_notes'])->toHaveCount(1);
+    expect($payload['reminders'])->toHaveCount(1);
 
     assertNoForbiddenMedicalCopyAppears($browser);
 }
@@ -210,6 +229,7 @@ function deleteAllHealthData(Browser $browser): void
         ->visit('/dashboard')
         ->waitForText('No blood tests yet.')
         ->assertSee('No pinned biomarkers yet.')
+        ->assertSee('No reminders yet.')
         ->assertSee('No confirmed low, high, or unknown values yet.');
 
     assertNoForbiddenMedicalCopyAppears($browser);

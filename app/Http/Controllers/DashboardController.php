@@ -21,6 +21,11 @@ class DashboardController extends Controller
                 ->with('biomarker')
                 ->latest()
                 ->get(),
+            'nextReminder' => $user->reminders()
+                ->open()
+                ->orderBy('due_date')
+                ->orderBy('id')
+                ->first(),
             'attentionResults' => BiomarkerResult::query()
                 ->whereNotNull('confirmed_at')
                 ->whereIn('status', ['low', 'high', 'unknown'])
