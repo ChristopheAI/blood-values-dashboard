@@ -145,15 +145,16 @@ function addContextNote(Browser $browser, int $bloodTestId): void
 
 function buildConsultOverview(Browser $browser): void
 {
-    $browser->visit(route('consult-overview.index', [
-        'from' => '2026-05-01',
-        'to' => '2026-06-01',
-        'include_pinned' => '1',
-        'include_trends' => '1',
-        'include_context' => '1',
-        'questions' => 'What changed between these tests?',
-    ], false))
+    $browser->visit(route('consult-overview.index', [], false))
         ->waitForText('Consult overview')
+        ->value('input[name="from"]', '2026-05-01')
+        ->value('input[name="to"]', '2026-06-01')
+        ->check('[data-test="include-pinned-checkbox"]')
+        ->check('[data-test="include-trends-checkbox"]')
+        ->check('[data-test="include-context-checkbox"]')
+        ->type('questions', 'What changed between these tests?')
+        ->click('[data-test="build-consult-overview-button"]')
+        ->waitForText('Self-entered personal tracking data')
         ->assertSee('Self-entered personal tracking data')
         ->assertSee('not medical advice')
         ->assertSee('Ferritin')

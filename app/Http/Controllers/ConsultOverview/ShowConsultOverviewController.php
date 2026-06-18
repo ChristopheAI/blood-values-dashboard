@@ -64,7 +64,7 @@ class ShowConsultOverviewController extends Controller
             'include_attention' => $request->boolean('include_attention'),
             'include_trends' => $request->boolean('include_trends'),
             'include_context' => $request->boolean('include_context'),
-            'questions' => $validated['questions'] ?? null,
+            'questions' => $request->isMethod('post') ? ($validated['questions'] ?? null) : null,
         ];
     }
 

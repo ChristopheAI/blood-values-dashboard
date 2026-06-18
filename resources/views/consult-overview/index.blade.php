@@ -7,7 +7,9 @@
             </flux:text>
         </header>
 
-        <form method="GET" action="{{ route('consult-overview.index') }}" class="space-y-5 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="consult-overview-form">
+        <form method="POST" action="{{ route('consult-overview.index') }}" class="space-y-5 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="consult-overview-form">
+            @csrf
+
             <div class="grid gap-4 md:grid-cols-2">
                 <flux:input name="from" type="date" :label="__('From')" :value="$filters['from']" data-test="consult-from-input" />
                 <flux:input name="to" type="date" :label="__('To')" :value="$filters['to']" data-test="consult-to-input" />
@@ -59,8 +61,45 @@
 
             <div class="flex flex-wrap gap-3">
                 <flux:button type="submit" variant="primary" data-test="build-consult-overview-button">{{ __('Build overview') }}</flux:button>
-                <flux:button :href="route('consult-overview.csv', request()->query())" variant="outline" data-test="export-consult-csv-link">{{ __('Export CSV') }}</flux:button>
             </div>
+        </form>
+
+        <form method="POST" action="{{ route('consult-overview.csv') }}" data-test="export-consult-csv-form">
+            @csrf
+
+            @if ($filters['from'])
+                <input type="hidden" name="from" value="{{ $filters['from'] }}">
+            @endif
+
+            @if ($filters['to'])
+                <input type="hidden" name="to" value="{{ $filters['to'] }}">
+            @endif
+
+            @foreach ($filters['blood_test_ids'] as $bloodTestId)
+                <input type="hidden" name="blood_test_ids[]" value="{{ $bloodTestId }}">
+            @endforeach
+
+            @if ($filters['include_pinned'])
+                <input type="hidden" name="include_pinned" value="1">
+            @endif
+
+            @if ($filters['include_attention'])
+                <input type="hidden" name="include_attention" value="1">
+            @endif
+
+            @if ($filters['include_trends'])
+                <input type="hidden" name="include_trends" value="1">
+            @endif
+
+            @if ($filters['include_context'])
+                <input type="hidden" name="include_context" value="1">
+            @endif
+
+            @if ($overview['questions'])
+                <input type="hidden" name="questions" value="{{ $overview['questions'] }}">
+            @endif
+
+            <flux:button type="submit" variant="outline" data-test="export-consult-csv-button">{{ __('Export CSV') }}</flux:button>
         </form>
 
         <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="consult-selected-tests">

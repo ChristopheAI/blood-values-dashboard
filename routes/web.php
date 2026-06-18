@@ -36,8 +36,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('context-notes/{contextNote}', UpdateContextNoteController::class)->name('context-notes.update');
     Route::delete('context-notes/{contextNote}', DestroyContextNoteController::class)->name('context-notes.destroy');
 
-    Route::get('consult-overview', ShowConsultOverviewController::class)->name('consult-overview.index');
-    Route::get('consult-overview.csv', ExportConsultOverviewCsvController::class)->name('consult-overview.csv');
+    Route::match(['get', 'post'], 'consult-overview', ShowConsultOverviewController::class)->name('consult-overview.index');
+    Route::post('consult-overview.csv', ExportConsultOverviewCsvController::class)->name('consult-overview.csv');
 
     Route::get('biomarkers/{biomarker}', ShowBiomarkerController::class)->name('biomarkers.show');
     Route::post('biomarkers/{biomarker}/pin', PinBiomarkerController::class)->name('biomarkers.pin');

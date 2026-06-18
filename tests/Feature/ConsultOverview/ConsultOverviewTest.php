@@ -52,7 +52,7 @@ it('renders a consult overview with confirmed owner data pins context questions 
     ]);
 
     $this->actingAs($user)
-        ->get(route('consult-overview.index', [
+        ->post(route('consult-overview.index'), [
             'from' => '2026-05-01',
             'to' => '2026-06-30',
             'include_pinned' => '1',
@@ -60,7 +60,7 @@ it('renders a consult overview with confirmed owner data pins context questions 
             'include_trends' => '1',
             'include_context' => '1',
             'questions' => 'What should I ask about the change?',
-        ]))
+        ])
         ->assertOk()
         ->assertSee('Self-entered personal tracking data')
         ->assertSee('not medical advice')
@@ -94,11 +94,11 @@ it('includes only low high and unknown confirmed values in the attention section
     }
 
     $this->actingAs($user)
-        ->get(route('consult-overview.index', [
+        ->post(route('consult-overview.index'), [
             'from' => '2026-06-01',
             'to' => '2026-06-01',
             'include_attention' => '1',
-        ]))
+        ])
         ->assertOk()
         ->assertSee('Low marker')
         ->assertSee('High marker')
@@ -113,10 +113,10 @@ it('rejects selected blood tests not owned by the authenticated user', function 
     $otherBloodTest = BloodTest::factory()->for($otherUser)->create();
 
     $this->actingAs($owner)
-        ->get(route('consult-overview.index', [
+        ->post(route('consult-overview.index'), [
             'blood_test_ids' => [$ownedBloodTest->id, $otherBloodTest->id],
             'include_attention' => '1',
-        ]))
+        ])
         ->assertForbidden();
 });
 
@@ -140,15 +140,42 @@ it('exports the consult overview structured rows as csv', function () {
     ]);
 
     $this->actingAs($user)
-        ->get(route('consult-overview.csv', [
+        ->post(route('consult-overview.csv'), [
             'from' => '2026-06-01',
             'to' => '2026-06-01',
             'include_attention' => '1',
-        ]))
+        ])
         ->assertOk()
         ->assertHeader('content-type', 'text/csv; charset=UTF-8')
         ->assertSee('section,date,biomarker,value,unit,status,note', false)
         ->assertSee('attention,2026-06-01,Ferritin,18,ug/L,low,', false)
         ->assertDontSee('Draft marker')
         ->assertDontSee('999');
+});
+
+it('does not carry consult questions in generated get urls', function () {
+    $user = User::factory()->create();
+    $secretQuestion = 'Could we discuss the training context privately?';
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'from' => '2026-06-01',
+            'to' => '2026-06-01',
+            'include_context' => '1',
+            'questions' => $secretQuestion,
+        ])
+        ->assertOk()
+        ->assertSee($secretQuestion)
+        ->assertSee('method="POST"', false)
+        ->assertSee('action="'.route('consult-overview.index').'"', false)
+        ->assertSee('action="'.route('consult-overview.csv').'"', false)
+        ->assertDontSee('/consult-overview?questions=', false)
+        ->assertDontSee('/consult-overview.csv?questions=', false)
+        ->assertDontSee('questions='.rawurlencode($secretQuestion), false)
+        ->assertDontSee('questions='.urlencode($secretQuestion), false);
+
+    $this->actingAs($user)
+        ->get(route('consult-overview.index', ['questions' => $secretQuestion]))
+        ->assertOk()
+        ->assertDontSee($secretQuestion);
 });
