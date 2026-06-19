@@ -23,8 +23,8 @@ Implementation status:
 Planning boundary:
 
 - This document itself does not create Laravel code.
-- The executable tests now live in `tests/Feature`, `tests/Browser`, and
-  `tests/Architecture`.
+- The executable tests now live in `tests/Feature`, `tests/Feature/Architecture`,
+  and `tests/Browser`.
 - The repository now validates the implementation stage through
   `sh scripts/validate.sh`, including frontend build, Pint, PHPStan, Pest,
   browser smoke, and whitespace checks.
@@ -88,8 +88,8 @@ These are target files for the Laravel implementation phase.
 - `tests/Feature/BloodTests/BloodTestDocumentDownloadTest.php`
 - `tests/Feature/BloodTests/BloodTestDocumentDeletionTest.php`
 - `tests/Feature/Livewire/BloodTestReviewAuthorizationTest.php`
-- `tests/Architecture/PrivacyBoundaryTest.php`
-- `tests/Architecture/PackageBoundaryTest.php`
+- `tests/Feature/Architecture/PrivacyBoundaryTest.php`
+- `tests/Feature/Architecture/PackageBoundaryTest.php`
 
 Exact class, model, route, and component names may be adjusted to the scaffold's
 real naming, but the behaviors below must stay intact.
