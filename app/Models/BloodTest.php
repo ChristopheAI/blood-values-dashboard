@@ -66,7 +66,9 @@ class BloodTest extends Model
      */
     public function confirmedResults(): HasMany
     {
-        return $this->results()->whereNotNull('confirmed_at');
+        return $this->results()
+            ->whereNotNull('confirmed_at')
+            ->whereHas('biomarker', fn ($query) => $query->where('user_id', $this->user_id));
     }
 
     public function recalculateStatusFromResults(): void
@@ -75,9 +77,7 @@ class BloodTest extends Model
             ->where('entry_source', 'extracted')
             ->whereNull('confirmed_at')
             ->exists();
-        $hasConfirmedValues = $this->results()
-            ->whereNotNull('confirmed_at')
-            ->exists();
+        $hasConfirmedValues = $this->confirmedResults()->exists();
 
         $this->update([
             'status' => $hasConfirmedValues && ! $hasDrafts ? 'confirmed' : 'reviewing',
