@@ -102,6 +102,23 @@ it('original filename is sanitized before display storage', function () {
         ->not->toContain('>');
 });
 
+it('limits the sanitized original filename to the document metadata column length', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $longFilename = str_repeat('very-long-lab-name-', 20).'result.pdf';
+    $file = UploadedFile::fake()->create($longFilename, 64, 'application/pdf');
+
+    $this->actingAs($user)
+        ->post(route('blood-tests.store'), ['document' => $file])
+        ->assertRedirect();
+
+    $document = BloodTestDocument::query()->firstOrFail();
+
+    expect(strlen($document->original_filename))->toBeLessThanOrEqual(255)
+        ->and($document->original_filename)->toEndWith('.pdf');
+});
+
 it('removes the stored pdf when intake persistence fails after upload', function () {
     Storage::fake('local');
 

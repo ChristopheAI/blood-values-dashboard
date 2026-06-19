@@ -69,7 +69,26 @@ class StoreBloodTestController extends Controller
     {
         $basename = basename(str_replace('\\', '/', $filename));
         $cleaned = preg_replace('/[^\w.\- ]+/u', '-', $basename) ?: 'lab-result.pdf';
+        $sanitized = trim($cleaned, '. -') ?: 'lab-result.pdf';
 
-        return trim($cleaned, '. -') ?: 'lab-result.pdf';
+        return $this->limitFilename($sanitized);
+    }
+
+    private function limitFilename(string $filename): string
+    {
+        if (mb_strlen($filename) <= 255) {
+            return $filename;
+        }
+
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        $suffix = $extension === '' ? '' : '.'.$extension;
+
+        if ($suffix === '' || mb_strlen($suffix) >= 255) {
+            return Str::limit($filename, 255, '');
+        }
+
+        $basename = pathinfo($filename, PATHINFO_FILENAME);
+
+        return Str::limit($basename, 255 - mb_strlen($suffix), '').$suffix;
     }
 }
