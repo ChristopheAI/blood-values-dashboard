@@ -340,6 +340,7 @@ it('auto-confirms high confidence catalog matched candidates and leaves lower co
     $user = User::factory()->create();
     $marker = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
     $missingRangeMarker = Biomarker::factory()->for($user)->create(['name' => 'Marker Beta']);
+    $missingUnitMarker = Biomarker::factory()->for($user)->create(['name' => 'Marker Gamma']);
     $bloodTest = bloodTestWithStoredDocument($user);
 
     runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
@@ -362,6 +363,16 @@ it('auto-confirms high confidence catalog matched candidates and leaves lower co
             referenceUnit: null,
             confidence: 0.95,
             sourceSnippet: 'synthetic missing range row',
+        ),
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Gamma',
+            value: '9',
+            unit: '',
+            referenceMin: '3',
+            referenceMax: '12',
+            referenceUnit: null,
+            confidence: 0.95,
+            sourceSnippet: 'synthetic missing unit row',
         ),
         new ExtractedBiomarkerCandidate(
             extractedName: 'Unmatched Marker',
@@ -387,12 +398,19 @@ it('auto-confirms high confidence catalog matched candidates and leaves lower co
         ->where('blood_test_id', $bloodTest->id)
         ->where('biomarker_id', $missingRangeMarker->id)
         ->firstOrFail();
+    $missingUnitDraft = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $missingUnitMarker->id)
+        ->firstOrFail();
 
     expect($confirmed->confirmed_at)->not->toBeNull()
         ->and($confirmed->entry_source)->toBe('extracted')
         ->and($confirmed->extracted_name)->toBe('Marker Alpha')
         ->and($confirmed->status)->toBe('normal')
         ->and($missingRangeDraft->confirmed_at)->toBeNull()
+        ->and($missingUnitDraft->confirmed_at)->toBeNull()
+        ->and($missingUnitDraft->unit)->toBe('')
+        ->and($missingUnitDraft->status)->toBe('unknown')
         ->and($draft->confirmed_at)->toBeNull()
         ->and($draft->extracted_name)->toBe('Unmatched Marker')
         ->and($bloodTest->refresh()->status)->toBe('reviewing');

@@ -328,7 +328,7 @@ class ExtractTabularBiomarkerCandidates
      */
     private function candidate(array $cells): ?ExtractedBiomarkerCandidate
     {
-        if ($cells['name'] === '' || $cells['unit'] === '') {
+        if ($cells['name'] === '') {
             return null;
         }
 
@@ -353,6 +353,10 @@ class ExtractTabularBiomarkerCandidates
         };
 
         if ($nameWasTruncated) {
+            $confidence = min($confidence, 0.6);
+        }
+
+        if ($cells['unit'] === '') {
             $confidence = min($confidence, 0.6);
         }
 

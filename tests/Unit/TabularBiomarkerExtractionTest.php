@@ -115,6 +115,28 @@ it('keeps inferred value column candidates low confidence when the reference is 
         ->and($candidates[0]->confidence)->toBeLessThan(0.85);
 });
 
+it('keeps missing-unit tabular rows as low confidence candidates', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analysis', 40, 700),
+        new PositionedTextFragment('Value', 210, 700),
+        new PositionedTextFragment('Unit', 300, 700),
+        new PositionedTextFragment('Reference', 390, 700),
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('12,4', 210, 680),
+        new PositionedTextFragment('10 - 20', 390, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->extractedName)->toBe('Marker Alpha')
+        ->and($candidates[0]->value)->toBe('12.4')
+        ->and($candidates[0]->unit)->toBe('')
+        ->and($candidates[0]->referenceMin)->toBe('10')
+        ->and($candidates[0]->referenceMax)->toBe('20')
+        ->and($candidates[0]->confidence)->toBeLessThan(0.85);
+});
+
 it('treats one-sided references with exact values as high confidence', function () {
     $extract = new ExtractTabularBiomarkerCandidates;
 
