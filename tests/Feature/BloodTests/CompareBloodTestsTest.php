@@ -52,9 +52,13 @@ it('compares two blood tests using confirmed values only', function () {
         ->assertSee('Ferritin')
         ->assertSee('+7')
         ->assertSee('Vitamin D')
+        ->assertSee('24 ng/mL')
+        ->assertSee('60 nmol/L')
+        ->assertDontSee('24 nmol/L')
         ->assertSee('not comparable')
         ->assertSee('CRP')
         ->assertSee('not measured')
+        ->assertDontSee('not measured mg/L')
         ->assertDontSee('Unconfirmed');
 });
 

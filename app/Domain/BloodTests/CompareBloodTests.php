@@ -13,7 +13,8 @@ class CompareBloodTests
      *     biomarker: string,
      *     previous_value: string,
      *     current_value: string,
-     *     unit: string,
+     *     previous_unit: string,
+     *     current_unit: string,
      *     status: string,
      *     delta: string
      * }>
@@ -38,7 +39,8 @@ class CompareBloodTests
                         'biomarker' => 'Unknown biomarker',
                         'previous_value' => 'not measured',
                         'current_value' => 'not measured',
-                        'unit' => '',
+                        'previous_unit' => '',
+                        'current_unit' => '',
                         'status' => $status,
                         'delta' => $delta,
                     ];
@@ -49,7 +51,8 @@ class CompareBloodTests
                         'biomarker' => $current->biomarker->name,
                         'previous_value' => 'not measured',
                         'current_value' => $this->formatValue($current->value),
-                        'unit' => $current->unit,
+                        'previous_unit' => '',
+                        'current_unit' => $current->unit,
                         'status' => $status,
                         'delta' => $delta,
                     ];
@@ -60,7 +63,8 @@ class CompareBloodTests
                         'biomarker' => $previous->biomarker->name,
                         'previous_value' => $this->formatValue($previous->value),
                         'current_value' => 'not measured',
-                        'unit' => $previous->unit,
+                        'previous_unit' => $previous->unit,
+                        'current_unit' => '',
                         'status' => $status,
                         'delta' => $delta,
                     ];
@@ -79,7 +83,8 @@ class CompareBloodTests
                     'biomarker' => $current->biomarker->name,
                     'previous_value' => $this->formatValue($previous->value),
                     'current_value' => $this->formatValue($current->value),
-                    'unit' => $current->unit,
+                    'previous_unit' => $previous->unit,
+                    'current_unit' => $current->unit,
                     'status' => $status,
                     'delta' => $delta,
                 ];
