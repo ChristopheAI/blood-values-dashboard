@@ -130,6 +130,30 @@ it('frames the review form as extracted value review when drafts exist', functio
         ->assertDontSee('Add your values');
 });
 
+it('does not tell the owner nothing counts when auto-confirmed values are already active', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $vitaminD = Biomarker::factory()->for($user)->create(['name' => 'Vitamin D']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'extracted_name' => 'Ferritin',
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($vitaminD)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Vitamin D',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('Confirmed values')
+        ->assertSee('Review extracted values')
+        ->assertSee('Some values are already active for status and trends.')
+        ->assertDontSee('nothing counts until you confirm each one');
+});
+
 it('marks below auto-confirm threshold drafts as low confidence in the review strip', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);

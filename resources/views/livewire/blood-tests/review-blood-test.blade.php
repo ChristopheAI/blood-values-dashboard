@@ -199,7 +199,9 @@
             <div class="space-y-2">
                 <flux:heading size="lg">{{ $hasDraftResults ? __('Review extracted values') : __('Add your values') }}</flux:heading>
                 <flux:text>
-                    @if ($hasDraftResults)
+                    @if ($hasDraftResults && $confirmedCount > 0)
+                        {{ __('Some values are already active for status and trends. Review only the remaining extracted rows.') }}
+                    @elseif ($hasDraftResults)
                         {{ __('Read from your PDF; nothing counts until you confirm each one.') }}
                     @elseif ($extractionFoundNoDrafts)
                         {{ __("We couldn't read values from this PDF automatically. Add them next to the document below.") }}
