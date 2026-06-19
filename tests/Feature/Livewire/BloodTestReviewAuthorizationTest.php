@@ -101,3 +101,28 @@ it('rejects a tampered zero biomarker id instead of treating it as a new biomark
     expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(0)
         ->and(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->count())->toBe(0);
 });
+
+it('trims padded review form names and units before storing confirmed values', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->set('resultForm.name', '  Ferritin  ')
+        ->set('resultForm.value', '42')
+        ->set('resultForm.unit', '  ug/L  ')
+        ->set('resultForm.reference_min', '30')
+        ->set('resultForm.reference_max', '150')
+        ->set('resultForm.reference_unit', '  ug/L  ')
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    $biomarker = Biomarker::query()->where('user_id', $user->id)->firstOrFail();
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($biomarker->name)->toBe('Ferritin')
+        ->and($biomarker->default_unit)->toBe('ug/L')
+        ->and($biomarker->reference_unit)->toBe('ug/L')
+        ->and($result->unit)->toBe('ug/L')
+        ->and($result->reference_unit)->toBe('ug/L');
+});

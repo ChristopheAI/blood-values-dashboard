@@ -56,7 +56,7 @@ class ReviewBloodTest extends Component
             'resultForm.note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $form = $validated['resultForm'];
+        $form = $this->normalizeResultForm($validated['resultForm']);
         $biomarker = $this->ownedBiomarker($form);
         $status = (new DetermineBiomarkerStatus)(
             value: (float) $form['value'],
@@ -233,6 +233,21 @@ class ReviewBloodTest extends Component
         abort_unless($this->resultUsesOwnedBiomarker($result), 403);
 
         return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $form
+     * @return array<string, mixed>
+     */
+    private function normalizeResultForm(array $form): array
+    {
+        foreach (['name', 'value', 'unit', 'reference_unit', 'note'] as $field) {
+            if (array_key_exists($field, $form) && is_string($form[$field])) {
+                $form[$field] = trim($form[$field]);
+            }
+        }
+
+        return $form;
     }
 
     /**
