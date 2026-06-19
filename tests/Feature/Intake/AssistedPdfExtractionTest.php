@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Intake\ExtractBiomarkerDrafts;
+use App\Domain\Intake\ExtractedBiomarkerCandidate;
 use App\Domain\Intake\RunBloodTestExtraction;
 use App\Domain\Privacy\BuildDataExport;
 use App\Models\Biomarker;
@@ -97,8 +98,8 @@ it('creates extracted draft rows and an extraction run after pdf upload', functi
         ->and((float) $ferritinDraft->reference_min)->toBe(30.0)
         ->and((float) $ferritinDraft->reference_max)->toBe(150.0)
         ->and($ferritinDraft->reference_unit)->toBe('ug/L')
-        ->and($ferritinDraft->confirmed_at)->toBeNull()
-        ->and($ferritinDraft->status)->toBe('unknown')
+        ->and($ferritinDraft->confirmed_at)->not->toBeNull()
+        ->and($ferritinDraft->status)->toBe('normal')
         ->and($ferritinDraft->extraction_confidence)->not->toBeNull()
         ->and($ferritinDraft->source_snippet)->toContain('Ferritin 42 ug/L');
 
@@ -159,8 +160,8 @@ it('creates extracted draft rows from tabular positioned pdf uploads', function 
         ->and((float) $alphaDraft->reference_min)->toBe(10.0)
         ->and((float) $alphaDraft->reference_max)->toBe(20.0)
         ->and($alphaDraft->reference_unit)->toBe('mg/L')
-        ->and($alphaDraft->status)->toBe('unknown')
-        ->and($alphaDraft->confirmed_at)->toBeNull()
+        ->and($alphaDraft->status)->toBe('normal')
+        ->and($alphaDraft->confirmed_at)->not->toBeNull()
         ->and((float) $alphaDraft->extraction_confidence)->toBe(0.85);
 
     expect($betaDraft)->not->toBeNull()
@@ -174,6 +175,121 @@ it('creates extracted draft rows from tabular positioned pdf uploads', function 
         ->and((float) $betaDraft->extraction_confidence)->toBe(0.75);
 
     expect($drafts->pluck('extracted_name')->all())->not->toContain('Marker Gamma');
+});
+
+it('anchors a noisy extracted name to the owners catalog without creating a biomarker', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $marker = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha sentence tail',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.6,
+            sourceSnippet: 'synthetic anchored row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(1)
+        ->and($result->biomarker_id)->toBe($marker->id)
+        ->and($result->extracted_name)->toBe('Marker Alpha')
+        ->and($result->confirmed_at)->toBeNull();
+});
+
+it('auto-confirms high confidence catalog matched candidates and leaves lower confidence rows as drafts', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $marker = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $missingRangeMarker = Biomarker::factory()->for($user)->create(['name' => 'Marker Beta']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic high row',
+        ),
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Beta',
+            value: '7',
+            unit: 'mg/L',
+            referenceMin: null,
+            referenceMax: null,
+            referenceUnit: null,
+            confidence: 0.95,
+            sourceSnippet: 'synthetic missing range row',
+        ),
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Unmatched Marker',
+            value: '5',
+            unit: 'U/mL',
+            referenceMin: null,
+            referenceMax: '8',
+            referenceUnit: 'U/mL',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic unmatched row',
+        ),
+    ]);
+
+    $confirmed = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $marker->id)
+        ->firstOrFail();
+    $draft = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->whereNull('biomarker_id')
+        ->firstOrFail();
+    $missingRangeDraft = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $missingRangeMarker->id)
+        ->firstOrFail();
+
+    expect($confirmed->confirmed_at)->not->toBeNull()
+        ->and($confirmed->entry_source)->toBe('extracted')
+        ->and($confirmed->extracted_name)->toBe('Marker Alpha')
+        ->and($confirmed->status)->toBe('normal')
+        ->and($missingRangeDraft->confirmed_at)->toBeNull()
+        ->and($draft->confirmed_at)->toBeNull()
+        ->and($draft->extracted_name)->toBe('Unmatched Marker')
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
+it('marks the blood test confirmed when every extracted candidate is auto-confirmed', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic high row',
+        ),
+    ]);
+
+    expect($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
 it('does not overwrite a previously confirmed value when extraction sees the same biomarker', function () {
@@ -409,4 +525,45 @@ function positionedPdfText(string $text, int $x, int $y): string
     $escapedText = str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $text);
 
     return "1 0 0 1 {$x} {$y} Tm ({$escapedText}) Tj";
+}
+
+function bloodTestWithStoredDocument(User $user): BloodTest
+{
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'uploaded']);
+
+    $bloodTest->documents()->create([
+        'original_filename' => 'synthetic.pdf',
+        'storage_disk' => 'local',
+        'storage_path' => 'blood-test-documents/synthetic.pdf',
+        'mime_type' => 'application/pdf',
+        'file_size' => 100,
+    ]);
+
+    Storage::disk('local')->put('blood-test-documents/synthetic.pdf', '%PDF-1.4 synthetic');
+
+    return $bloodTest;
+}
+
+/**
+ * @param  list<ExtractedBiomarkerCandidate>  $candidates
+ */
+function runExtractionWithCandidates(BloodTestDocument $document, array $candidates): void
+{
+    $extractor = new class($candidates) extends ExtractBiomarkerDrafts
+    {
+        /**
+         * @param  list<ExtractedBiomarkerCandidate>  $candidates
+         */
+        public function __construct(private readonly array $candidates) {}
+
+        /**
+         * @return list<ExtractedBiomarkerCandidate>
+         */
+        public function __invoke(string $pdfPath): array
+        {
+            return $this->candidates;
+        }
+    };
+
+    (new RunBloodTestExtraction($extractor))($document);
 }

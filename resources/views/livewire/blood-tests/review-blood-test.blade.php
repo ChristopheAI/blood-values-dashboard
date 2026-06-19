@@ -138,6 +138,7 @@
                         <th class="p-3">{{ __('Biomarker') }}</th>
                         <th class="p-3">{{ __('Value') }}</th>
                         <th class="p-3">{{ __('Status') }}</th>
+                        <th class="p-3 text-right">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -145,11 +146,30 @@
                         <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="confirmed-value-row">
                             <td class="p-3">{{ $result->biomarker->name }}</td>
                             <td class="p-3">{{ (float) $result->value }} {{ $result->unit }}</td>
-                            <td class="p-3">{{ $result->status }}</td>
+                            <td class="p-3">
+                                <div class="flex flex-col gap-1">
+                                    <span>{{ $result->status }}</span>
+                                    @if ($result->entry_source === 'extracted')
+                                        <span class="text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400">
+                                            {{ __('auto-filled from PDF') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="p-3">
+                                <div class="flex justify-end gap-2">
+                                    <flux:button type="button" size="sm" wire:click="editConfirmedResult({{ $result->id }})" data-test="edit-confirmed-value-button">
+                                        {{ __('Edit') }}
+                                    </flux:button>
+                                    <flux:button type="button" variant="danger" size="sm" wire:click="deleteConfirmedResult({{ $result->id }})" data-test="delete-confirmed-value-button">
+                                        {{ __('Delete') }}
+                                    </flux:button>
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('No confirmed values yet.') }}</td>
+                            <td colspan="4" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('No confirmed values yet.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -78,6 +78,38 @@ it('frames the review form as manual entry when extraction found no drafts', fun
         ->assertDontSee('Confirm a biomarker value');
 });
 
+it('shows auto-confirmed extracted values as auto-filled and lets the owner edit or delete them', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    $result = BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'reference_min' => 30,
+        'reference_max' => 150,
+        'reference_unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'extracted_name' => 'Ferritin',
+        'extraction_confidence' => 0.95,
+        'source_snippet' => 'Ferritin 42 ug/L ref 30-150 ug/L',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('Confirmed values')
+        ->assertSee('auto-filled from PDF')
+        ->assertDontSee('Extracted - please confirm')
+        ->call('editConfirmedResult', $result->id)
+        ->assertSet('resultForm.biomarker_id', $biomarker->id)
+        ->assertSet('resultForm.value', '42')
+        ->call('deleteConfirmedResult', $result->id)
+        ->assertHasNoErrors();
+
+    expect(BiomarkerResult::query()->whereKey($result->id)->exists())->toBeFalse();
+});
+
 it('blocks using another users extracted draft from a tampered livewire action', function () {
     $owner = User::factory()->create();
     $otherUser = User::factory()->create();

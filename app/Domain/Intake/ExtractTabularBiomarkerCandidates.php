@@ -6,6 +6,8 @@ class ExtractTabularBiomarkerCandidates
 {
     private const ROW_TOLERANCE = 4.0;
 
+    private const NAME_PROSE_GAP = 32.0;
+
     private const MAX_CANDIDATES = 80;
 
     /**
@@ -209,11 +211,40 @@ class ExtractTabularBiomarkerCandidates
         }
 
         return [
-            'name' => $this->cleanText(implode(' ', $cells['name'])),
+            'name' => $this->cleanNameCell($row, $columns['name']),
             'value' => $this->cleanText(implode(' ', $cells['value'])),
             'unit' => $this->cleanText(implode(' ', $cells['unit'])),
             'reference' => $this->cleanText(implode(' ', $cells['reference'])),
         ];
+    }
+
+    /**
+     * @param  list<PositionedTextFragment>  $row
+     * @param  array{left: float, x: float, right: float}  $nameColumn
+     */
+    private function cleanNameCell(array $row, array $nameColumn): string
+    {
+        $fragments = array_values(array_filter(
+            $row,
+            fn (PositionedTextFragment $fragment): bool => $fragment->x >= $nameColumn['left']
+                && $fragment->x <= $nameColumn['right'],
+        ));
+
+        usort($fragments, fn (PositionedTextFragment $left, PositionedTextFragment $right): int => $left->x <=> $right->x);
+
+        $kept = [];
+        $previous = null;
+
+        foreach ($fragments as $fragment) {
+            if ($previous instanceof PositionedTextFragment && ($fragment->x - $previous->x) >= self::NAME_PROSE_GAP) {
+                break;
+            }
+
+            $kept[] = trim($fragment->text);
+            $previous = $fragment;
+        }
+
+        return $this->cleanText(implode(' ', $kept));
     }
 
     /**

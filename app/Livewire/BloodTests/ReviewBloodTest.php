@@ -16,6 +16,8 @@ class ReviewBloodTest extends Component
 
     public ?int $draftResultId = null;
 
+    public ?int $editingResultId = null;
+
     /** @var array<string, mixed> */
     public array $resultForm = [
         'biomarker_id' => null,
@@ -39,6 +41,9 @@ class ReviewBloodTest extends Component
     {
         $bloodTest = $this->ownedBloodTest($bloodTestId ?? $this->bloodTestId);
         $draft = $this->draftResultId === null ? null : $this->ownedDraft($this->draftResultId, $bloodTest);
+        $editingResult = $this->editingResultId === null
+            ? null
+            : $this->ownedConfirmedResult($this->editingResultId, $bloodTest);
 
         $validated = $this->validate([
             'resultForm.biomarker_id' => ['nullable', 'integer'],
@@ -75,7 +80,9 @@ class ReviewBloodTest extends Component
             'note' => $form['note'],
         ];
 
-        if ($draft instanceof BiomarkerResult) {
+        if ($editingResult instanceof BiomarkerResult) {
+            $editingResult->update($payload);
+        } elseif ($draft instanceof BiomarkerResult) {
             $draft->update($payload);
         } else {
             $bloodTest->results()->updateOrCreate(['biomarker_id' => $biomarker->id], $payload);
@@ -84,6 +91,37 @@ class ReviewBloodTest extends Component
         $bloodTest->update(['status' => 'confirmed']);
 
         $this->resetResultForm();
+    }
+
+    public function editConfirmedResult(int $resultId): void
+    {
+        $bloodTest = $this->ownedBloodTest($this->bloodTestId);
+        $result = $this->ownedConfirmedResult($resultId, $bloodTest);
+
+        $this->editingResultId = $result->id;
+        $this->draftResultId = null;
+        $this->resultForm = [
+            'biomarker_id' => $result->biomarker_id,
+            'name' => $result->biomarker->name,
+            'value' => $this->formatDecimal($result->value),
+            'unit' => $result->unit,
+            'reference_min' => $this->formatDecimal($result->reference_min),
+            'reference_max' => $this->formatDecimal($result->reference_max),
+            'reference_unit' => $result->reference_unit,
+            'note' => $result->note,
+        ];
+    }
+
+    public function deleteConfirmedResult(int $resultId): void
+    {
+        $bloodTest = $this->ownedBloodTest($this->bloodTestId);
+        $result = $this->ownedConfirmedResult($resultId, $bloodTest);
+
+        $result->delete();
+
+        if ($this->editingResultId === $resultId) {
+            $this->resetResultForm();
+        }
     }
 
     public function useDraft(int $draftResultId): void
@@ -95,6 +133,7 @@ class ReviewBloodTest extends Component
             : Biomarker::query()->whereKey($draft->biomarker_id)->value('name');
 
         $this->draftResultId = $draft->id;
+        $this->editingResultId = null;
         $this->resultForm = [
             'biomarker_id' => $draft->biomarker_id,
             'name' => $biomarkerName ?? $draft->extracted_name ?? '',
@@ -121,7 +160,7 @@ class ReviewBloodTest extends Component
 
     private function resetResultForm(): void
     {
-        $this->reset('resultForm', 'draftResultId');
+        $this->reset('resultForm', 'draftResultId', 'editingResultId');
         $this->resultForm = [
             'biomarker_id' => null,
             'name' => '',
@@ -169,6 +208,20 @@ class ReviewBloodTest extends Component
         abort_unless($draft->entry_source === 'extracted' && $draft->confirmed_at === null, 403);
 
         return $draft;
+    }
+
+    private function ownedConfirmedResult(int $resultId, BloodTest $bloodTest): BiomarkerResult
+    {
+        $result = BiomarkerResult::query()
+            ->with('biomarker')
+            ->whereKey($resultId)
+            ->firstOrFail();
+
+        abort_unless($result->blood_test_id === $bloodTest->id, 403);
+        abort_unless($bloodTest->user_id === Auth::id(), 403);
+        abort_unless($result->confirmed_at !== null, 403);
+
+        return $result;
     }
 
     /**

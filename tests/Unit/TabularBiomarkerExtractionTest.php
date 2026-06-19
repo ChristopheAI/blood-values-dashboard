@@ -161,3 +161,24 @@ it('bounds and flags an over-captured biomarker name', function () {
     expect(count(explode(' ', $candidates[0]->extractedName)))->toBeLessThanOrEqual(4);
     expect($candidates[0]->confidence)->toBeLessThanOrEqual(0.6);
 });
+
+it('drops prose noise after a large gap inside the name cell', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analysis', 40, 700),
+        new PositionedTextFragment('Value', 210, 700),
+        new PositionedTextFragment('Unit', 300, 700),
+        new PositionedTextFragment('Reference', 390, 700),
+        new PositionedTextFragment('Marker', 40, 680),
+        new PositionedTextFragment('Alpha', 64, 680),
+        new PositionedTextFragment('prose sentence tail', 122, 680),
+        new PositionedTextFragment('12,4', 210, 680),
+        new PositionedTextFragment('mg/L', 300, 680),
+        new PositionedTextFragment('10 - 20', 390, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1);
+    expect($candidates[0]->extractedName)->toBe('Marker Alpha');
+    expect($candidates[0]->confidence)->toBe(0.85);
+});
