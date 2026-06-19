@@ -182,6 +182,11 @@ class ReviewBloodTest extends Component
         $bloodTest = $this->ownedBloodTest($this->bloodTestId)
             ->load(['contextNotes', 'documents', 'results.biomarker', 'extractionRuns']);
 
+        abort_unless(
+            $bloodTest->results->every(fn (BiomarkerResult $result): bool => $this->resultUsesOwnedBiomarker($result)),
+            403,
+        );
+
         return view('livewire.blood-tests.review-blood-test', [
             'bloodTest' => $bloodTest,
             'biomarkers' => Biomarker::query()
@@ -210,6 +215,7 @@ class ReviewBloodTest extends Component
         abort_unless($draft->blood_test_id === $bloodTest->id, 403);
         abort_unless($bloodTest->user_id === Auth::id(), 403);
         abort_unless($draft->entry_source === 'extracted' && $draft->confirmed_at === null, 403);
+        abort_unless($this->resultUsesOwnedBiomarker($draft), 403);
 
         return $draft;
     }
@@ -224,6 +230,7 @@ class ReviewBloodTest extends Component
         abort_unless($result->blood_test_id === $bloodTest->id, 403);
         abort_unless($bloodTest->user_id === Auth::id(), 403);
         abort_unless($result->confirmed_at !== null, 403);
+        abort_unless($this->resultUsesOwnedBiomarker($result), 403);
 
         return $result;
     }
@@ -254,6 +261,12 @@ class ReviewBloodTest extends Component
                 'active' => true,
             ],
         );
+    }
+
+    private function resultUsesOwnedBiomarker(BiomarkerResult $result): bool
+    {
+        return $result->biomarker_id === null
+            || $result->biomarker?->user_id === Auth::id();
     }
 
     private function formatDecimal(mixed $value): ?string

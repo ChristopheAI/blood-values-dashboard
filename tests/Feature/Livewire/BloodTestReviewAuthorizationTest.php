@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\BloodTests\ReviewBloodTest;
+use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\User;
@@ -65,4 +66,21 @@ it('tampered livewire public property cannot switch owner context', function () 
         ->assertForbidden();
 
     expect(BiomarkerResult::query()->where('blood_test_id', $ownersBloodTest->id)->exists())->toBeFalse();
+});
+
+it('rejects review state with a cross-owner biomarker relation', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $foreignBiomarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Other private marker']);
+    $bloodTest = BloodTest::factory()->for($owner)->create(['status' => 'reviewing']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($foreignBiomarker)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Sanitized extracted marker',
+    ]);
+
+    Livewire::actingAs($owner)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertForbidden();
 });
