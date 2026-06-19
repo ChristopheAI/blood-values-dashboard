@@ -41,6 +41,7 @@ test -f docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md
 test -f docs/adr/0007-use-staged-laravel-quality-ladder.md
 test -f docs/adr/0008-future-ai-agents-must-be-proposal-only.md
 test -f docs/adr/0009-use-local-best-effort-pdf-extraction.md
+test -f docs/adr/0010-use-layout-aware-positional-text-extraction.md
 echo "ok: ADR guardrails detected"
 
 echo

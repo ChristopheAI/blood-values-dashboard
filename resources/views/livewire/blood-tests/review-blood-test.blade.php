@@ -4,6 +4,10 @@
         ->where('entry_source', 'extracted');
     $confirmedResults = $bloodTest->results->whereNotNull('confirmed_at');
     $latestExtractionRun = $bloodTest->extractionRuns->sortByDesc('created_at')->first();
+    $hasDraftResults = $draftResults->isNotEmpty();
+    $extractionFoundNoDrafts = $latestExtractionRun?->status === 'done'
+        && (int) $latestExtractionRun->candidate_count === 0
+        && ! $hasDraftResults;
 @endphp
 
 <section class="mx-auto flex w-full max-w-5xl flex-col gap-8">
@@ -45,8 +49,8 @@
 
             @if ($latestExtractionRun?->status === 'failed')
                 <flux:text data-test="extraction-status">{{ __('Extraction failed. Manual entry is still available.') }}</flux:text>
-            @elseif ($latestExtractionRun?->status === 'done' && $draftResults->isEmpty())
-                <flux:text data-test="extraction-status">{{ __('No extracted drafts found. Manual entry is still available.') }}</flux:text>
+            @elseif ($extractionFoundNoDrafts)
+                <flux:text data-test="extraction-status">{{ __("We couldn't read values from this PDF automatically. Manual entry is still available.") }}</flux:text>
             @endif
 
             <div class="space-y-3">
@@ -89,7 +93,18 @@
         </section>
 
         <form wire:submit="confirmResult" class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="confirm-biomarker-form">
-            <flux:heading size="lg">{{ __('Confirm a biomarker value') }}</flux:heading>
+            <div class="space-y-2">
+                <flux:heading size="lg">{{ $hasDraftResults ? __('Review extracted values') : __('Add your values') }}</flux:heading>
+                <flux:text>
+                    @if ($hasDraftResults)
+                        {{ __('Read from your PDF; nothing counts until you confirm each one.') }}
+                    @elseif ($extractionFoundNoDrafts)
+                        {{ __("We couldn't read values from this PDF automatically. Add them next to the document below.") }}
+                    @else
+                        {{ __('Add values from the source document when you are ready.') }}
+                    @endif
+                </flux:text>
+            </div>
 
             <flux:select wire:model="resultForm.biomarker_id" :label="__('Existing biomarker')" data-test="existing-biomarker-select">
                 <option value="">{{ __('Create new') }}</option>
@@ -109,7 +124,7 @@
             </div>
 
             <flux:textarea wire:model="resultForm.note" :label="__('Note')" data-test="result-note-input" />
-            <flux:button type="submit" variant="primary" data-test="confirm-value-button">{{ __('Confirm value') }}</flux:button>
+            <flux:button type="submit" variant="primary" data-test="confirm-value-button">{{ $hasDraftResults ? __('Confirm value') : __('Add value') }}</flux:button>
         </form>
     </div>
 

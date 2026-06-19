@@ -33,6 +33,22 @@ it('extracts expected candidate values from a fixture pdf deterministically', fu
         ->and($candidates[2]->unit)->toBe('nmol/L');
 });
 
+it('uses inline extraction before tabular fallback when both are present', function () {
+    $path = syntheticInlineAndTabularPdfPath();
+
+    try {
+        $candidates = app(ExtractBiomarkerDrafts::class)($path);
+    } finally {
+        @unlink($path);
+    }
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->extractedName)->toBe('Marker Inline')
+        ->and($candidates[0]->value)->toBe('42')
+        ->and($candidates[0]->unit)->toBe('mg/L')
+        ->and($candidates[0]->confidence)->toBe(0.95);
+});
+
 it('creates extracted draft rows and an extraction run after pdf upload', function () {
     Storage::fake('local');
 
@@ -88,6 +104,76 @@ it('creates extracted draft rows and an extraction run after pdf upload', functi
 
     expect($drafts->whereNull('biomarker_id')->pluck('extracted_name')->all())
         ->toContain('CRP', 'Vitamin D');
+});
+
+it('creates extracted draft rows from tabular positioned pdf uploads', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $markerAlpha = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $path = syntheticTabularPdfPath();
+    $file = new UploadedFile(
+        $path,
+        'tabular-extraction.pdf',
+        'application/pdf',
+        null,
+        true,
+    );
+
+    try {
+        $this->actingAs($user)
+            ->post(route('blood-tests.store'), [
+                'document' => $file,
+                'test_date' => '2026-06-19',
+                'lab_name' => 'Synthetic Lab',
+                'title' => 'Tabular extraction fixture',
+            ])
+            ->assertRedirect();
+    } finally {
+        @unlink($path);
+    }
+
+    $bloodTest = BloodTest::query()->firstOrFail();
+    $run = ExtractionRun::query()->firstOrFail();
+
+    expect($bloodTest->status)->toBe('reviewing')
+        ->and($run->engine)->toBe('smalot/pdfparser')
+        ->and($run->status)->toBe('done')
+        ->and($run->candidate_count)->toBe(2);
+
+    $drafts = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('entry_source', 'extracted')
+        ->orderBy('id')
+        ->get();
+
+    expect($drafts)->toHaveCount(2);
+
+    $alphaDraft = $drafts->firstWhere('extracted_name', 'Marker Alpha');
+    $betaDraft = $drafts->firstWhere('extracted_name', 'Marker Beta');
+
+    expect($alphaDraft)->not->toBeNull()
+        ->and($alphaDraft->biomarker_id)->toBe($markerAlpha->id)
+        ->and((float) $alphaDraft->value)->toBe(12.4)
+        ->and($alphaDraft->unit)->toBe('mg/L')
+        ->and((float) $alphaDraft->reference_min)->toBe(10.0)
+        ->and((float) $alphaDraft->reference_max)->toBe(20.0)
+        ->and($alphaDraft->reference_unit)->toBe('mg/L')
+        ->and($alphaDraft->status)->toBe('unknown')
+        ->and($alphaDraft->confirmed_at)->toBeNull()
+        ->and((float) $alphaDraft->extraction_confidence)->toBe(0.85);
+
+    expect($betaDraft)->not->toBeNull()
+        ->and($betaDraft->biomarker_id)->toBeNull()
+        ->and((float) $betaDraft->value)->toBe(5.0)
+        ->and($betaDraft->unit)->toBe('U/mL')
+        ->and($betaDraft->reference_min)->toBeNull()
+        ->and((float) $betaDraft->reference_max)->toBe(8.0)
+        ->and($betaDraft->reference_unit)->toBe('U/mL')
+        ->and($betaDraft->confirmed_at)->toBeNull()
+        ->and((float) $betaDraft->extraction_confidence)->toBe(0.75);
+
+    expect($drafts->pluck('extracted_name')->all())->not->toContain('Marker Gamma');
 });
 
 it('does not overwrite a previously confirmed value when extraction sees the same biomarker', function () {
@@ -234,3 +320,93 @@ it('delete all removes extracted drafts and extraction runs', function () {
     expect(BiomarkerResult::query()->count())->toBe(0)
         ->and(ExtractionRun::query()->count())->toBe(0);
 });
+
+function syntheticTabularPdfPath(): string
+{
+    $stream = implode("\n", [
+        'BT',
+        '/F1 12 Tf',
+        positionedPdfText('Analysis', 40, 180),
+        positionedPdfText('Value', 210, 180),
+        positionedPdfText('Unit', 300, 180),
+        positionedPdfText('Reference', 390, 180),
+        positionedPdfText('Marker Alpha', 40, 160),
+        positionedPdfText('12,4', 210, 160),
+        positionedPdfText('mg/L', 300, 160),
+        positionedPdfText('10 - 20', 390, 160),
+        positionedPdfText('Marker Beta', 40, 140),
+        positionedPdfText('<5', 210, 140),
+        positionedPdfText('U/mL', 300, 140),
+        positionedPdfText('< 8', 390, 140),
+        positionedPdfText('Marker Gamma', 40, 120),
+        positionedPdfText('not detected', 210, 120),
+        positionedPdfText('U/mL', 300, 120),
+        positionedPdfText('< 1', 390, 120),
+        'ET',
+        '',
+    ]);
+
+    return syntheticPdfPath($stream);
+}
+
+function syntheticInlineAndTabularPdfPath(): string
+{
+    $stream = implode("\n", [
+        'BT',
+        '/F1 12 Tf',
+        positionedPdfText('Marker Inline 42 mg/L ref 10-20 mg/L', 40, 200),
+        positionedPdfText('Analysis', 40, 180),
+        positionedPdfText('Value', 210, 180),
+        positionedPdfText('Unit', 300, 180),
+        positionedPdfText('Reference', 390, 180),
+        positionedPdfText('Marker Alpha', 40, 160),
+        positionedPdfText('12,4', 210, 160),
+        positionedPdfText('mg/L', 300, 160),
+        positionedPdfText('10 - 20', 390, 160),
+        'ET',
+        '',
+    ]);
+
+    return syntheticPdfPath($stream);
+}
+
+function syntheticPdfPath(string $stream): string
+{
+    $objects = [
+        '<< /Type /Catalog /Pages 2 0 R >>',
+        '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+        '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 500 220] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
+        '<< /Length '.strlen($stream)." >>\nstream\n".$stream.'endstream',
+        '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    ];
+
+    $pdf = "%PDF-1.4\n";
+    $offsets = [0];
+
+    foreach ($objects as $index => $object) {
+        $objectNumber = $index + 1;
+        $offsets[$objectNumber] = strlen($pdf);
+        $pdf .= $objectNumber." 0 obj\n".$object."\nendobj\n";
+    }
+
+    $xref = strlen($pdf);
+    $pdf .= "xref\n0 ".(count($objects) + 1)."\n0000000000 65535 f \n";
+
+    for ($objectNumber = 1; $objectNumber <= count($objects); $objectNumber++) {
+        $pdf .= sprintf("%010d 00000 n \n", $offsets[$objectNumber]);
+    }
+
+    $pdf .= "trailer\n<< /Root 1 0 R /Size ".(count($objects) + 1)." >>\nstartxref\n".$xref."\n%%EOF\n";
+
+    $path = tempnam(sys_get_temp_dir(), 'tabular-pdf-');
+    file_put_contents($path, $pdf);
+
+    return $path;
+}
+
+function positionedPdfText(string $text, int $x, int $y): string
+{
+    $escapedText = str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $text);
+
+    return "1 0 0 1 {$x} {$y} Tm ({$escapedText}) Tj";
+}

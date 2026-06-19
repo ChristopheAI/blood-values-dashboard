@@ -2,11 +2,15 @@
 
 namespace App\Domain\Intake;
 
+use Smalot\PdfParser\Document;
 use Smalot\PdfParser\Parser;
 
 class ExtractBiomarkerDrafts
 {
-    public function __construct(private readonly Parser $parser) {}
+    public function __construct(
+        private readonly Parser $parser,
+        private readonly ExtractTabularBiomarkerCandidates $extractTabularBiomarkerCandidates,
+    ) {}
 
     /**
      * @return list<ExtractedBiomarkerCandidate>
@@ -17,6 +21,10 @@ class ExtractBiomarkerDrafts
         $text = $this->normalizeText($pdf->getText());
 
         preg_match_all($this->pattern(), $text, $matches, PREG_SET_ORDER);
+
+        if ($matches === []) {
+            return ($this->extractTabularBiomarkerCandidates)($this->positionedFragments($pdf));
+        }
 
         return array_map(
             fn (array $match): ExtractedBiomarkerCandidate => new ExtractedBiomarkerCandidate(
@@ -31,6 +39,37 @@ class ExtractBiomarkerDrafts
             ),
             $matches,
         );
+    }
+
+    /**
+     * @return list<PositionedTextFragment>
+     */
+    private function positionedFragments(Document $pdf): array
+    {
+        $fragments = [];
+
+        try {
+            foreach ($pdf->getPages() as $page) {
+                foreach ($page->getDataTm() as $textMatrix) {
+                    $coordinates = $textMatrix[0] ?? null;
+                    $text = trim((string) ($textMatrix[1] ?? ''));
+
+                    if (! is_array($coordinates) || count($coordinates) < 6 || $text === '') {
+                        continue;
+                    }
+
+                    $fragments[] = new PositionedTextFragment(
+                        text: $text,
+                        x: (float) $coordinates[4],
+                        y: (float) $coordinates[5],
+                    );
+                }
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return $fragments;
     }
 
     private function normalizeText(string $text): string

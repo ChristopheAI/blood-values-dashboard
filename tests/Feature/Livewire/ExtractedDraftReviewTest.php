@@ -4,6 +4,7 @@ use App\Livewire\BloodTests\ReviewBloodTest;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Models\ExtractionRun;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -42,6 +43,39 @@ it('shows extracted drafts and lets the owner confirm a draft through the review
         ->and($draft->entry_source)->toBe('pdf_reviewed')
         ->and($draft->status)->toBe('normal')
         ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
+it('frames the review form as extracted value review when drafts exist', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Ferritin',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('Review extracted values')
+        ->assertSee('Read from your PDF')
+        ->assertDontSee('Add your values');
+});
+
+it('frames the review form as manual entry when extraction found no drafts', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    ExtractionRun::factory()->for($bloodTest)->create([
+        'engine' => 'smalot/pdfparser',
+        'status' => 'done',
+        'candidate_count' => 0,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('Add your values')
+        ->assertSee("We couldn't read values from this PDF automatically")
+        ->assertDontSee('Confirm a biomarker value');
 });
 
 it('blocks using another users extracted draft from a tampered livewire action', function () {

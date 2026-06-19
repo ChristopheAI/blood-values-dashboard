@@ -1,0 +1,137 @@
+<?php
+
+use App\Domain\Intake\ExtractTabularBiomarkerCandidates;
+use App\Domain\Intake\PositionedTextFragment;
+
+it('extracts candidates from positioned tabular fragments', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analysis', 40, 700),
+        new PositionedTextFragment('Value', 210, 700),
+        new PositionedTextFragment('Unit', 300, 700),
+        new PositionedTextFragment('Reference', 390, 700),
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('12,4', 210, 680),
+        new PositionedTextFragment('mg/L', 300, 680),
+        new PositionedTextFragment('10 - 20', 390, 680),
+        new PositionedTextFragment('Marker Beta', 40, 660),
+        new PositionedTextFragment('<5', 210, 660),
+        new PositionedTextFragment('U/mL', 300, 660),
+        new PositionedTextFragment('< 8', 390, 660),
+        new PositionedTextFragment('Marker Gamma', 40, 640),
+        new PositionedTextFragment('not detected', 210, 640),
+        new PositionedTextFragment('U/mL', 300, 640),
+        new PositionedTextFragment('< 1', 390, 640),
+    ]);
+
+    expect($candidates)->toHaveCount(2);
+
+    expect($candidates[0]->extractedName)->toBe('Marker Alpha')
+        ->and($candidates[0]->value)->toBe('12.4')
+        ->and($candidates[0]->unit)->toBe('mg/L')
+        ->and($candidates[0]->referenceMin)->toBe('10')
+        ->and($candidates[0]->referenceMax)->toBe('20')
+        ->and($candidates[0]->referenceUnit)->toBe('mg/L')
+        ->and($candidates[0]->confidence)->toBe(0.85);
+
+    expect($candidates[1]->extractedName)->toBe('Marker Beta')
+        ->and($candidates[1]->value)->toBe('5')
+        ->and($candidates[1]->unit)->toBe('U/mL')
+        ->and($candidates[1]->referenceMin)->toBeNull()
+        ->and($candidates[1]->referenceMax)->toBe('8')
+        ->and($candidates[1]->referenceUnit)->toBe('U/mL')
+        ->and($candidates[1]->confidence)->toBe(0.75);
+});
+
+it('returns no tabular candidates when no header row is recognized', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('12,4', 210, 680),
+        new PositionedTextFragment('mg/L', 300, 680),
+        new PositionedTextFragment('10 - 20', 390, 680),
+    ]);
+
+    expect($candidates)->toBe([]);
+});
+
+it('recognizes resultaat as a tabular value header', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analyse', 40, 700),
+        new PositionedTextFragment('Resultaat', 210, 700),
+        new PositionedTextFragment('Eenheid', 300, 700),
+        new PositionedTextFragment('Referentie', 390, 700),
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('12,4', 210, 680),
+        new PositionedTextFragment('mg/L', 300, 680),
+        new PositionedTextFragment('10 - 20', 390, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->extractedName)->toBe('Marker Alpha')
+        ->and($candidates[0]->value)->toBe('12.4');
+});
+
+it('infers the value column when a lab header omits the explicit value label', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analyse', 40, 700),
+        new PositionedTextFragment('Eenheid', 387, 700),
+        new PositionedTextFragment('Referentie', 465, 700),
+        new PositionedTextFragment('Marker Alpha', 50, 680),
+        new PositionedTextFragment('12,4', 190, 680),
+        new PositionedTextFragment('mg/L', 387, 680),
+        new PositionedTextFragment('10 - 20', 465, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->extractedName)->toBe('Marker Alpha')
+        ->and($candidates[0]->value)->toBe('12.4')
+        ->and($candidates[0]->unit)->toBe('mg/L')
+        ->and($candidates[0]->confidence)->toBe(0.7);
+});
+
+it('ignores same-row fragments outside the recognized column bands', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analysis', 40, 700),
+        new PositionedTextFragment('Value', 210, 700),
+        new PositionedTextFragment('Unit', 300, 700),
+        new PositionedTextFragment('Reference', 390, 700),
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('12,4', 210, 680),
+        new PositionedTextFragment('mg/L', 300, 680),
+        new PositionedTextFragment('10 - 20', 390, 680),
+        new PositionedTextFragment('Footer text outside table', 650, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->sourceSnippet)->toBe('Marker Alpha 12,4 mg/L 10 - 20');
+});
+
+it('caps tabular extraction candidates', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $fragments = [
+        new PositionedTextFragment('Analysis', 40, 700),
+        new PositionedTextFragment('Value', 210, 700),
+        new PositionedTextFragment('Unit', 300, 700),
+        new PositionedTextFragment('Reference', 390, 700),
+    ];
+
+    for ($index = 0; $index < 85; $index++) {
+        $y = 680 - ($index * 10);
+        $fragments[] = new PositionedTextFragment('Marker '.$index, 40, $y);
+        $fragments[] = new PositionedTextFragment((string) $index, 210, $y);
+        $fragments[] = new PositionedTextFragment('mg/L', 300, $y);
+        $fragments[] = new PositionedTextFragment('10 - 20', 390, $y);
+    }
+
+    expect($extract($fragments))->toHaveCount(80);
+});

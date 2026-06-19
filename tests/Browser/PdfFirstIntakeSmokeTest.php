@@ -91,7 +91,7 @@ function uploadBloodTestPdf(Browser $browser, string $fixturePath, string $date,
         ->type('title', $title)
         ->scrollIntoView('[data-test="upload-pdf-button"]')
         ->click('[data-test="upload-pdf-button"]')
-        ->waitForText('Confirm a biomarker value')
+        ->waitForText('Review extracted values')
         ->waitForText('EXTRACTED - PLEASE CONFIRM')
         ->assertSee($title);
 
