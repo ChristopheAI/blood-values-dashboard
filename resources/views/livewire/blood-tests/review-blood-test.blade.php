@@ -128,14 +128,27 @@
 
             <div class="space-y-3">
                 @forelse ($draftResults as $draft)
+                    @php
+                        $referenceUnit = $draft->reference_unit ?: $draft->unit;
+                        $referenceRange = null;
+
+                        if ($draft->reference_min !== null && $draft->reference_max !== null) {
+                            $referenceRange = (float) $draft->reference_min.'-'.(float) $draft->reference_max.' '.$referenceUnit;
+                        } elseif ($draft->reference_min !== null) {
+                            $referenceRange = '>= '.(float) $draft->reference_min.' '.$referenceUnit;
+                        } elseif ($draft->reference_max !== null) {
+                            $referenceRange = '<= '.(float) $draft->reference_max.' '.$referenceUnit;
+                        }
+                    @endphp
+
                     <article class="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40" data-test="extracted-draft-row">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <div class="font-medium">{{ $draft->biomarker?->name ?? $draft->extracted_name ?? __('Unknown marker') }}</div>
                                 <div class="text-neutral-600 dark:text-neutral-400">
                                     {{ (float) $draft->value }} {{ $draft->unit }}
-                                    @if ($draft->reference_min !== null && $draft->reference_max !== null)
-                                        · {{ (float) $draft->reference_min }}-{{ (float) $draft->reference_max }} {{ $draft->reference_unit }}
+                                    @if ($referenceRange !== null)
+                                        · {{ $referenceRange }}
                                     @endif
                                 </div>
                             </div>

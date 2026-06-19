@@ -146,6 +146,39 @@ it('marks below auto-confirm threshold drafts as low confidence in the review st
         ->assertSee('Low confidence');
 });
 
+it('shows one-sided draft reference ranges in the review strip', function () {
+    $user = User::factory()->create();
+    $maxOnly = Biomarker::factory()->for($user)->create(['name' => 'Marker Max']);
+    $minOnly = Biomarker::factory()->for($user)->create(['name' => 'Marker Min']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($maxOnly)->create([
+        'value' => 5,
+        'unit' => 'U/mL',
+        'reference_min' => null,
+        'reference_max' => 8,
+        'reference_unit' => 'U/mL',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Marker Max',
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($minOnly)->create([
+        'value' => 35,
+        'unit' => 'ug/L',
+        'reference_min' => 30,
+        'reference_max' => null,
+        'reference_unit' => 'ug/L',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Marker Min',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('<= 8 U/mL')
+        ->assertSee('>= 30 ug/L');
+});
+
 it('frames the review form as manual entry when extraction found no drafts', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
