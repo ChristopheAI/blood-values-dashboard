@@ -256,6 +256,43 @@ it('rejects confirming a draft as a biomarker already present on the same blood 
             ->count())->toBe(1);
 });
 
+it('rejects manually adding a biomarker that already has a value on the same blood test', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    $confirmed = BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'pdf_reviewed',
+        'confirmed_at' => now(),
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->set('resultForm.biomarker_id', $ferritin->id)
+        ->set('resultForm.value', '50')
+        ->set('resultForm.unit', 'ug/L');
+
+    $exception = null;
+
+    try {
+        $component->call('confirmResult');
+    } catch (Throwable $caught) {
+        $exception = $caught;
+    }
+
+    expect($exception)->toBeNull();
+
+    $component->assertHasErrors(['resultForm.biomarker_id']);
+
+    expect((float) $confirmed->refresh()->value)->toBe(42.0)
+        ->and(BiomarkerResult::query()
+            ->where('blood_test_id', $bloodTest->id)
+            ->where('biomarker_id', $ferritin->id)
+            ->count())->toBe(1);
+});
+
 it('rejects editing a confirmed result to duplicate another biomarker on the same blood test', function () {
     $user = User::factory()->create();
     $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);

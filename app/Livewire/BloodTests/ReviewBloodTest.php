@@ -60,7 +60,7 @@ class ReviewBloodTest extends Component
         $biomarker = $this->ownedBiomarker($form);
         $currentResultId = $editingResult->id ?? $draft->id ?? null;
 
-        if ($currentResultId !== null && $this->hasOtherResultForBiomarker($bloodTest, $biomarker, $currentResultId)) {
+        if ($this->hasOtherResultForBiomarker($bloodTest, $biomarker, $currentResultId)) {
             $this->addError(
                 $this->duplicateBiomarkerErrorField($form),
                 'This biomarker already has a value for this blood test.',
@@ -289,13 +289,17 @@ class ReviewBloodTest extends Component
         );
     }
 
-    private function hasOtherResultForBiomarker(BloodTest $bloodTest, Biomarker $biomarker, int $currentResultId): bool
+    private function hasOtherResultForBiomarker(BloodTest $bloodTest, Biomarker $biomarker, ?int $currentResultId): bool
     {
-        return BiomarkerResult::query()
+        $query = BiomarkerResult::query()
             ->where('blood_test_id', $bloodTest->id)
-            ->where('biomarker_id', $biomarker->id)
-            ->whereKeyNot($currentResultId)
-            ->exists();
+            ->where('biomarker_id', $biomarker->id);
+
+        if ($currentResultId !== null) {
+            $query->whereKeyNot($currentResultId);
+        }
+
+        return $query->exists();
     }
 
     /**
