@@ -105,6 +105,7 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertMissing('[data-test="blood-test-date-input"]')
             ->assertMissing('[data-test="blood-test-lab-input"]')
             ->assertMissing('[data-test="blood-test-title-input"]')
+            ->assertMissing('[data-test="upload-pdf-button"]')
             ->assertMissing('input[name="email"]')
             ->assertMissing('input[name="account"]')
             ->attach('document', base_path('tests/Fixtures/assisted-extraction-lab.pdf'))

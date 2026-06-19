@@ -6,7 +6,7 @@
             enctype="multipart/form-data"
             class="space-y-5"
             data-test="blood-test-upload-form"
-            onsubmit="document.querySelector('[data-test=&quot;intake-progress&quot;]').hidden = false; this.querySelector('[data-test=&quot;upload-pdf-button&quot;]').setAttribute('disabled', 'disabled');"
+            onsubmit="document.querySelector('[data-test=&quot;intake-progress&quot;]').hidden = false; this.querySelector('[data-test=&quot;choose-pdf-button&quot;]').setAttribute('disabled', 'disabled');"
         >
             @csrf
 
@@ -69,8 +69,6 @@
                     <div class="rounded-md bg-neutral-100 p-3 dark:bg-neutral-900" data-test="intake-progress-stage-trend">{{ __('trend') }}</div>
                 </div>
             </section>
-
-            <flux:button type="submit" variant="primary" data-test="upload-pdf-button">{{ __('Upload PDF') }}</flux:button>
         </form>
 
         <div class="space-y-3">
