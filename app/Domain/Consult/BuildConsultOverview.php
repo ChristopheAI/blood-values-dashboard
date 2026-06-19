@@ -150,6 +150,14 @@ class BuildConsultOverview
                     });
                 }
             });
+        } else {
+            if (! empty($filters['from'])) {
+                $query->whereDate('note_date', '>=', $filters['from']);
+            }
+
+            if (! empty($filters['to'])) {
+                $query->whereDate('note_date', '<=', $filters['to']);
+            }
         }
 
         return $query->get();

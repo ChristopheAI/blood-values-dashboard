@@ -163,6 +163,31 @@ it('does not render confirmed results linked to another users biomarker', functi
         ->assertDontSee('123');
 });
 
+it('filters context notes by date range when no blood tests are selected', function () {
+    $user = User::factory()->create();
+
+    ContextNote::factory()->for($user)->create([
+        'note_date' => '2026-06-01',
+        'category' => ContextNoteCategory::Sleep->value,
+        'body' => 'In-range context note.',
+    ]);
+    ContextNote::factory()->for($user)->create([
+        'note_date' => '2026-04-01',
+        'category' => ContextNoteCategory::Stress->value,
+        'body' => 'Out-of-range context note.',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'from' => '2026-06-01',
+            'to' => '2026-06-30',
+            'include_context' => '1',
+        ])
+        ->assertOk()
+        ->assertSee('In-range context note.')
+        ->assertDontSee('Out-of-range context note.');
+});
+
 it('exports the consult overview structured rows as csv', function () {
     $user = User::factory()->create();
     $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
