@@ -216,7 +216,9 @@ it('frames the review form as manual entry when extraction found no drafts', fun
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertSee('Add your values')
-        ->assertSee("We couldn't read values from this PDF automatically")
+        ->assertSee('No source document is attached.')
+        ->assertSee("We couldn't read values from this PDF automatically. Add values manually when you are ready.")
+        ->assertDontSee('Add them next to the document below.')
         ->assertDontSee('No below-threshold rows need review.')
         ->assertDontSee('Confirm a biomarker value');
 });
@@ -224,6 +226,7 @@ it('frames the review form as manual entry when extraction found no drafts', fun
 it('shows a manual-entry fallback when extraction failed', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    BloodTestDocument::factory()->for($bloodTest)->create();
     ExtractionRun::factory()->for($bloodTest)->create([
         'engine' => 'smalot/pdfparser',
         'status' => 'failed',
@@ -240,6 +243,17 @@ it('shows a manual-entry fallback when extraction failed', function () {
         ->assertDontSee('No below-threshold rows need review.')
         ->assertSee('Add your values')
         ->assertSee('Add values from the source document when you are ready.');
+});
+
+it('does not point manual entry copy to a missing source document', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('No source document is attached.')
+        ->assertSee('Add values manually when you are ready.')
+        ->assertDontSee('Add values from the source document when you are ready.');
 });
 
 it('shows auto-confirmed extracted values as auto-filled and lets the owner edit or delete them', function () {

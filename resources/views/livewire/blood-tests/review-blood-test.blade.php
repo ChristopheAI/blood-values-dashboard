@@ -204,8 +204,12 @@
                         {{ __('Some values are already active for status and trends. Review only the remaining extracted rows.') }}
                     @elseif ($hasDraftResults)
                         {{ __('Read from your PDF; nothing counts until you confirm each one.') }}
-                    @elseif ($extractionFoundNoDrafts)
+                    @elseif ($extractionFoundNoDrafts && $hasSourceDocuments)
                         {{ __("We couldn't read values from this PDF automatically. Add them next to the document below.") }}
+                    @elseif ($extractionFoundNoDrafts)
+                        {{ __("We couldn't read values from this PDF automatically. Add values manually when you are ready.") }}
+                    @elseif (! $hasSourceDocuments)
+                        {{ __('Add values manually when you are ready.') }}
                     @else
                         {{ __('Add values from the source document when you are ready.') }}
                     @endif
