@@ -16,7 +16,7 @@
         'failed' => 'failed',
         default => 'pending',
     };
-    $valuesStageState = $latestExtractionRun?->status === 'done' && ($confirmedCount > 0 || $draftCount > 0)
+    $valuesStageState = $confirmedCount > 0 || $draftCount > 0
         ? 'done'
         : 'pending';
     $statusStageState = $confirmedCount > 0 ? 'done' : 'pending';

@@ -296,6 +296,26 @@ it('marks auto-filled values when the source PDF is gone', function () {
         ->assertSee('auto-filled from PDF (source deleted)');
 });
 
+it('marks the values stage done when confirmed values already exist', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'pdf_reviewed',
+        'confirmed_at' => now(),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('data-test="intake-progress-stage-extract" data-state="pending"', false)
+        ->assertSee('data-test="intake-progress-stage-values" data-state="done"', false)
+        ->assertSee('data-test="intake-progress-stage-status" data-state="done"', false)
+        ->assertSee('data-test="intake-progress-stage-trend" data-state="done"', false);
+});
+
 it('rejects confirming a draft as a biomarker already present on the same blood test', function () {
     $user = User::factory()->create();
     $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
