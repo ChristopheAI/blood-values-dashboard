@@ -120,6 +120,24 @@ it('rejects selected blood tests not owned by the authenticated user', function 
         ->assertForbidden();
 });
 
+it('does not render corrupted cross-owner pinned biomarkers in consult overview', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $foreignBiomarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+
+    PinnedBiomarker::factory()->for($user)->for($foreignBiomarker)->create([
+        'note' => 'Foreign private pin note',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'include_pinned' => '1',
+        ])
+        ->assertOk()
+        ->assertDontSee('Foreign private marker')
+        ->assertDontSee('Foreign private pin note');
+});
+
 it('does not render confirmed results linked to another users biomarker', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();

@@ -172,7 +172,7 @@ class BuildDataExport
     private function pinnedBiomarkers(User $user): array
     {
         return array_values(PinnedBiomarker::query()
-            ->where('user_id', $user->id)
+            ->forUserWithOwnedBiomarker($user->id)
             ->orderBy('id')
             ->get()
             ->map(fn (PinnedBiomarker $pin): array => [

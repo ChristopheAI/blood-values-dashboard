@@ -91,3 +91,19 @@ it('surfaces pinned biomarkers on the dashboard', function () {
         ->assertDontSee('Vitamin D')
         ->assertDontSee('CRP');
 });
+
+it('does not surface corrupted cross-owner pinned biomarkers on the dashboard', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $foreignBiomarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+
+    PinnedBiomarker::factory()->for($user)->for($foreignBiomarker)->create([
+        'note' => 'Foreign private note',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertDontSee('Foreign private marker')
+        ->assertDontSee('Foreign private note');
+});

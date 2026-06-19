@@ -89,7 +89,7 @@ class BuildConsultOverview
     private function pinnedBiomarkers(User $user): Collection
     {
         return PinnedBiomarker::query()
-            ->where('user_id', $user->id)
+            ->forUserWithOwnedBiomarker($user->id)
             ->with('biomarker')
             ->orderByDesc('created_at')
             ->get();
