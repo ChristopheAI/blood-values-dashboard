@@ -16,8 +16,12 @@ class DestroyBloodTestDocumentController extends Controller
 
         abort_unless($bloodTest->user_id === Auth::id(), 403);
 
-        Storage::disk($bloodTestDocument->storage_disk)->delete($bloodTestDocument->storage_path);
+        $storageDisk = $bloodTestDocument->storage_disk;
+        $storagePath = $bloodTestDocument->storage_path;
+
         $bloodTestDocument->delete();
+
+        Storage::disk($storageDisk)->delete($storagePath);
 
         return redirect()->route('blood-tests.show', $bloodTest);
     }

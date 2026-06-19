@@ -11,6 +11,7 @@ use App\Models\PinnedBiomarker;
 use App\Models\Reminder;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 it('exports owned health data as a downloadable json file without other users rows', function () {
@@ -227,6 +228,46 @@ it('deletes all owned health data and private documents without deleting the acc
         'password' => 'password',
     ])->assertRedirect(route('dashboard', absolute: false));
     $this->assertAuthenticatedAs($user);
+});
+
+it('keeps private documents when delete all fails before the database transaction commits', function () {
+    if (DB::connection()->getDriverName() !== 'sqlite') {
+        $this->markTestSkipped('This synthetic trigger regression is SQLite-only.');
+    }
+
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_path' => 'blood-test-documents/delete-all-fails.pdf',
+    ]);
+    $caught = null;
+
+    Storage::disk('local')->put($document->storage_path, 'pdf bytes');
+
+    DB::unprepared(
+        'CREATE TRIGGER fail_delete_all_blood_tests '.
+        'BEFORE DELETE ON blood_tests '.
+        'WHEN OLD.id = '.$bloodTest->id.' '.
+        "BEGIN SELECT RAISE(ABORT, 'synthetic delete all failure'); END;"
+    );
+
+    try {
+        $this->withoutExceptionHandling()
+            ->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->delete(route('data.destroy'), ['confirmation' => 'DELETE ALL']);
+    } catch (Throwable $exception) {
+        $caught = $exception;
+    } finally {
+        DB::unprepared('DROP TRIGGER IF EXISTS fail_delete_all_blood_tests;');
+    }
+
+    expect($caught?->getMessage())->toContain('synthetic delete all failure')
+        ->and(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue()
+        ->and(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
+    Storage::disk('local')->assertExists($document->storage_path);
 });
 
 it('requires explicit typed confirmation before delete all removes health data', function () {

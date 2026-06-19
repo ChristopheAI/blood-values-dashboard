@@ -22,10 +22,6 @@ class DeleteAllHealthData
             ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $user->id))
             ->get(['id', 'storage_disk', 'storage_path']);
 
-        foreach ($documents as $document) {
-            Storage::disk($document->storage_disk)->delete($document->storage_path);
-        }
-
         DB::transaction(function () use ($user): void {
             $ownedBiomarkerIds = Biomarker::query()
                 ->where('user_id', $user->id)
@@ -65,5 +61,9 @@ class DeleteAllHealthData
                 ->where('user_id', $user->id)
                 ->delete();
         });
+
+        foreach ($documents as $document) {
+            Storage::disk($document->storage_disk)->delete($document->storage_path);
+        }
     }
 }

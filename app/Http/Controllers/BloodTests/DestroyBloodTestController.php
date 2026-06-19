@@ -14,11 +14,14 @@ class DestroyBloodTestController extends Controller
     {
         abort_unless($bloodTest->user_id === Auth::id(), 403);
 
-        foreach ($bloodTest->documents as $document) {
-            Storage::disk($document->storage_disk)->delete($document->storage_path);
-        }
+        $documents = $bloodTest->documents()
+            ->get(['id', 'storage_disk', 'storage_path']);
 
         $bloodTest->delete();
+
+        foreach ($documents as $document) {
+            Storage::disk($document->storage_disk)->delete($document->storage_path);
+        }
 
         return redirect()->route('blood-tests.index');
     }
