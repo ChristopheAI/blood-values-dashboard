@@ -274,6 +274,36 @@ it('keeps high confidence prefix-only catalog matches as drafts', function () {
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
+it('leaves ambiguous prefix-only catalog matches unanchored', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Beta', 'short_name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha sentence tail',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic ambiguous prefix row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($result->confirmed_at)->toBeNull()
+        ->and($result->biomarker_id)->toBeNull()
+        ->and($result->extracted_name)->toBe('Marker Alpha sentence tail')
+        ->and($result->status)->toBe('unknown')
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('keeps ambiguous exact catalog alias matches as drafts', function () {
     Storage::fake('local');
 

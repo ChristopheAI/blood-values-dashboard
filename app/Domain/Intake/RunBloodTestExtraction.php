@@ -125,21 +125,56 @@ class RunBloodTestExtraction
             return null;
         }
 
-        return $biomarkers
-            ->filter(function (Biomarker $biomarker) use ($name): bool {
-                return $this->isCatalogPrefix($name, $biomarker->name)
-                    || ($biomarker->short_name !== null && $this->isCatalogPrefix($name, $biomarker->short_name));
-            })
-            ->sortByDesc(fn (Biomarker $biomarker): int => max(
-                mb_strlen($biomarker->name),
-                $biomarker->short_name === null ? 0 : mb_strlen($biomarker->short_name),
-            ))
-            ->first();
+        $strongestMatches = [];
+        $strongestLength = 0;
+
+        foreach ($biomarkers as $biomarker) {
+            $prefixLength = $this->catalogPrefixLength($name, $biomarker);
+
+            if ($prefixLength === 0) {
+                continue;
+            }
+
+            if ($prefixLength > $strongestLength) {
+                $strongestMatches = [$biomarker];
+                $strongestLength = $prefixLength;
+
+                continue;
+            }
+
+            if ($prefixLength === $strongestLength) {
+                $strongestMatches[] = $biomarker;
+            }
+        }
+
+        return count($strongestMatches) === 1 ? $strongestMatches[0] : null;
+    }
+
+    private function catalogPrefixLength(string $extractedName, Biomarker $biomarker): int
+    {
+        $length = $this->prefixLength($extractedName, $biomarker->name);
+
+        if ($biomarker->short_name !== null) {
+            $length = max($length, $this->prefixLength($extractedName, $biomarker->short_name));
+        }
+
+        return $length;
+    }
+
+    private function prefixLength(string $extractedName, string $catalogName): int
+    {
+        $catalogName = $this->normalizedName($catalogName);
+
+        if (! $this->isCatalogPrefix($extractedName, $catalogName)) {
+            return 0;
+        }
+
+        return mb_strlen($catalogName);
     }
 
     private function isCatalogPrefix(string $extractedName, string $catalogName): bool
     {
-        $catalogName = Str::lower(trim($catalogName));
+        $catalogName = $this->normalizedName($catalogName);
 
         return $extractedName === $catalogName || str_starts_with($extractedName, $catalogName.' ');
     }
