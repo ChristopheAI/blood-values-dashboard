@@ -83,6 +83,11 @@ class RunBloodTestExtraction
             } else {
                 $attributes['biomarker_id'] = null;
                 $attributes['extracted_name'] = $extractedName;
+                $attributes['value'] = $candidate->value;
+                $attributes['unit'] = $candidate->unit;
+                $attributes['reference_min'] = $candidate->referenceMin;
+                $attributes['reference_max'] = $candidate->referenceMax;
+                $attributes['reference_unit'] = $candidate->referenceUnit;
                 $attributes['confirmed_at'] = null;
                 $attributes['source_snippet'] = $sourceSnippet;
             }
