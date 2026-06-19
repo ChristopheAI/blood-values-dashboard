@@ -33,7 +33,8 @@ class RunBloodTestExtraction
         try {
             $path = Storage::disk($document->storage_disk)->path($document->storage_path);
             $candidates = ($this->extractBiomarkerDrafts)($path);
-            $candidateCount = $this->storeDrafts($document, $candidates);
+            $candidateCount = count($candidates);
+            $this->storeDrafts($document, $candidates);
 
             $run->update([
                 'status' => 'done',

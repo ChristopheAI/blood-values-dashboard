@@ -431,6 +431,7 @@ it('does not overwrite a previously confirmed value when extraction sees the sam
         ->where('biomarker_id', $ferritin->id)
         ->where('entry_source', 'extracted')
         ->exists())->toBeFalse()
+        ->and($bloodTest->extractionRuns()->latest('id')->firstOrFail()->candidate_count)->toBe(1)
         ->and($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
