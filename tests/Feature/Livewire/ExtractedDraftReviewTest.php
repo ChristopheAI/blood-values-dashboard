@@ -206,6 +206,10 @@ it('shows a manual-entry fallback when extraction failed', function () {
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('data-test="intake-progress-stage-extract" data-state="failed"', false)
+        ->assertSee('data-test="intake-progress-stage-values" data-state="pending"', false)
+        ->assertSee('data-test="intake-progress-stage-status" data-state="pending"', false)
+        ->assertSee('data-test="intake-progress-stage-trend" data-state="pending"', false)
         ->assertSee('Extraction failed. Manual entry is still available.')
         ->assertSee('Add your values')
         ->assertSee('Add values from the source document when you are ready.');

@@ -10,6 +10,21 @@
     $extractionFoundNoDrafts = $latestExtractionRun?->status === 'done'
         && (int) $latestExtractionRun->candidate_count === 0
         && ! $hasDraftResults;
+    $extractStageState = match ($latestExtractionRun?->status) {
+        'done' => 'done',
+        'failed' => 'failed',
+        default => 'pending',
+    };
+    $valuesStageState = $latestExtractionRun?->status === 'done' && ($confirmedCount > 0 || $draftCount > 0)
+        ? 'done'
+        : 'pending';
+    $statusStageState = $confirmedCount > 0 ? 'done' : 'pending';
+    $trendStageState = $confirmedCount > 0 ? 'done' : 'pending';
+    $progressStageClass = fn (string $state): string => match ($state) {
+        'done' => 'bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200',
+        'failed' => 'bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200',
+        default => 'bg-neutral-100 text-neutral-700 dark:bg-neutral-900 dark:text-neutral-300',
+    };
 @endphp
 
 <section class="mx-auto flex w-full max-w-5xl flex-col gap-8" data-test="blood-test-result">
@@ -24,10 +39,10 @@
 
     <section class="rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="intake-progress">
         <div class="grid gap-3 text-sm sm:grid-cols-4">
-            <div class="rounded-md bg-green-50 p-3 font-medium text-green-800 dark:bg-green-950 dark:text-green-200" data-test="intake-progress-stage-extract">{{ __('extract') }}</div>
-            <div class="rounded-md bg-green-50 p-3 font-medium text-green-800 dark:bg-green-950 dark:text-green-200" data-test="intake-progress-stage-values">{{ __('waarden') }}</div>
-            <div class="rounded-md bg-green-50 p-3 font-medium text-green-800 dark:bg-green-950 dark:text-green-200" data-test="intake-progress-stage-status">{{ __('status') }}</div>
-            <div class="rounded-md bg-green-50 p-3 font-medium text-green-800 dark:bg-green-950 dark:text-green-200" data-test="intake-progress-stage-trend">{{ __('trend') }}</div>
+            <div class="rounded-md p-3 font-medium {{ $progressStageClass($extractStageState) }}" data-test="intake-progress-stage-extract" data-state="{{ $extractStageState }}">{{ __('extract') }}</div>
+            <div class="rounded-md p-3 font-medium {{ $progressStageClass($valuesStageState) }}" data-test="intake-progress-stage-values" data-state="{{ $valuesStageState }}">{{ __('waarden') }}</div>
+            <div class="rounded-md p-3 font-medium {{ $progressStageClass($statusStageState) }}" data-test="intake-progress-stage-status" data-state="{{ $statusStageState }}">{{ __('status') }}</div>
+            <div class="rounded-md p-3 font-medium {{ $progressStageClass($trendStageState) }}" data-test="intake-progress-stage-trend" data-state="{{ $trendStageState }}">{{ __('trend') }}</div>
         </div>
     </section>
 
