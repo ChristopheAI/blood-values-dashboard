@@ -118,6 +118,26 @@ it('rejects a tampered zero biomarker id instead of treating it as a new biomark
         ->and(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->count())->toBe(0);
 });
 
+it('treats the create-new select empty value as no biomarker id', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->set('resultForm.biomarker_id', '')
+        ->set('resultForm.name', 'Ferritin')
+        ->set('resultForm.value', '42')
+        ->set('resultForm.unit', 'ug/L')
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    $biomarker = Biomarker::query()->where('user_id', $user->id)->firstOrFail();
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($biomarker->name)->toBe('Ferritin')
+        ->and($result->biomarker_id)->toBe($biomarker->id);
+});
+
 it('trims padded review form names and units before storing confirmed values', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create();

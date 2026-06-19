@@ -259,6 +259,10 @@ class ReviewBloodTest extends Component
             }
         }
 
+        if (($form['biomarker_id'] ?? null) === '') {
+            $form['biomarker_id'] = null;
+        }
+
         return $form;
     }
 
