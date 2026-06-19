@@ -4,6 +4,7 @@ use App\Livewire\BloodTests\ReviewBloodTest;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Models\BloodTestDocument;
 use App\Models\ExtractionRun;
 use App\Models\User;
 use Livewire\Livewire;
@@ -245,6 +246,7 @@ it('shows auto-confirmed extracted values as auto-filled and lets the owner edit
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
     $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    BloodTestDocument::factory()->for($bloodTest)->create();
     $result = BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
         'value' => 42,
         'unit' => 'ug/L',
@@ -263,6 +265,7 @@ it('shows auto-confirmed extracted values as auto-filled and lets the owner edit
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertSee('Confirmed values')
         ->assertSee('auto-filled from PDF')
+        ->assertDontSee('source deleted')
         ->assertDontSee('Extracted - please confirm')
         ->call('editConfirmedResult', $result->id)
         ->assertSet('resultForm.biomarker_id', $biomarker->id)
@@ -271,6 +274,26 @@ it('shows auto-confirmed extracted values as auto-filled and lets the owner edit
         ->assertHasNoErrors();
 
     expect(BiomarkerResult::query()->whereKey($result->id)->exists())->toBeFalse();
+});
+
+it('marks auto-filled values when the source PDF is gone', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'extracted_name' => 'Ferritin',
+        'source_snippet' => null,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('No source document is attached.')
+        ->assertSee('auto-filled from PDF (source deleted)');
 });
 
 it('rejects confirming a draft as a biomarker already present on the same blood test', function () {

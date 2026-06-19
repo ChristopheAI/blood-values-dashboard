@@ -3,6 +3,7 @@
         ->whereNull('confirmed_at')
         ->where('entry_source', 'extracted');
     $confirmedResults = $bloodTest->results->whereNotNull('confirmed_at');
+    $hasSourceDocuments = $bloodTest->documents->isNotEmpty();
     $latestExtractionRun = $bloodTest->extractionRuns->sortByDesc('created_at')->first();
     $hasDraftResults = $draftResults->isNotEmpty();
     $confirmedCount = $confirmedResults->count();
@@ -79,7 +80,7 @@
                                     <span>{{ $result->status }}</span>
                                     @if ($result->entry_source === 'extracted')
                                         <span class="text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400">
-                                            {{ __('auto-filled from PDF') }}
+                                            {{ $hasSourceDocuments ? __('auto-filled from PDF') : __('auto-filled from PDF (source deleted)') }}
                                         </span>
                                     @endif
                                 </div>
