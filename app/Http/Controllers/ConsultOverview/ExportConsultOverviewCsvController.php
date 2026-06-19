@@ -69,7 +69,7 @@ class ExportConsultOverviewCsvController extends Controller
         }
 
         foreach ($rows as $row) {
-            fputcsv($handle, $row);
+            fputcsv($handle, $this->escapeSpreadsheetFormulas($row));
         }
 
         rewind($handle);
@@ -80,6 +80,17 @@ class ExportConsultOverviewCsvController extends Controller
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="consult-overview.csv"',
         ]);
+    }
+
+    /**
+     * @param  list<string>  $row
+     * @return list<string>
+     */
+    private function escapeSpreadsheetFormulas(array $row): array
+    {
+        return array_map(function (string $cell): string {
+            return preg_match('/^\s*[=+\-@\t\r]/', $cell) === 1 ? "'".$cell : $cell;
+        }, $row);
     }
 
     /**

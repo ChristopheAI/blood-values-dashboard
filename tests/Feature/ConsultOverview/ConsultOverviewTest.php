@@ -178,6 +178,47 @@ it('exports the consult overview structured rows as csv', function () {
         ->assertDontSee('999');
 });
 
+it('escapes spreadsheet formulas in consult csv export cells', function () {
+    $user = User::factory()->create();
+    $dangerousMarker = Biomarker::factory()->for($user)->create(['name' => '=Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($dangerousMarker)->create([
+        'value' => 18,
+        'unit' => 'ug/L',
+        'status' => 'low',
+        'confirmed_at' => now(),
+        'note' => '+review note',
+    ]);
+    PinnedBiomarker::factory()->for($user)->for($dangerousMarker)->create(['note' => '@pin note']);
+    ContextNote::factory()->for($user)->for($bloodTest)->create([
+        'note_date' => '2026-06-01',
+        'category' => ContextNoteCategory::Sleep->value,
+        'body' => '-context note',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->post(route('consult-overview.csv'), [
+            'from' => '2026-06-01',
+            'to' => '2026-06-01',
+            'include_pinned' => '1',
+            'include_attention' => '1',
+            'include_context' => '1',
+        ])
+        ->assertOk();
+
+    $rows = array_map(
+        fn (string $line): array => str_getcsv($line),
+        array_filter(explode("\n", trim($response->getContent()))),
+    );
+
+    expect($rows)->toContain(
+        ['pinned', '', "'=Ferritin", '', '', '', "'@pin note"],
+        ['attention', '2026-06-01', "'=Ferritin", '18', 'ug/L', 'low', "'+review note"],
+        ['context', '2026-06-01', 'Sleep', '', '', '', "'-context note"],
+    );
+});
+
 it('does not carry consult questions in generated get urls', function () {
     $user = User::factory()->create();
     $secretQuestion = 'Could we discuss the training context privately?';
