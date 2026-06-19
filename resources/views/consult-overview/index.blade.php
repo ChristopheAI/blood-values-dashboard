@@ -95,10 +95,6 @@
                 <input type="hidden" name="include_context" value="1">
             @endif
 
-            @if ($overview['questions'])
-                <input type="hidden" name="questions" value="{{ $overview['questions'] }}">
-            @endif
-
             <flux:button type="submit" variant="outline" data-test="export-consult-csv-button">{{ __('Export CSV') }}</flux:button>
         </form>
 

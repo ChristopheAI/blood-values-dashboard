@@ -288,3 +288,19 @@ it('does not carry consult questions in generated get urls', function () {
         ->assertOk()
         ->assertDontSee($secretQuestion);
 });
+
+it('does not carry consult questions into the csv export form', function () {
+    $user = User::factory()->create();
+    $secretQuestion = 'Could we discuss the training context privately?';
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'include_context' => '1',
+            'questions' => $secretQuestion,
+        ])
+        ->assertOk()
+        ->assertSee($secretQuestion)
+        ->assertSee('data-test="export-consult-csv-form"', false)
+        ->assertDontSee('type="hidden" name="questions"', false)
+        ->assertDontSee('value="'.$secretQuestion.'"', false);
+});
