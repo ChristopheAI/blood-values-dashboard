@@ -84,3 +84,20 @@ it('rejects review state with a cross-owner biomarker relation', function () {
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertForbidden();
 });
+
+it('rejects a tampered zero biomarker id instead of treating it as a new biomarker', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->set('resultForm.biomarker_id', 0)
+        ->set('resultForm.name', 'Ferritin')
+        ->set('resultForm.value', '42')
+        ->set('resultForm.unit', 'ug/L')
+        ->call('confirmResult')
+        ->assertHasErrors(['resultForm.biomarker_id' => 'min']);
+
+    expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(0)
+        ->and(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->count())->toBe(0);
+});

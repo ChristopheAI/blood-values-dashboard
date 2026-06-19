@@ -46,7 +46,7 @@ class ReviewBloodTest extends Component
             : $this->ownedConfirmedResult($this->editingResultId, $bloodTest);
 
         $validated = $this->validate([
-            'resultForm.biomarker_id' => ['nullable', 'integer'],
+            'resultForm.biomarker_id' => ['nullable', 'integer', 'min:1'],
             'resultForm.name' => ['required_without:resultForm.biomarker_id', 'nullable', 'string', 'max:255'],
             'resultForm.value' => ['required', 'numeric'],
             'resultForm.unit' => ['required', 'string', 'max:50'],
@@ -240,7 +240,7 @@ class ReviewBloodTest extends Component
      */
     private function ownedBiomarker(array $form): Biomarker
     {
-        if ($form['biomarker_id']) {
+        if ($form['biomarker_id'] !== null) {
             $biomarker = Biomarker::query()->whereKey((int) $form['biomarker_id'])->firstOrFail();
 
             abort_unless($biomarker->user_id === Auth::id(), 403);
