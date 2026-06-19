@@ -511,6 +511,33 @@ it('matches extracted names only against the owning users biomarker catalog', fu
     expect($draft->biomarker_id)->toBeNull();
 });
 
+it('records failed extraction runs without storing parser output', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = bloodTestWithStoredDocument($user);
+    $document = $bloodTest->documents()->firstOrFail();
+    $extractor = new class extends ExtractBiomarkerDrafts
+    {
+        public function __construct() {}
+
+        /**
+         * @return list<ExtractedBiomarkerCandidate>
+         */
+        public function __invoke(string $pdfPath): array
+        {
+            throw new RuntimeException('Synthetic parser failure');
+        }
+    };
+
+    $run = (new RunBloodTestExtraction($extractor))($document);
+
+    expect($run->status)->toBe('failed')
+        ->and($run->candidate_count)->toBe(0)
+        ->and(BiomarkerResult::query()->count())->toBe(0)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('keeps extracted drafts out of confirmed-only workflows and export until confirmed', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);

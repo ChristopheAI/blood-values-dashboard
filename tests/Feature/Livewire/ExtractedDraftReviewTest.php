@@ -162,6 +162,22 @@ it('frames the review form as manual entry when extraction found no drafts', fun
         ->assertDontSee('Confirm a biomarker value');
 });
 
+it('shows a manual-entry fallback when extraction failed', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    ExtractionRun::factory()->for($bloodTest)->create([
+        'engine' => 'smalot/pdfparser',
+        'status' => 'failed',
+        'candidate_count' => 0,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('Extraction failed. Manual entry is still available.')
+        ->assertSee('Add your values')
+        ->assertSee('Add values from the source document when you are ready.');
+});
+
 it('shows auto-confirmed extracted values as auto-filled and lets the owner edit or delete them', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
