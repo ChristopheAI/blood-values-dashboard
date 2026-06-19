@@ -33,7 +33,7 @@ class ExtractTabularBiomarkerCandidates
 
         foreach (array_slice($rows, $headerIndex + 1) as $row) {
             $cells = $this->cells($row, $columnLayout['columns']);
-            $candidate = $this->candidate($cells, $columnLayout['inferred_value_column']);
+            $candidate = $this->candidate($cells);
 
             if ($candidate === null) {
                 continue;
@@ -116,7 +116,7 @@ class ExtractTabularBiomarkerCandidates
 
     /**
      * @param  list<PositionedTextFragment>  $headerRow
-     * @return array{columns: array{name: array{left: float, x: float, right: float}, value: array{left: float, x: float, right: float}, unit: array{left: float, x: float, right: float}, reference: array{left: float, x: float, right: float}}, inferred_value_column: bool}|null
+     * @return array{columns: array{name: array{left: float, x: float, right: float}, value: array{left: float, x: float, right: float}, unit: array{left: float, x: float, right: float}, reference: array{left: float, x: float, right: float}}}|null
      */
     private function columns(array $headerRow): ?array
     {
@@ -136,7 +136,6 @@ class ExtractTabularBiomarkerCandidates
             }
         }
 
-        $inferredValueColumn = ! array_key_exists('value', $columns);
         $columns['value'] ??= $this->midpoint($columns['name'], $columns['unit']);
 
         $rightBoundary = $columns['reference'] + (($columns['reference'] - $columns['unit']) * 1.5);
@@ -164,7 +163,6 @@ class ExtractTabularBiomarkerCandidates
                     'right' => $rightBoundary,
                 ],
             ],
-            'inferred_value_column' => $inferredValueColumn,
         ];
     }
 
@@ -274,7 +272,7 @@ class ExtractTabularBiomarkerCandidates
     /**
      * @param  array{name: string, value: string, unit: string, reference: string}  $cells
      */
-    private function candidate(array $cells, bool $inferredValueColumn): ?ExtractedBiomarkerCandidate
+    private function candidate(array $cells): ?ExtractedBiomarkerCandidate
     {
         if ($cells['name'] === '' || $cells['unit'] === '') {
             return null;
@@ -287,13 +285,18 @@ class ExtractTabularBiomarkerCandidates
         }
 
         $reference = $this->reference($cells['reference']);
-        $isOneSided = str_contains($cells['value'], '<') || str_contains($cells['value'], '>')
-            || str_contains($cells['reference'], '<') || str_contains($cells['reference'], '>');
+        $valueIsOneSided = str_contains($cells['value'], '<') || str_contains($cells['value'], '>');
 
         $name = $this->sanitizeName($cells['name']);
         $nameWasTruncated = $name !== $cells['name'];
 
-        $confidence = $inferredValueColumn ? 0.7 : ($isOneSided ? 0.75 : 0.85);
+        $hasReference = $reference['min'] !== null || $reference['max'] !== null;
+
+        $confidence = match (true) {
+            ! $hasReference => 0.7,
+            $valueIsOneSided => 0.75,
+            default => 0.85,
+        };
 
         if ($nameWasTruncated) {
             $confidence = min($confidence, 0.6);

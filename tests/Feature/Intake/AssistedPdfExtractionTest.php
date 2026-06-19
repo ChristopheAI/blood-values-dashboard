@@ -177,6 +177,46 @@ it('creates extracted draft rows from tabular positioned pdf uploads', function 
     expect($drafts->pluck('extracted_name')->all())->not->toContain('Marker Gamma');
 });
 
+it('auto-confirms clean inferred-value tabular rows when the biomarker is already in the catalog', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $markerAlpha = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $path = syntheticInferredValueTabularPdfPath();
+    $file = new UploadedFile(
+        $path,
+        'inferred-value-tabular.pdf',
+        'application/pdf',
+        null,
+        true,
+    );
+
+    try {
+        $this->actingAs($user)
+            ->post(route('blood-tests.store'), [
+                'document' => $file,
+                'test_date' => '2026-06-19',
+                'lab_name' => 'Synthetic Lab',
+                'title' => 'Inferred value tabular fixture',
+            ])
+            ->assertRedirect();
+    } finally {
+        @unlink($path);
+    }
+
+    $bloodTest = BloodTest::query()->firstOrFail();
+    $result = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $markerAlpha->id)
+        ->firstOrFail();
+
+    expect($bloodTest->status)->toBe('confirmed')
+        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->entry_source)->toBe('extracted')
+        ->and((float) $result->extraction_confidence)->toBe(0.85)
+        ->and(BiomarkerResult::query()->whereNull('confirmed_at')->count())->toBe(0);
+});
+
 it('anchors a noisy extracted name to the owners catalog without creating a biomarker', function () {
     Storage::fake('local');
 
@@ -479,6 +519,25 @@ function syntheticInlineAndTabularPdfPath(): string
         positionedPdfText('12,4', 210, 160),
         positionedPdfText('mg/L', 300, 160),
         positionedPdfText('10 - 20', 390, 160),
+        'ET',
+        '',
+    ]);
+
+    return syntheticPdfPath($stream);
+}
+
+function syntheticInferredValueTabularPdfPath(): string
+{
+    $stream = implode("\n", [
+        'BT',
+        '/F1 12 Tf',
+        positionedPdfText('Analyse', 40, 180),
+        positionedPdfText('Eenheid', 387, 180),
+        positionedPdfText('Referentie', 465, 180),
+        positionedPdfText('Marker Alpha', 50, 160),
+        positionedPdfText('12,4', 190, 160),
+        positionedPdfText('mg/L', 387, 160),
+        positionedPdfText('10 - 20', 465, 160),
         'ET',
         '',
     ]);

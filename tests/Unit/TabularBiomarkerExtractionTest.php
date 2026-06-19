@@ -93,7 +93,46 @@ it('infers the value column when a lab header omits the explicit value label', f
         ->and($candidates[0]->extractedName)->toBe('Marker Alpha')
         ->and($candidates[0]->value)->toBe('12.4')
         ->and($candidates[0]->unit)->toBe('mg/L')
-        ->and($candidates[0]->confidence)->toBe(0.7);
+        ->and($candidates[0]->confidence)->toBe(0.85);
+});
+
+it('keeps inferred value column candidates low confidence when the reference is missing', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analyse', 40, 700),
+        new PositionedTextFragment('Eenheid', 387, 700),
+        new PositionedTextFragment('Referentie', 465, 700),
+        new PositionedTextFragment('Marker Alpha', 50, 680),
+        new PositionedTextFragment('12,4', 190, 680),
+        new PositionedTextFragment('mg/L', 387, 680),
+        new PositionedTextFragment('pending', 465, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->referenceMin)->toBeNull()
+        ->and($candidates[0]->referenceMax)->toBeNull()
+        ->and($candidates[0]->confidence)->toBeLessThan(0.85);
+});
+
+it('treats one-sided references with exact values as high confidence', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analysis', 40, 700),
+        new PositionedTextFragment('Value', 210, 700),
+        new PositionedTextFragment('Unit', 300, 700),
+        new PositionedTextFragment('Reference', 390, 700),
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('5', 210, 680),
+        new PositionedTextFragment('U/mL', 300, 680),
+        new PositionedTextFragment('< 8', 390, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->referenceMin)->toBeNull()
+        ->and($candidates[0]->referenceMax)->toBe('8')
+        ->and($candidates[0]->confidence)->toBe(0.85);
 });
 
 it('ignores same-row fragments outside the recognized column bands', function () {
