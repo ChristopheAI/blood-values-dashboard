@@ -49,7 +49,11 @@ class ExtractBiomarkerDrafts
         $fragments = [];
 
         try {
+            $pageNumber = 0;
+
             foreach ($pdf->getPages() as $page) {
+                $pageNumber++;
+
                 foreach ($page->getDataTm() as $textMatrix) {
                     $coordinates = $textMatrix[0] ?? null;
                     $text = trim((string) ($textMatrix[1] ?? ''));
@@ -62,6 +66,7 @@ class ExtractBiomarkerDrafts
                         text: $text,
                         x: (float) $coordinates[4],
                         y: (float) $coordinates[5],
+                        page: $pageNumber,
                     );
                 }
             }

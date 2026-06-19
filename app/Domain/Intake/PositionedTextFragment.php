@@ -8,5 +8,6 @@ class PositionedTextFragment
         public readonly string $text,
         public readonly float $x,
         public readonly float $y,
+        public readonly int $page = 1,
     ) {}
 }

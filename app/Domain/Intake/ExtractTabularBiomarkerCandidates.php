@@ -62,7 +62,8 @@ class ExtractTabularBiomarkerCandidates
 
         usort(
             $fragments,
-            fn (PositionedTextFragment $left, PositionedTextFragment $right): int => $right->y <=> $left->y
+            fn (PositionedTextFragment $left, PositionedTextFragment $right): int => $left->page <=> $right->page
+                ?: $right->y <=> $left->y
                 ?: $left->x <=> $right->x,
         );
 
@@ -70,7 +71,7 @@ class ExtractTabularBiomarkerCandidates
 
         foreach ($fragments as $fragment) {
             foreach ($rows as &$row) {
-                if (abs($row[0]->y - $fragment->y) <= self::ROW_TOLERANCE) {
+                if ($row[0]->page === $fragment->page && abs($row[0]->y - $fragment->y) <= self::ROW_TOLERANCE) {
                     $row[] = $fragment;
 
                     continue 2;

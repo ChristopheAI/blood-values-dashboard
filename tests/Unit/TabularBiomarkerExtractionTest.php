@@ -221,3 +221,50 @@ it('drops prose noise after a large gap inside the name cell', function () {
     expect($candidates[0]->extractedName)->toBe('Marker Alpha');
     expect($candidates[0]->confidence)->toBe(0.85);
 });
+
+it('does not merge fragments from a different page that share a vertical position', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        // Page 1: a real-style header (no explicit value label) and one clean row.
+        new PositionedTextFragment('Analyse', 40, 700, 1),
+        new PositionedTextFragment('Eenheid', 300, 700, 1),
+        new PositionedTextFragment('Referentie', 390, 700, 1),
+        new PositionedTextFragment('Marker Alpha', 40, 680, 1),
+        new PositionedTextFragment('12,4', 210, 680, 1),
+        new PositionedTextFragment('mg/L', 300, 680, 1),
+        new PositionedTextFragment('10 - 20', 390, 680, 1),
+        // Page 3 marketing prose sitting at the SAME y as the biomarker row.
+        new PositionedTextFragment('Prose line on a later marketing page', 40, 680, 3),
+        new PositionedTextFragment('continues across that page', 210, 680, 3),
+    ]);
+
+    expect($candidates)->toHaveCount(1);
+    expect($candidates[0]->extractedName)->toBe('Marker Alpha');
+    expect($candidates[0]->confidence)->toBe(0.85);
+});
+
+it('extracts continuation rows on a later page without a repeated header', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        // Page 1: header + first data row.
+        new PositionedTextFragment('Analysis', 40, 700, 1),
+        new PositionedTextFragment('Value', 210, 700, 1),
+        new PositionedTextFragment('Unit', 300, 700, 1),
+        new PositionedTextFragment('Reference', 390, 700, 1),
+        new PositionedTextFragment('Marker Alpha', 40, 680, 1),
+        new PositionedTextFragment('12,4', 210, 680, 1),
+        new PositionedTextFragment('mg/L', 300, 680, 1),
+        new PositionedTextFragment('10 - 20', 390, 680, 1),
+        // Page 2: continuation row at the same y, no repeated header.
+        new PositionedTextFragment('Marker Beta', 40, 680, 2),
+        new PositionedTextFragment('7,1', 210, 680, 2),
+        new PositionedTextFragment('mg/L', 300, 680, 2),
+        new PositionedTextFragment('3 - 9', 390, 680, 2),
+    ]);
+
+    expect($candidates)->toHaveCount(2);
+    expect($candidates[0]->extractedName)->toBe('Marker Alpha');
+    expect($candidates[1]->extractedName)->toBe('Marker Beta');
+});

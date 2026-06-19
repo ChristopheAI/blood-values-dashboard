@@ -8,6 +8,10 @@ The auto-confirm policy relaxes the confirmed-only trust boundary set in ADR-000
 and ADR-0009, so it is recorded explicitly. Stays Proposed until the name cleaning
 and the confidence threshold are validated on synthetic fixtures and live-verified.
 
+The page-aware row clustering described below is implemented in the working tree and
+awaits local validation. The catalog anchor, confidence threshold, auto-confirm, and
+format tuning were implemented in the earlier V2 commits on this branch.
+
 ## Context
 
 Tabular extraction (ADR-0010) works but produces best-effort drafts that the user
@@ -17,11 +21,23 @@ into a biomarker name), and the per-value confirm step itself. The owner wants c
 extraction by default, and no manual confirmation for values the system is confident
 about.
 
+The "prose merged into a biomarker name" failure has a concrete, identified root
+cause. Positioned fragments did not record their page, and rows were clustered by
+vertical position across the whole document. So a biomarker name on the results page
+and an unrelated line on a later non-table page — a billing/marketing page bundled
+into the same PDF — that happened to share a vertical coordinate collapsed into one
+row, and the name cell absorbed the foreign text. The earlier name-bounding fix only
+capped the symptom; clustering per page removes the cause.
+
 ## Decision
 
 Reduce extraction friction to near-zero while keeping a safety net:
 
 1. Clean-by-default extraction.
+   - Page-aware row clustering: positioned fragments carry their page number, and rows
+     are reconstructed within a single page, never across pages. This removes the
+     cross-page collision that was the main source of merged-in prose, and means a
+     non-table page (no recognized header row) contributes no candidates.
    - Anchor the extracted name on the user's biomarker catalog: if a catalog
      biomarker name is a prefix of (or confidently matches) the extracted text, use
      the catalog's canonical name and set `biomarker_id`. Deterministic, local, no AI.
@@ -38,6 +54,17 @@ Reduce extraction friction to near-zero while keeping a safety net:
    sanitized synthetic fixture (no real PDF/values) and the parser is tuned until that
    format is clean, locked by a test. For the small set of labs the user actually
    uses, this converges to effectively perfect.
+4. Upload-first, instant-result intake (UX expression of the zero-friction goal).
+   - The empty intake/dashboard state is the upload itself — a single "drop your lab
+     PDF" zone (PDF only; no OCR/image path, per ADR-0009), not a form. No account or
+     email step is introduced, and nothing leaves the device.
+   - While the local parse runs, a deterministic progress affordance shows the stages
+     (extract → values → status → trend) so the work is visible.
+   - On completion the user lands on the result — auto-confirmed values, status, and
+     trend — with any below-threshold rows in a small review strip. The first thing
+     shown is the user's own data, not a form.
+   - This is the local, no-funnel counterpart to commercial upload-first demos: the
+     same immediacy, without lead capture, off-device upload, or AI.
 
 This relaxes ADR-0009's "structured values become usable only after explicit user
 review": high-confidence extracted values may now be auto-confirmed. Draft-then-confirm
@@ -63,8 +90,22 @@ the backstop.
 
 - Source: live verification (blood test 5, sanitized)
   - Claim type: fact
-  - Summary: Bounded names and low-confidence flags work; the residual friction is the
-    few prose-polluted / low-confidence drafts.
+  - Summary: Bounded names and low-confidence flags work, but only cap the symptom; the
+    residual friction is the few prose-polluted / low-confidence drafts.
+
+- Source: real tabular layout reviewed (sanitized, 2026-06-19)
+  - Claim type: fact
+  - Summary: The merged-in prose originates on a separate non-table page bundled into
+    the same PDF, not interleaved in the results table. The parser merged it because
+    rows were clustered by vertical position across pages. Page-aware clustering
+    removes the cause; no real content or values were logged or committed.
+
+- Source: competitive UX review (sanitized, 2026-06-19)
+  - Claim type: fact
+  - Summary: Commercial upload-first demo flows lead with the PDF upload as the first
+    action and land on an immediate result, which reads as strong; they pay for it with
+    email/lead capture and off-device processing. The local app reproduces the
+    immediacy with neither cost.
 
 - Source: `docs/adr/0009-...` and `docs/adr/0010-...`
   - Claim type: fact
@@ -90,6 +131,11 @@ the backstop.
 
 ## Consequences
 
+- `PositionedTextFragment` carries a page number, and tabular rows are clustered per
+  page, so text from a different page never merges into a cell.
+- The intake/empty state becomes upload-first (a dropzone, not a form), and the
+  post-upload screen lands on auto-confirmed results rather than an empty review form.
+  No email or account is introduced; nothing leaves the device.
 - `biomarker_results` may be created with `confirmed_at` set at upload for
   high-confidence rows.
 - A named confidence threshold, the catalog anchor, and per-format tuning are added to
