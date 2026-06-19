@@ -82,6 +82,7 @@ it('exports owned health data as a downloadable json file without other users ro
 
     $otherCategory = BiomarkerCategory::factory()->for($otherUser)->create(['name' => 'Other category']);
     $otherBiomarker = Biomarker::factory()->for($otherUser)->for($otherCategory, 'category')->create(['name' => 'Other marker']);
+    Biomarker::factory()->for($user)->for($otherCategory, 'category')->create(['name' => 'Corrupt categorized marker']);
     $otherBloodTest = BloodTest::factory()->for($otherUser)->create(['title' => 'Other user test']);
     $otherDocument = BloodTestDocument::factory()->for($otherBloodTest)->create(['original_filename' => 'other-lab.pdf']);
     Storage::disk('local')->put($otherDocument->storage_path, 'other pdf bytes');
@@ -115,6 +116,7 @@ it('exports owned health data as a downloadable json file without other users ro
     expect(array_column($payload['blood_tests'], 'title'))->toContain('Owner June test')->not->toContain('Other user test');
     expect(array_column($payload['biomarker_categories'], 'name'))->toContain('Inflammation')->not->toContain('Other category');
     expect(array_column($payload['biomarkers'], 'name'))->toContain('Ferritin')->not->toContain('Other marker');
+    expect(collect($payload['biomarkers'])->firstWhere('name', 'Corrupt categorized marker')['biomarker_category_id'])->toBeNull();
     expect(array_column($payload['biomarker_results'], 'note'))->toContain('Confirmed from PDF.')
         ->not->toContain('Draft extraction should stay out.')
         ->not->toContain('Foreign biomarker link should stay out.');

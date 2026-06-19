@@ -91,12 +91,13 @@ class BuildDataExport
     private function biomarkers(User $user): array
     {
         return array_values(Biomarker::query()
+            ->with('category')
             ->where('user_id', $user->id)
             ->orderBy('name')
             ->get()
             ->map(fn (Biomarker $biomarker): array => [
                 'id' => $biomarker->id,
-                'biomarker_category_id' => $biomarker->biomarker_category_id,
+                'biomarker_category_id' => $this->ownedBiomarkerCategoryId($biomarker, $user),
                 'name' => $biomarker->name,
                 'short_name' => $biomarker->short_name,
                 'default_unit' => $biomarker->default_unit,
@@ -109,6 +110,17 @@ class BuildDataExport
                 'updated_at' => $biomarker->updated_at?->toISOString(),
             ])
             ->all());
+    }
+
+    private function ownedBiomarkerCategoryId(Biomarker $biomarker, User $user): ?int
+    {
+        if ($biomarker->biomarker_category_id === null) {
+            return null;
+        }
+
+        return $biomarker->category?->user_id === $user->id
+            ? $biomarker->biomarker_category_id
+            : null;
     }
 
     /**
