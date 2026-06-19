@@ -308,8 +308,11 @@ class ReviewBloodTest extends Component
 
     private function resultUsesOwnedBiomarker(BiomarkerResult $result): bool
     {
-        return $result->biomarker_id === null
-            || $result->biomarker?->user_id === Auth::id();
+        if ($result->biomarker_id === null) {
+            return $result->confirmed_at === null && $result->entry_source === 'extracted';
+        }
+
+        return $result->biomarker?->user_id === Auth::id();
     }
 
     private function formatDecimal(mixed $value): ?string

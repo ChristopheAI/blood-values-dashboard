@@ -85,6 +85,22 @@ it('rejects review state with a cross-owner biomarker relation', function () {
         ->assertForbidden();
 });
 
+it('rejects confirmed review state without a biomarker relation', function () {
+    $owner = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($owner)->create(['status' => 'confirmed']);
+
+    BiomarkerResult::factory()->for($bloodTest)->create([
+        'biomarker_id' => null,
+        'entry_source' => 'pdf_reviewed',
+        'confirmed_at' => now(),
+        'extracted_name' => 'Sanitized extracted marker',
+    ]);
+
+    Livewire::actingAs($owner)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertForbidden();
+});
+
 it('rejects a tampered zero biomarker id instead of treating it as a new biomarker', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create();
