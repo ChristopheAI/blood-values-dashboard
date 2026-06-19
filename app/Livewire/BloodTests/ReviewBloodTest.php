@@ -46,6 +46,8 @@ class ReviewBloodTest extends Component
             ? null
             : $this->ownedConfirmedResult($this->editingResultId, $bloodTest);
 
+        $this->resultForm = $this->normalizeResultForm($this->resultForm);
+
         $validated = $this->validate([
             'resultForm.biomarker_id' => ['nullable', 'integer', 'min:1'],
             'resultForm.name' => ['required_without:resultForm.biomarker_id', 'nullable', 'string', 'max:255'],
@@ -253,9 +255,16 @@ class ReviewBloodTest extends Component
      */
     private function normalizeResultForm(array $form): array
     {
-        foreach (['name', 'value', 'unit', 'reference_unit', 'note'] as $field) {
+        foreach (['name', 'unit', 'reference_unit', 'note'] as $field) {
             if (array_key_exists($field, $form) && is_string($form[$field])) {
                 $form[$field] = trim($form[$field]);
+            }
+        }
+
+        foreach (['value', 'reference_min', 'reference_max'] as $field) {
+            if (array_key_exists($field, $form) && is_string($form[$field])) {
+                $value = str_replace(',', '.', trim($form[$field]));
+                $form[$field] = $value === '' && $field !== 'value' ? null : $value;
             }
         }
 

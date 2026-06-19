@@ -138,6 +138,26 @@ it('treats the create-new select empty value as no biomarker id', function () {
         ->and($result->biomarker_id)->toBe($biomarker->id);
 });
 
+it('rejects whitespace-only manual biomarker names and units after trimming', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->set('resultForm.biomarker_id', '')
+        ->set('resultForm.name', '   ')
+        ->set('resultForm.value', '42')
+        ->set('resultForm.unit', '   ')
+        ->call('confirmResult')
+        ->assertHasErrors([
+            'resultForm.name' => 'required_without',
+            'resultForm.unit' => 'required',
+        ]);
+
+    expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(0)
+        ->and(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->count())->toBe(0);
+});
+
 it('trims padded review form names and units before storing confirmed values', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create();
@@ -161,6 +181,32 @@ it('trims padded review form names and units before storing confirmed values', f
         ->and($biomarker->reference_unit)->toBe('ug/L')
         ->and($result->unit)->toBe('ug/L')
         ->and($result->reference_unit)->toBe('ug/L');
+});
+
+it('accepts decimal comma values in manual review input', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->set('resultForm.name', 'Marker Alpha')
+        ->set('resultForm.value', '12,4')
+        ->set('resultForm.unit', 'mg/L')
+        ->set('resultForm.reference_min', '10,0')
+        ->set('resultForm.reference_max', '20,0')
+        ->set('resultForm.reference_unit', 'mg/L')
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    $biomarker = Biomarker::query()->where('user_id', $user->id)->firstOrFail();
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect((float) $biomarker->reference_min)->toBe(10.0)
+        ->and((float) $biomarker->reference_max)->toBe(20.0)
+        ->and((float) $result->value)->toBe(12.4)
+        ->and((float) $result->reference_min)->toBe(10.0)
+        ->and((float) $result->reference_max)->toBe(20.0)
+        ->and($result->status)->toBe('normal');
 });
 
 it('reuses an owned biomarker when a manual review name only differs by case', function () {
