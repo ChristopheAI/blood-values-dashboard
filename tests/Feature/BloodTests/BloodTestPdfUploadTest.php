@@ -102,6 +102,33 @@ it('original filename is sanitized before display storage', function () {
         ->not->toContain('>');
 });
 
+it('removes the stored pdf when intake persistence fails after upload', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $file = UploadedFile::fake()->create('lab-result.pdf', 64, 'application/pdf');
+    $caught = null;
+
+    BloodTestDocument::created(function (): void {
+        throw new RuntimeException('Synthetic document persistence failure');
+    });
+
+    try {
+        $this->withoutExceptionHandling()
+            ->actingAs($user)
+            ->post(route('blood-tests.store'), ['document' => $file]);
+    } catch (RuntimeException $exception) {
+        $caught = $exception;
+    } finally {
+        BloodTestDocument::flushEventListeners();
+    }
+
+    expect($caught?->getMessage())->toBe('Synthetic document persistence failure')
+        ->and(BloodTest::query()->count())->toBe(0)
+        ->and(BloodTestDocument::query()->count())->toBe(0)
+        ->and(Storage::disk('local')->allFiles('blood-test-documents'))->toBe([]);
+});
+
 it('pdf upload rejects non pdf files', function () {
     Storage::fake('local');
 
