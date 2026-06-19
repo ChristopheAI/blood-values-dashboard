@@ -29,22 +29,23 @@ class StoreBloodTestController extends Controller
         $user = Auth::user();
         $storedName = Str::uuid().'.pdf';
         $storagePath = $file->storeAs("blood-test-documents/{$user->id}", $storedName, 'local');
+        $originalFilename = $this->sanitizeFilename($file->getClientOriginalName());
 
         $bloodTest = null;
         $document = null;
 
         try {
-            DB::transaction(function () use (&$bloodTest, &$document, $file, $storagePath, $user, $validated): void {
+            DB::transaction(function () use (&$bloodTest, &$document, $file, $storagePath, $user, $validated, $originalFilename): void {
                 $bloodTest = BloodTest::create([
                     'user_id' => $user->id,
                     'test_date' => $validated['test_date'] ?? null,
                     'lab_name' => $validated['lab_name'] ?? null,
-                    'title' => $validated['title'] ?? null,
+                    'title' => $validated['title'] ?? $this->defaultTitleFromFilename($originalFilename),
                     'status' => 'uploaded',
                 ]);
 
                 $document = $bloodTest->documents()->create([
-                    'original_filename' => $this->sanitizeFilename($file->getClientOriginalName()),
+                    'original_filename' => $originalFilename,
                     'storage_disk' => 'local',
                     'storage_path' => $storagePath,
                     'mime_type' => $file->getMimeType(),
@@ -72,6 +73,13 @@ class StoreBloodTestController extends Controller
         $sanitized = trim($cleaned, '. -') ?: 'lab-result.pdf';
 
         return $this->limitFilename($sanitized);
+    }
+
+    private function defaultTitleFromFilename(string $filename): string
+    {
+        $title = trim(pathinfo($filename, PATHINFO_FILENAME));
+
+        return $title === '' ? $filename : $this->limitFilename($title);
     }
 
     private function limitFilename(string $filename): string

@@ -34,6 +34,23 @@ it('owner can upload a lab pdf to private storage', function () {
     Storage::disk('public')->assertMissing($document->storage_path);
 });
 
+it('uses the sanitized pdf filename as the upload-first title when no metadata is posted', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $file = UploadedFile::fake()->create('bloedafname 8april2026.pdf', 64, 'application/pdf');
+
+    $this->actingAs($user)
+        ->post(route('blood-tests.store'), ['document' => $file])
+        ->assertRedirect();
+
+    $bloodTest = BloodTest::query()->firstOrFail();
+
+    expect($bloodTest->title)->toBe('bloedafname 8april2026')
+        ->and($bloodTest->test_date)->toBeNull()
+        ->and($bloodTest->lab_name)->toBeNull();
+});
+
 it('renders an upload-first empty intake dropzone without metadata or account fields', function () {
     $user = User::factory()->create();
 
