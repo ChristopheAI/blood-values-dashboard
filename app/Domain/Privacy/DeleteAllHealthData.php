@@ -4,6 +4,7 @@ namespace App\Domain\Privacy;
 
 use App\Models\Biomarker;
 use App\Models\BiomarkerCategory;
+use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
 use App\Models\ContextNote;
@@ -26,6 +27,10 @@ class DeleteAllHealthData
         }
 
         DB::transaction(function () use ($user): void {
+            $ownedBiomarkerIds = Biomarker::query()
+                ->where('user_id', $user->id)
+                ->pluck('id');
+
             ContextNote::query()
                 ->where('user_id', $user->id)
                 ->delete();
@@ -41,6 +46,11 @@ class DeleteAllHealthData
             BloodTest::query()
                 ->where('user_id', $user->id)
                 ->delete();
+
+            BiomarkerResult::query()
+                ->whereIn('biomarker_id', $ownedBiomarkerIds)
+                ->whereHas('bloodTest', fn ($query) => $query->where('user_id', '!=', $user->id))
+                ->update(['biomarker_id' => null]);
 
             Biomarker::query()
                 ->where('user_id', $user->id)

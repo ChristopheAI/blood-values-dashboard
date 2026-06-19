@@ -181,6 +181,11 @@ it('deletes all owned health data and private documents without deleting the acc
     ]);
     Storage::disk('local')->put($otherDocument->storage_path, 'other pdf bytes');
     BiomarkerResult::factory()->for($otherBloodTest)->for($otherBiomarker)->create();
+    $otherUsersResultWithOwnerBiomarker = BiomarkerResult::factory()->for($otherBloodTest)->for($biomarker)->create([
+        'value' => 321,
+        'unit' => 'ug/L',
+        'confirmed_at' => now(),
+    ]);
     PinnedBiomarker::factory()->for($otherUser)->for($otherBiomarker)->create();
     ContextNote::factory()->for($otherUser)->for($otherBloodTest)->create();
     Reminder::factory()->for($otherUser)->create(['title' => 'Other reminder']);
@@ -203,6 +208,8 @@ it('deletes all owned health data and private documents without deleting the acc
     expect(BloodTest::query()->where('user_id', $otherUser->id)->count())->toBe(1);
     expect(Biomarker::query()->where('user_id', $otherUser->id)->count())->toBe(1);
     expect(BiomarkerCategory::query()->where('user_id', $otherUser->id)->count())->toBe(1);
+    expect(BiomarkerResult::query()->whereKey($otherUsersResultWithOwnerBiomarker->id)->exists())->toBeTrue();
+    expect(BiomarkerResult::query()->whereKey($otherUsersResultWithOwnerBiomarker->id)->value('biomarker_id'))->toBeNull();
     expect(PinnedBiomarker::query()->where('user_id', $otherUser->id)->count())->toBe(1);
     expect(ContextNote::query()->where('user_id', $otherUser->id)->count())->toBe(1);
     expect(Reminder::query()->where('user_id', $otherUser->id)->count())->toBe(1);
