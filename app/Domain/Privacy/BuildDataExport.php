@@ -203,13 +203,14 @@ class BuildDataExport
     private function contextNotes(User $user): array
     {
         return array_values(ContextNote::query()
+            ->with('bloodTest')
             ->where('user_id', $user->id)
             ->orderBy('note_date')
             ->orderBy('id')
             ->get()
             ->map(fn (ContextNote $note): array => [
                 'id' => $note->id,
-                'blood_test_id' => $note->blood_test_id,
+                'blood_test_id' => $this->ownedContextNoteBloodTestId($note, $user),
                 'note_date' => $note->note_date->toDateString(),
                 'category' => $note->category->value,
                 'body' => $note->body,
@@ -217,6 +218,17 @@ class BuildDataExport
                 'updated_at' => $note->updated_at?->toISOString(),
             ])
             ->all());
+    }
+
+    private function ownedContextNoteBloodTestId(ContextNote $note, User $user): ?int
+    {
+        if ($note->blood_test_id === null) {
+            return null;
+        }
+
+        return $note->bloodTest?->user_id === $user->id
+            ? $note->blood_test_id
+            : null;
     }
 
     /**

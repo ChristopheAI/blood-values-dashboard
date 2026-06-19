@@ -96,6 +96,10 @@ it('exports owned health data as a downloadable json file without other users ro
     ]);
     PinnedBiomarker::factory()->for($otherUser)->for($otherBiomarker)->create(['note' => 'Other pin']);
     PinnedBiomarker::factory()->for($user)->for($otherBiomarker)->create(['note' => 'Foreign biomarker pin should stay out.']);
+    ContextNote::factory()->for($user)->create([
+        'blood_test_id' => $otherBloodTest->id,
+        'body' => 'Owned context with foreign blood test link.',
+    ]);
     ContextNote::factory()->for($otherUser)->create(['body' => 'Other context']);
     Reminder::factory()->for($otherUser)->create([
         'title' => 'Other reminder',
@@ -125,6 +129,7 @@ it('exports owned health data as a downloadable json file without other users ro
         ->not->toContain('Other pin')
         ->not->toContain('Foreign biomarker pin should stay out.');
     expect(array_column($payload['context_notes'], 'body'))->toContain('Short sleep before test.')->not->toContain('Other context');
+    expect(collect($payload['context_notes'])->firstWhere('body', 'Owned context with foreign blood test link.')['blood_test_id'])->toBeNull();
     expect(array_column($payload['reminders'], 'title'))->toContain('Owner reminder')->not->toContain('Other reminder');
     expect($payload['reminders'][0]['due_date'])->toBe('2026-07-15');
     expect($payload['reminders'][0]['note'])->toBe('Plan next lab.');
