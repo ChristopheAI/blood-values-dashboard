@@ -416,6 +416,48 @@ it('auto-confirms high confidence catalog matched candidates and leaves lower co
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
+it('preserves repeated unmatched extracted names as separate draft rows', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    $run = runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Repeated Marker',
+            value: '5',
+            unit: 'U/mL',
+            referenceMin: null,
+            referenceMax: '8',
+            referenceUnit: 'U/mL',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic repeated row one',
+        ),
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Repeated Marker',
+            value: '7',
+            unit: 'U/mL',
+            referenceMin: null,
+            referenceMax: '8',
+            referenceUnit: 'U/mL',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic repeated row two',
+        ),
+    ]);
+
+    $drafts = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->whereNull('biomarker_id')
+        ->orderBy('id')
+        ->get();
+
+    expect($run->status)->toBe('done')
+        ->and($run->candidate_count)->toBe(2)
+        ->and($drafts)->toHaveCount(2)
+        ->and($drafts->pluck('extracted_name')->all())->toBe(['Repeated Marker', 'Repeated Marker'])
+        ->and($drafts->pluck('value')->map(fn (string $value): float => (float) $value)->all())->toBe([5.0, 7.0]);
+});
+
 it('marks the blood test confirmed when every extracted candidate is auto-confirmed', function () {
     Storage::fake('local');
 

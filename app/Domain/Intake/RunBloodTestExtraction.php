@@ -71,6 +71,7 @@ class RunBloodTestExtraction
             $autoConfirm = $this->shouldAutoConfirm($document, $candidate, $biomarker);
             $confirmedAt = $autoConfirm ? now() : null;
             $extractedName = $biomarker instanceof Biomarker ? $biomarker->name : $candidate->extractedName;
+            $sourceSnippet = Str::limit($candidate->sourceSnippet, 500, '');
 
             $attributes = [
                 'blood_test_id' => $bloodTest->id,
@@ -83,6 +84,7 @@ class RunBloodTestExtraction
                 $attributes['biomarker_id'] = null;
                 $attributes['extracted_name'] = $extractedName;
                 $attributes['confirmed_at'] = null;
+                $attributes['source_snippet'] = $sourceSnippet;
             }
 
             BiomarkerResult::query()->updateOrCreate(
@@ -99,7 +101,7 @@ class RunBloodTestExtraction
                     'entry_source' => 'extracted',
                     'confirmed_at' => $confirmedAt,
                     'extraction_confidence' => $candidate->confidence,
-                    'source_snippet' => Str::limit($candidate->sourceSnippet, 500, ''),
+                    'source_snippet' => $sourceSnippet,
                 ],
             );
 
