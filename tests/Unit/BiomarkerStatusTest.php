@@ -13,7 +13,11 @@ it('determines biomarker status from value unit and reference range', function (
         'mismatched unit returns unknown' => [15.0, 'mg/L', 10.0, 20.0, 'g/L', 'unknown'],
         'reversed range returns unknown' => [15.0, 'g/L', 20.0, 10.0, 'g/L', 'unknown'],
         'one-sided minimum below threshold returns low' => [9.9, 'g/L', 10.0, null, 'g/L', 'low'],
+        'one-sided minimum at threshold returns normal' => [10.0, 'g/L', 10.0, null, 'g/L', 'normal'],
+        'one-sided minimum above threshold returns normal' => [10.1, 'g/L', 10.0, null, 'g/L', 'normal'],
         'one-sided maximum above threshold returns high' => [20.1, 'g/L', null, 20.0, 'g/L', 'high'],
+        'one-sided maximum at threshold returns normal' => [20.0, 'g/L', null, 20.0, 'g/L', 'normal'],
+        'one-sided maximum below threshold returns normal' => [19.9, 'g/L', null, 20.0, 'g/L', 'normal'],
     ];
 
     foreach ($cases as $label => [$value, $valueUnit, $minimum, $maximum, $rangeUnit, $expectedStatus]) {
