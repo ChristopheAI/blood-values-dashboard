@@ -210,6 +210,98 @@ it('shows auto-confirmed extracted values as auto-filled and lets the owner edit
     expect(BiomarkerResult::query()->whereKey($result->id)->exists())->toBeFalse();
 });
 
+it('rejects confirming a draft as a biomarker already present on the same blood test', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $vitaminD = Biomarker::factory()->for($user)->create(['name' => 'Vitamin D']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    $confirmed = BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'pdf_reviewed',
+        'confirmed_at' => now(),
+    ]);
+    $draft = BiomarkerResult::factory()->for($bloodTest)->for($vitaminD)->create([
+        'value' => 61,
+        'unit' => 'nmol/L',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Vitamin D',
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('useDraft', $draft->id)
+        ->set('resultForm.biomarker_id', $ferritin->id);
+
+    $exception = null;
+
+    try {
+        $component->call('confirmResult');
+    } catch (Throwable $caught) {
+        $exception = $caught;
+    }
+
+    expect($exception)->toBeNull();
+
+    $component->assertHasErrors(['resultForm.biomarker_id']);
+
+    expect($draft->refresh()->confirmed_at)->toBeNull()
+        ->and($draft->biomarker_id)->toBe($vitaminD->id)
+        ->and((float) $confirmed->refresh()->value)->toBe(42.0)
+        ->and(BiomarkerResult::query()
+            ->where('blood_test_id', $bloodTest->id)
+            ->where('biomarker_id', $ferritin->id)
+            ->count())->toBe(1);
+});
+
+it('rejects editing a confirmed result to duplicate another biomarker on the same blood test', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $vitaminD = Biomarker::factory()->for($user)->create(['name' => 'Vitamin D']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    $ferritinResult = BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'pdf_reviewed',
+        'confirmed_at' => now(),
+    ]);
+    $vitaminDResult = BiomarkerResult::factory()->for($bloodTest)->for($vitaminD)->create([
+        'value' => 61,
+        'unit' => 'nmol/L',
+        'status' => 'normal',
+        'entry_source' => 'pdf_reviewed',
+        'confirmed_at' => now(),
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('editConfirmedResult', $vitaminDResult->id)
+        ->set('resultForm.biomarker_id', $ferritin->id);
+
+    $exception = null;
+
+    try {
+        $component->call('confirmResult');
+    } catch (Throwable $caught) {
+        $exception = $caught;
+    }
+
+    expect($exception)->toBeNull();
+
+    $component->assertHasErrors(['resultForm.biomarker_id']);
+
+    expect($vitaminDResult->refresh()->biomarker_id)->toBe($vitaminD->id)
+        ->and((float) $vitaminDResult->value)->toBe(61.0)
+        ->and((float) $ferritinResult->refresh()->value)->toBe(42.0)
+        ->and(BiomarkerResult::query()
+            ->where('blood_test_id', $bloodTest->id)
+            ->where('biomarker_id', $ferritin->id)
+            ->count())->toBe(1);
+});
+
 it('blocks using another users extracted draft from a tampered livewire action', function () {
     $owner = User::factory()->create();
     $otherUser = User::factory()->create();

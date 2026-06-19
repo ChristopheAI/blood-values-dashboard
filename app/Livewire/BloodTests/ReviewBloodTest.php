@@ -58,6 +58,17 @@ class ReviewBloodTest extends Component
 
         $form = $this->normalizeResultForm($validated['resultForm']);
         $biomarker = $this->ownedBiomarker($form);
+        $currentResultId = $editingResult->id ?? $draft->id ?? null;
+
+        if ($currentResultId !== null && $this->hasOtherResultForBiomarker($bloodTest, $biomarker, $currentResultId)) {
+            $this->addError(
+                $this->duplicateBiomarkerErrorField($form),
+                'This biomarker already has a value for this blood test.',
+            );
+
+            return;
+        }
+
         $status = (new DetermineBiomarkerStatus)(
             value: (float) $form['value'],
             valueUnit: $form['unit'],
@@ -276,6 +287,23 @@ class ReviewBloodTest extends Component
                 'active' => true,
             ],
         );
+    }
+
+    private function hasOtherResultForBiomarker(BloodTest $bloodTest, Biomarker $biomarker, int $currentResultId): bool
+    {
+        return BiomarkerResult::query()
+            ->where('blood_test_id', $bloodTest->id)
+            ->where('biomarker_id', $biomarker->id)
+            ->whereKeyNot($currentResultId)
+            ->exists();
+    }
+
+    /**
+     * @param  array<string, mixed>  $form
+     */
+    private function duplicateBiomarkerErrorField(array $form): string
+    {
+        return $form['biomarker_id'] === null ? 'resultForm.name' : 'resultForm.biomarker_id';
     }
 
     private function resultUsesOwnedBiomarker(BiomarkerResult $result): bool
