@@ -135,3 +135,29 @@ it('caps tabular extraction candidates', function () {
 
     expect($extract($fragments))->toHaveCount(80);
 });
+
+it('bounds and flags an over-captured biomarker name', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analysis', 180, 700),
+        new PositionedTextFragment('Value', 300, 700),
+        new PositionedTextFragment('Unit', 390, 700),
+        new PositionedTextFragment('Reference', 480, 700),
+        new PositionedTextFragment('Unrelated', 20, 680),
+        new PositionedTextFragment('prose', 40, 680),
+        new PositionedTextFragment('Marker', 180, 680),
+        new PositionedTextFragment('Alpha', 195, 680),
+        new PositionedTextFragment('lorem', 210, 680),
+        new PositionedTextFragment('ipsum', 225, 680),
+        new PositionedTextFragment('dolor', 238, 680),
+        new PositionedTextFragment('12,4', 300, 680),
+        new PositionedTextFragment('mg/L', 390, 680),
+        new PositionedTextFragment('10 - 20', 480, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1);
+    expect($candidates[0]->extractedName)->toBe('Marker Alpha lorem ipsum');
+    expect(count(explode(' ', $candidates[0]->extractedName)))->toBeLessThanOrEqual(4);
+    expect($candidates[0]->confidence)->toBeLessThanOrEqual(0.6);
+});

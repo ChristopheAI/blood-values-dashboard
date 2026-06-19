@@ -142,7 +142,7 @@ class ExtractTabularBiomarkerCandidates
         return [
             'columns' => [
                 'name' => [
-                    'left' => -INF,
+                    'left' => $columns['name'] - ($columns['value'] - $columns['name']),
                     'x' => $columns['name'],
                     'right' => $this->midpoint($columns['name'], $columns['value']),
                 ],
@@ -259,14 +259,23 @@ class ExtractTabularBiomarkerCandidates
         $isOneSided = str_contains($cells['value'], '<') || str_contains($cells['value'], '>')
             || str_contains($cells['reference'], '<') || str_contains($cells['reference'], '>');
 
+        $name = $this->sanitizeName($cells['name']);
+        $nameWasTruncated = $name !== $cells['name'];
+
+        $confidence = $inferredValueColumn ? 0.7 : ($isOneSided ? 0.75 : 0.85);
+
+        if ($nameWasTruncated) {
+            $confidence = min($confidence, 0.6);
+        }
+
         return new ExtractedBiomarkerCandidate(
-            extractedName: $cells['name'],
+            extractedName: $name,
             value: $value,
             unit: $cells['unit'],
             referenceMin: $reference['min'],
             referenceMax: $reference['max'],
             referenceUnit: $cells['unit'],
-            confidence: $inferredValueColumn ? 0.7 : ($isOneSided ? 0.75 : 0.85),
+            confidence: $confidence,
             sourceSnippet: $this->sourceSnippet($cells),
         );
     }
@@ -333,5 +342,28 @@ class ExtractTabularBiomarkerCandidates
     private function cleanNumber(string $number): string
     {
         return str_replace(',', '.', trim($number));
+    }
+
+    private function sanitizeName(string $name): string
+    {
+        $name = $this->cleanText($name);
+
+        if ($name === '') {
+            return '';
+        }
+
+        $words = explode(' ', $name);
+
+        if (count($words) > 4) {
+            $words = array_slice($words, 0, 4);
+        }
+
+        $name = implode(' ', $words);
+
+        if (mb_strlen($name) > 48) {
+            $name = rtrim(mb_substr($name, 0, 48));
+        }
+
+        return $name;
     }
 }
