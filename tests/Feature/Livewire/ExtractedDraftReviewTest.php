@@ -118,6 +118,7 @@ it('frames the review form as extracted value review when drafts exist', functio
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
     $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    BloodTestDocument::factory()->for($bloodTest)->create();
     BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
         'entry_source' => 'extracted',
         'confirmed_at' => null,
@@ -129,6 +130,24 @@ it('frames the review form as extracted value review when drafts exist', functio
         ->assertSee('Review extracted values')
         ->assertSee('Read from your PDF')
         ->assertDontSee('Add your values');
+});
+
+it('does not tell the owner to read from a deleted PDF when drafts remain', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Ferritin',
+        'source_snippet' => null,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('No source document is attached.')
+        ->assertSee('Review the extracted rows; the source PDF is no longer attached. Nothing counts until you confirm a row.')
+        ->assertDontSee('Read from your PDF');
 });
 
 it('does not tell the owner nothing counts when auto-confirmed values are already active', function () {

@@ -202,6 +202,8 @@
                 <flux:text>
                     @if ($hasDraftResults && $confirmedCount > 0)
                         {{ __('Some values are already active for status and trends. Review only the remaining extracted rows.') }}
+                    @elseif ($hasDraftResults && ! $hasSourceDocuments)
+                        {{ __('Review the extracted rows; the source PDF is no longer attached. Nothing counts until you confirm a row.') }}
                     @elseif ($hasDraftResults)
                         {{ __('Read from your PDF; nothing counts until you confirm each one.') }}
                     @elseif ($extractionFoundNoDrafts && $hasSourceDocuments)
