@@ -82,6 +82,10 @@ fix. Do not re-dump real PDFs or log values.
   view with auto-confirmed values visible (not an empty review form); the empty state
   renders the dropzone as the primary action (`data-test`); no email/account field is
   introduced.
+- Dropzone definition of done: automated tests assert that the choose control is a
+  `<button type="button">`, the file input remains `name="document"` and
+  `accept="application/pdf"`, and the selected-file-name surface exists. Native OS file
+  picker opening and OS drag/drop acceptance remain manual UI checks during live review.
 - `PrivacyBoundaryTest` and `MedicalCopyBoundaryTest` stay green; no new
   package/network/OCR/AI.
 

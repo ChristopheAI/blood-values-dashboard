@@ -10,13 +10,51 @@
         >
             @csrf
 
-            <section class="grid min-h-[22rem] place-items-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center dark:border-neutral-700 dark:bg-neutral-900">
-                <label for="document" class="flex w-full max-w-2xl cursor-pointer flex-col items-center gap-4 rounded-lg border border-neutral-200 bg-white p-8 shadow-xs transition hover:border-blue-400 hover:bg-blue-50 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-blue-500 dark:hover:bg-neutral-800/80" data-test="lab-pdf-dropzone">
+            <section
+                x-data="{
+                    dragging: false,
+                    fileName: '',
+                    setFiles(files) {
+                        if (files && files.length) {
+                            $refs.input.files = files;
+                            this.fileName = files[0].name;
+                        }
+                    },
+                }"
+                @dragover.prevent="dragging = true"
+                @dragleave.prevent="dragging = false"
+                @drop.prevent="dragging = false; setFiles($event.dataTransfer.files)"
+                :class="dragging
+                    ? 'border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-neutral-800/80'
+                    : 'border-neutral-300 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900'"
+                class="grid min-h-[22rem] place-items-center rounded-lg border border-dashed p-8 text-center transition"
+                data-test="lab-pdf-dropzone"
+            >
+                <div class="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border border-neutral-200 bg-white p-8 shadow-xs dark:border-neutral-700 dark:bg-neutral-800">
                     <span class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ __('Sleep je lab-PDF hierheen') }}</span>
                     <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('PDF only') }}</span>
-                    <input id="document" name="document" type="file" accept="application/pdf" required class="sr-only" data-test="lab-pdf-input" />
-                    <span class="inline-flex h-10 items-center rounded-lg bg-neutral-900 px-4 text-sm font-medium text-white dark:bg-white dark:text-neutral-900">{{ __('Choose PDF') }}</span>
-                </label>
+
+                    <input
+                        x-ref="input"
+                        id="document"
+                        name="document"
+                        type="file"
+                        accept="application/pdf"
+                        required
+                        class="sr-only"
+                        data-test="lab-pdf-input"
+                        @change="fileName = $event.target.files[0]?.name ?? ''"
+                    />
+
+                    <button
+                        type="button"
+                        @click="$refs.input.click()"
+                        class="inline-flex h-10 cursor-pointer items-center rounded-lg bg-neutral-900 px-4 text-sm font-medium text-white dark:bg-white dark:text-neutral-900"
+                        data-test="choose-pdf-button"
+                    >{{ __('Choose PDF') }}</button>
+
+                    <span x-show="fileName" x-text="fileName" class="text-sm text-neutral-600 dark:text-neutral-400" data-test="selected-file-name"></span>
+                </div>
 
                 @error('document')
                     <flux:text class="mt-4 text-red-600 dark:text-red-400">{{ $message }}</flux:text>
