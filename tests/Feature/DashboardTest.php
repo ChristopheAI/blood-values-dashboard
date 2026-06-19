@@ -67,6 +67,24 @@ class DashboardTest extends TestCase
             ->assertDontSee('Other marker');
     }
 
+    public function test_dashboard_ignores_confirmed_results_linked_to_another_users_biomarker(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+        $foreignMarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+
+        BiomarkerResult::factory()->for($bloodTest)->for($foreignMarker)->create([
+            'status' => 'high',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Foreign private marker');
+    }
+
     public function test_dashboard_shows_the_next_open_reminder_only(): void
     {
         $user = User::factory()->create();

@@ -120,6 +120,31 @@ it('rejects selected blood tests not owned by the authenticated user', function 
         ->assertForbidden();
 });
 
+it('does not render confirmed results linked to another users biomarker', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+    $foreignMarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($foreignMarker)->create([
+        'value' => 123,
+        'unit' => 'mg/L',
+        'status' => 'high',
+        'confirmed_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'from' => '2026-06-01',
+            'to' => '2026-06-01',
+            'include_attention' => '1',
+            'include_trends' => '1',
+        ])
+        ->assertOk()
+        ->assertDontSee('Foreign private marker')
+        ->assertDontSee('123');
+});
+
 it('exports the consult overview structured rows as csv', function () {
     $user = User::factory()->create();
     $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);

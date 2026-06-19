@@ -117,8 +117,7 @@ class BuildDataExport
     private function biomarkerResults(User $user): array
     {
         return array_values(BiomarkerResult::query()
-            ->whereNotNull('confirmed_at')
-            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $user->id))
+            ->confirmedForUser($user->id)
             ->join('blood_tests', 'biomarker_results.blood_test_id', '=', 'blood_tests.id')
             ->orderBy('blood_tests.test_date')
             ->orderBy('biomarker_results.id')

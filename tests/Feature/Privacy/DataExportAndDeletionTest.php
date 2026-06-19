@@ -86,6 +86,13 @@ it('exports owned health data as a downloadable json file without other users ro
     $otherDocument = BloodTestDocument::factory()->for($otherBloodTest)->create(['original_filename' => 'other-lab.pdf']);
     Storage::disk('local')->put($otherDocument->storage_path, 'other pdf bytes');
     BiomarkerResult::factory()->for($otherBloodTest)->for($otherBiomarker)->create(['value' => 123]);
+    BiomarkerResult::factory()->for($bloodTest)->for($otherBiomarker)->create([
+        'value' => 456,
+        'unit' => 'mg/L',
+        'status' => 'high',
+        'confirmed_at' => '2026-06-01 10:00:00',
+        'note' => 'Foreign biomarker link should stay out.',
+    ]);
     PinnedBiomarker::factory()->for($otherUser)->for($otherBiomarker)->create(['note' => 'Other pin']);
     ContextNote::factory()->for($otherUser)->create(['body' => 'Other context']);
     Reminder::factory()->for($otherUser)->create([
@@ -107,7 +114,9 @@ it('exports owned health data as a downloadable json file without other users ro
     expect(array_column($payload['blood_tests'], 'title'))->toContain('Owner June test')->not->toContain('Other user test');
     expect(array_column($payload['biomarker_categories'], 'name'))->toContain('Inflammation')->not->toContain('Other category');
     expect(array_column($payload['biomarkers'], 'name'))->toContain('Ferritin')->not->toContain('Other marker');
-    expect(array_column($payload['biomarker_results'], 'note'))->toContain('Confirmed from PDF.')->not->toContain('Draft extraction should stay out.');
+    expect(array_column($payload['biomarker_results'], 'note'))->toContain('Confirmed from PDF.')
+        ->not->toContain('Draft extraction should stay out.')
+        ->not->toContain('Foreign biomarker link should stay out.');
     expect(array_column($payload['documents'], 'original_filename'))->toContain('owner-lab.pdf')->not->toContain('other-lab.pdf');
     expect(array_column($payload['pinned_biomarkers'], 'note'))->toContain('Track before consult')->not->toContain('Other pin');
     expect(array_column($payload['context_notes'], 'body'))->toContain('Short sleep before test.')->not->toContain('Other context');

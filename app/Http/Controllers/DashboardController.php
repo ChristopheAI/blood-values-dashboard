@@ -27,9 +27,8 @@ class DashboardController extends Controller
                 ->orderBy('id')
                 ->first(),
             'attentionResults' => BiomarkerResult::query()
-                ->whereNotNull('confirmed_at')
+                ->confirmedForUser($user->id)
                 ->whereIn('status', ['low', 'high', 'unknown'])
-                ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $user->id))
                 ->with(['biomarker', 'bloodTest'])
                 ->latest('confirmed_at')
                 ->limit(10)

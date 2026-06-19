@@ -100,7 +100,11 @@ class CompareBloodTests
     {
         $results = [];
 
-        foreach ($bloodTest->confirmedResults()->whereNotNull('biomarker_id')->with('biomarker')->get() as $result) {
+        foreach (BiomarkerResult::query()
+            ->confirmedForUser($bloodTest->user_id)
+            ->where('blood_test_id', $bloodTest->id)
+            ->with('biomarker')
+            ->get() as $result) {
             $results[(int) $result->biomarker_id] = $result;
         }
 

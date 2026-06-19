@@ -107,9 +107,8 @@ class BuildConsultOverview
         }
 
         $query = BiomarkerResult::query()
-            ->whereNotNull('biomarker_results.confirmed_at')
+            ->confirmedForUser($user->id)
             ->whereIn('biomarker_results.blood_test_id', $bloodTestIds)
-            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $user->id))
             ->with(['biomarker', 'bloodTest'])
             ->join('blood_tests', 'biomarker_results.blood_test_id', '=', 'blood_tests.id')
             ->orderBy('blood_tests.test_date')
