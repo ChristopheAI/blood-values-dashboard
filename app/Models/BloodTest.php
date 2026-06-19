@@ -97,6 +97,10 @@ class BloodTest extends Model
      */
     public function contextNotes(): HasMany
     {
-        return $this->hasMany(ContextNote::class);
+        return $this->hasMany(ContextNote::class)
+            ->whereHas(
+                'bloodTest',
+                fn ($query) => $query->whereColumn('blood_tests.user_id', 'context_notes.user_id'),
+            );
     }
 }

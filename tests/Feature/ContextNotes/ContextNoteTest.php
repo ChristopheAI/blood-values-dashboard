@@ -105,6 +105,23 @@ it('shows context notes near their blood test', function () {
         ->assertDontSee('This belongs elsewhere.');
 });
 
+it('does not show corrupted another users context note on a blood test', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($owner)->create(['title' => 'Owner blood test']);
+
+    ContextNote::factory()->for($otherUser)->create([
+        'blood_test_id' => $bloodTest->id,
+        'category' => ContextNoteCategory::Stress->value,
+        'body' => 'Other private context note.',
+    ]);
+
+    $this->actingAs($owner)
+        ->get(route('blood-tests.show', $bloodTest))
+        ->assertOk()
+        ->assertDontSee('Other private context note.');
+});
+
 it('stores medication and supplement context as descriptive user text', function () {
     $user = User::factory()->create();
     $body = 'Medication noted: 25mg at breakfast. Supplement noted: magnesium in evening.';
