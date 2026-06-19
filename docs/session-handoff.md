@@ -35,24 +35,36 @@ The project is following the `ChristopheAI/Codex` starter-kit workflow:
 
 Update this section after each meaningful session.
 
-- Branch: `codex/pdf-first-intake-slice`
+- Branch: `codex/v2-clean-autoconfirm`
 - Worktree:
-  `/Users/christophe/.config/superpowers/worktrees/laravel-1st-project/pdf-first-intake-slice`
+  `/Users/christophe/Projects/Laravel 1st project`
 - Remote:
   - `origin` -> `https://github.com/ChristopheAI/blood-values-dashboard.git`
 - Commit state:
-  - Planning baseline, pre-scaffold review gate, AI Architect decision layer,
-    future AI-agent boundary, Freek/Spatie engineering profile, and engineering
-    source radar should be committed and pushed.
-  - The PDF-first intake test contract, repo/service layer diagrams, and
-    workflow-value evidence should be committed as planning-content checkpoints.
+  - V2 clean-by-default extraction and confidence-gated auto-confirm are
+    implemented on this branch and awaiting owner review/live verification.
+  - Do not merge yet. The user reviews the code and live-verifies a fresh upload
+    first.
 - Latest meaningful local checkpoint:
-  - The Laravel Livewire starter scaffold exists on this branch.
-  - The first PDF-first intake slice is implemented with private PDF upload,
-    owner-authorized document download, manual biomarker value confirmation,
-    status calculation, biomarker history, blood-test comparison, and deletion
-    access blocking.
-  - `sh scripts/validate.sh` is now implementation-stage validation and passes.
+  - Page-aware tabular row clustering prevents cross-page name pollution while
+    preserving real page-continuation rows.
+  - Catalog anchoring is deterministic and conservative: ambiguous exact aliases
+    and equal-strength prefixes stay as drafts.
+  - `AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85`; clean, unambiguous,
+    catalog-matched rows may be auto-confirmed, while prefix-only, ambiguous,
+    missing-unit, missing-range, unmatched, or noisy rows remain drafts.
+  - Empty intake is upload-first with a PDF dropzone and file-selection
+    auto-submit. No metadata form, email, account field, OCR, AI, external
+    service, or new package was introduced.
+  - The result screen lands on confirmed values, status/trend affordances, and a
+    compact review strip for below-threshold rows.
+  - Confirmed-only downstream behavior remains covered for dashboard, history,
+    compare, consult overview, and data export; auto-confirmed extracted rows
+    count as confirmed, drafts do not.
+  - Failed and empty extraction states are inspectable and fall back to manual
+    entry.
+  - Latest full local validation passed on this branch with `sh
+    scripts/validate.sh`.
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -205,19 +217,20 @@ Update this section after each meaningful session.
   - `sh scripts/validate.sh` passed with 54 tests, 565 assertions, Pint,
     PHPStan, frontend build, and whitespace checks.
 - Known gaps:
-  - The PDF-first pre-scaffold result is an internal planning review, not an
-    external human review.
-  - The first slice is manual-confirmation-first. It does not implement OCR,
-    lab-provider import, wearable import, export/delete account flows,
-    reminders, or consult exports yet.
-  - Browser workflow proof should be added before calling the user-facing slice
-    polished; current validation is automated tests, static analysis, build,
-    and whitespace checks.
+  - ADR-0011 is still Proposed until owner review and a fresh local upload
+    verify the real UX outside synthetic fixtures.
+  - Native OS picker opening and OS drag/drop acceptance are manual live-review
+    checks; automated Dusk coverage uses `attach()`.
+  - Each imperfect real lab format still needs a sanitized synthetic fixture
+    before parser tuning. Do not commit or log real PDF content or values.
+  - OCR, AI/LLM, provider integrations, wearable sync, and medical advice remain
+    out of scope unless a later spec/ADR deliberately expands the boundary.
 - Next recommended action:
-  - Run a browser smoke pass against upload, review/confirm, download, history,
-    compare, and delete flows.
-  - Keep Apple Health or wearable import as a separate V2 ADR/spec before any
-    implementation.
+  - Let the owner review this branch and live-verify a fresh local upload:
+    Choose PDF opens the native picker; drag/drop highlights and accepts a PDF;
+    upload lands on auto-filled results plus review strip.
+  - If live review finds another imperfect row, reproduce it as a sanitized
+    synthetic fixture first, then tune the parser against that test.
   - Before installing any Composer package that touches auth, files, exports,
     jobs, logs, or health data, create a package review note or ADR.
   - Keep new implementation inside the PDF-first V1 boundary unless a spec, ADR,
@@ -227,7 +240,7 @@ Update this section after each meaningful session.
 
 | Marker | Type | Meaning | How To Resume |
 | --- | --- | --- | --- |
-| pdf-first-intake-slice | project state | Laravel scaffold exists and the first PDF-first intake slice is implemented on `codex/pdf-first-intake-slice`. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v1-spec.md`, the active plan, review docs, and run `sh scripts/validate.sh`. |
+| v2-clean-autoconfirm | project state | V2 clean extraction, confidence-gated auto-confirm, upload-first intake, and hardening follow-ups are implemented on `codex/v2-clean-autoconfirm`; pending owner review/live upload before merge. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v2-spec.md`, `docs/adr/0011-clean-extraction-and-confidence-gated-auto-confirm.md`, `docs/codex-v2-clean-autoconfirm-kickoff.md`, latest git log/status, then run `sh scripts/validate.sh`. |
 
 ## Handoff Prompt For A New Codex Thread
 
@@ -235,11 +248,14 @@ Update this section after each meaningful session.
 Read README.md, AGENTS.md, docs/session-handoff.md, docs/validation-protocol.md,
 docs/project-brief.md, docs/v1-spec.md, docs/product-system-check.md,
 docs/evidence/source-index.md, docs/adr/,
+docs/v2-spec.md,
+docs/adr/0011-clean-extraction-and-confidence-gated-auto-confirm.md,
 docs/research/laravel-stack-decision.md,
 docs/research/ai-architect-program-transfer.md,
 docs/research/2026-06-18-blood-values-workflow-value-evidence.md,
 docs/research/2026-06-18-engineering-source-radar.md,
 docs/testing/pdf-first-intake-test-conversion.md,
+docs/codex-v2-clean-autoconfirm-kickoff.md,
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md,
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md as historical context,
 docs/reviews/pre-scaffold-review-request.md,
@@ -252,9 +268,11 @@ Summarize:
 - what has been validated;
 - what the next smallest action is.
 
-Do not expand beyond the PDF-first V1 boundary without a spec, ADR, and task
-plan. Runtime AI interpretation, unreviewed OCR, provider integrations, wearable
-sync, and medical advice remain out of scope.
+Continue on `codex/v2-clean-autoconfirm`. Do not merge. ADR-0011 remains
+Proposed until owner review and fresh local upload verification. Do not expand
+beyond the PDF-first boundary without a spec, ADR, and task plan. Runtime AI
+interpretation, unreviewed OCR, provider integrations, wearable sync, and
+medical advice remain out of scope.
 ```
 
 ## End-Of-Session Update Checklist
