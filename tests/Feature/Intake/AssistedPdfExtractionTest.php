@@ -538,6 +538,52 @@ it('records failed extraction runs without storing parser output', function () {
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
+it('rolls back candidate rows when extraction persistence fails mid-run', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = bloodTestWithStoredDocument($user);
+    $document = $bloodTest->documents()->firstOrFail();
+
+    BiomarkerResult::created(function (BiomarkerResult $result): void {
+        if ($result->extracted_name === 'Second Marker') {
+            throw new RuntimeException('Synthetic storage failure');
+        }
+    });
+
+    try {
+        $run = runExtractionWithCandidates($document, [
+            new ExtractedBiomarkerCandidate(
+                extractedName: 'First Marker',
+                value: '12.4',
+                unit: 'mg/L',
+                referenceMin: '10',
+                referenceMax: '20',
+                referenceUnit: 'mg/L',
+                confidence: 0.95,
+                sourceSnippet: 'synthetic first row',
+            ),
+            new ExtractedBiomarkerCandidate(
+                extractedName: 'Second Marker',
+                value: '7.1',
+                unit: 'mg/L',
+                referenceMin: '4',
+                referenceMax: '9',
+                referenceUnit: 'mg/L',
+                confidence: 0.95,
+                sourceSnippet: 'synthetic second row',
+            ),
+        ]);
+    } finally {
+        BiomarkerResult::flushEventListeners();
+    }
+
+    expect($run->status)->toBe('failed')
+        ->and($run->candidate_count)->toBe(0)
+        ->and(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->count())->toBe(0)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('keeps extracted drafts out of confirmed-only workflows and export until confirmed', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
@@ -748,7 +794,7 @@ function bloodTestWithStoredDocument(User $user): BloodTest
 /**
  * @param  list<ExtractedBiomarkerCandidate>  $candidates
  */
-function runExtractionWithCandidates(BloodTestDocument $document, array $candidates): void
+function runExtractionWithCandidates(BloodTestDocument $document, array $candidates): ExtractionRun
 {
     $extractor = new class($candidates) extends ExtractBiomarkerDrafts
     {
@@ -766,5 +812,5 @@ function runExtractionWithCandidates(BloodTestDocument $document, array $candida
         }
     };
 
-    (new RunBloodTestExtraction($extractor))($document);
+    return (new RunBloodTestExtraction($extractor))($document);
 }

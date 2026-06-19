@@ -8,6 +8,7 @@ use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTestDocument;
 use App\Models\ExtractionRun;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -34,7 +35,7 @@ class RunBloodTestExtraction
             $path = Storage::disk($document->storage_disk)->path($document->storage_path);
             $candidates = ($this->extractBiomarkerDrafts)($path);
             $candidateCount = count($candidates);
-            $this->storeDrafts($document, $candidates);
+            DB::transaction(fn (): int => $this->storeDrafts($document, $candidates));
 
             $run->update([
                 'status' => 'done',
