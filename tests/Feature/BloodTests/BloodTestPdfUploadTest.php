@@ -56,25 +56,14 @@ it('renders the dropzone choose control as a button and keeps the input pdf only
 
     $response = $this->actingAs($user)->get(route('blood-tests.index'));
     $html = $response->getContent();
-    $previousXmlErrorHandling = libxml_use_internal_errors(true);
-    $dom = new DOMDocument;
 
-    $dom->loadHTML($html);
-    libxml_clear_errors();
-    libxml_use_internal_errors($previousXmlErrorHandling);
-
-    $xpath = new DOMXPath($dom);
-    $chooseButton = $xpath->query('//button[@data-test="choose-pdf-button"]')->item(0);
-    $pdfInput = $xpath->query('//input[@data-test="lab-pdf-input"]')->item(0);
-    $selectedFileName = $xpath->query('//*[@data-test="selected-file-name"]')->item(0);
-
-    expect($chooseButton)->not->toBeNull()
-        ->and($chooseButton->nodeName)->toBe('button')
-        ->and($chooseButton->getAttribute('type'))->toBe('button')
-        ->and($pdfInput)->not->toBeNull()
-        ->and($pdfInput->getAttribute('name'))->toBe('document')
-        ->and($pdfInput->getAttribute('accept'))->toBe('application/pdf')
-        ->and($selectedFileName)->not->toBeNull();
+    expect($html)
+        ->toContain('data-test="lab-pdf-dropzone"')
+        ->toContain('@drop.prevent="dragging = false; setFiles($event.dataTransfer.files); if (fileName) $nextTick(() => $el.closest(\'form\').requestSubmit())"')
+        ->toContain('@change="fileName = $event.target.files[0]?.name ?? \'\'; if (fileName) $nextTick(() => $el.form.requestSubmit())"')
+        ->toContain('data-test="selected-file-name"')
+        ->toMatch('/<button\s+[^>]*type="button"[^>]*data-test="choose-pdf-button"/s')
+        ->toMatch('/<input\s+[^>]*name="document"[^>]*accept="application\/pdf"[^>]*data-test="lab-pdf-input"/s');
 });
 
 it('lab pdf storage path does not use original filename', function () {

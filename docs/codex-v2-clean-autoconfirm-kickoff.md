@@ -84,8 +84,9 @@ fix. Do not re-dump real PDFs or log values.
   introduced.
 - Dropzone definition of done: automated tests assert that the choose control is a
   `<button type="button">`, the file input remains `name="document"` and
-  `accept="application/pdf"`, and the selected-file-name surface exists. Native OS file
-  picker opening and OS drag/drop acceptance remain manual UI checks during live review.
+  `accept="application/pdf"`, the selected-file-name surface exists, and file selection
+  auto-submits into the result flow. Native OS file picker opening and OS drag/drop
+  acceptance remain manual UI checks during live review.
 - `PrivacyBoundaryTest` and `MedicalCopyBoundaryTest` stay green; no new
   package/network/OCR/AI.
 

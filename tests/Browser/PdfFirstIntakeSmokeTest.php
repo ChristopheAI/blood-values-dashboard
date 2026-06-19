@@ -108,8 +108,6 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertMissing('input[name="email"]')
             ->assertMissing('input[name="account"]')
             ->attach('document', base_path('tests/Fixtures/assisted-extraction-lab.pdf'))
-            ->scrollIntoView('[data-test="upload-pdf-button"]')
-            ->click('[data-test="upload-pdf-button"]')
             ->waitFor('[data-test="blood-test-result"]')
             ->assertPresent('[data-test="intake-progress-stage-extract"]')
             ->assertPresent('[data-test="intake-progress-stage-values"]')
@@ -132,8 +130,6 @@ function uploadBloodTestPdf(Browser $browser, string $fixturePath, string $date,
     $browser->visit('/blood-tests')
         ->waitFor('[data-test="lab-pdf-dropzone"]')
         ->attach('document', base_path($fixturePath))
-        ->scrollIntoView('[data-test="upload-pdf-button"]')
-        ->click('[data-test="upload-pdf-button"]')
         ->waitFor('[data-test="blood-test-result"]')
         ->assertPresent('[data-test="blood-test-result"]');
 

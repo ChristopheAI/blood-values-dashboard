@@ -23,7 +23,7 @@
                 }"
                 @dragover.prevent="dragging = true"
                 @dragleave.prevent="dragging = false"
-                @drop.prevent="dragging = false; setFiles($event.dataTransfer.files)"
+                @drop.prevent="dragging = false; setFiles($event.dataTransfer.files); if (fileName) $nextTick(() => $el.closest('form').requestSubmit())"
                 :class="dragging
                     ? 'border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-neutral-800/80'
                     : 'border-neutral-300 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900'"
@@ -43,7 +43,7 @@
                         required
                         class="sr-only"
                         data-test="lab-pdf-input"
-                        @change="fileName = $event.target.files[0]?.name ?? ''"
+                        @change="fileName = $event.target.files[0]?.name ?? ''; if (fileName) $nextTick(() => $el.form.requestSubmit())"
                     />
 
                     <button
