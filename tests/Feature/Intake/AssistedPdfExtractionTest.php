@@ -245,6 +245,63 @@ it('anchors a noisy extracted name to the owners catalog without creating a biom
         ->and($result->confirmed_at)->toBeNull();
 });
 
+it('keeps high confidence prefix-only catalog matches as drafts', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $marker = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha sentence tail',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic noisy high-confidence row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($result->biomarker_id)->toBe($marker->id)
+        ->and($result->extracted_name)->toBe('Marker Alpha')
+        ->and($result->confirmed_at)->toBeNull()
+        ->and($result->status)->toBe('unknown')
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
+it('keeps ambiguous exact catalog alias matches as drafts', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'C reactive protein', 'short_name' => 'CRP']);
+    Biomarker::factory()->for($user)->create(['name' => 'Creatine reactive protein', 'short_name' => 'CRP']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'CRP',
+            value: '1.2',
+            unit: 'mg/L',
+            referenceMin: null,
+            referenceMax: '5',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic ambiguous alias row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($result->confirmed_at)->toBeNull()
+        ->and($result->status)->toBe('unknown')
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('auto-confirms high confidence catalog matched candidates and leaves lower confidence rows as drafts', function () {
     Storage::fake('local');
 

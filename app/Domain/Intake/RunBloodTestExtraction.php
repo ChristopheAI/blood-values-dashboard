@@ -66,7 +66,7 @@ class RunBloodTestExtraction
                 continue;
             }
 
-            $autoConfirm = $this->shouldAutoConfirm($candidate, $biomarker);
+            $autoConfirm = $this->shouldAutoConfirm($document, $candidate, $biomarker);
             $confirmedAt = $autoConfirm ? now() : null;
             $extractedName = $biomarker instanceof Biomarker ? $biomarker->name : $candidate->extractedName;
 
@@ -132,13 +132,37 @@ class RunBloodTestExtraction
         return $extractedName === $catalogName || str_starts_with($extractedName, $catalogName.' ');
     }
 
-    private function shouldAutoConfirm(ExtractedBiomarkerCandidate $candidate, ?Biomarker $biomarker): bool
+    private function shouldAutoConfirm(BloodTestDocument $document, ExtractedBiomarkerCandidate $candidate, ?Biomarker $biomarker): bool
     {
         return $biomarker instanceof Biomarker
+            && $this->hasUnambiguousLiteralCatalogMatch($document, $candidate, $biomarker)
             && $candidate->confidence >= self::AUTO_CONFIRM_CONFIDENCE_THRESHOLD
             && is_numeric($candidate->value)
             && trim($candidate->unit) !== ''
             && ($candidate->referenceMin !== null || $candidate->referenceMax !== null);
+    }
+
+    private function hasUnambiguousLiteralCatalogMatch(
+        BloodTestDocument $document,
+        ExtractedBiomarkerCandidate $candidate,
+        Biomarker $matchedBiomarker,
+    ): bool {
+        $name = $this->normalizedName($candidate->extractedName);
+        $literalMatches = Biomarker::query()
+            ->where('user_id', $document->bloodTest->user_id)
+            ->get()
+            ->filter(function (Biomarker $biomarker) use ($name): bool {
+                return $this->normalizedName($biomarker->name) === $name
+                    || ($biomarker->short_name !== null && $this->normalizedName($biomarker->short_name) === $name);
+            });
+
+        return $literalMatches->count() === 1
+            && $literalMatches->first()?->is($matchedBiomarker);
+    }
+
+    private function normalizedName(string $name): string
+    {
+        return Str::lower(trim($name));
     }
 
     private function status(ExtractedBiomarkerCandidate $candidate): BiomarkerStatus
