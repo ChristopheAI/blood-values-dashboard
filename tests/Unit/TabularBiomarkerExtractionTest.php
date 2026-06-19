@@ -244,6 +244,30 @@ it('does not merge fragments from a different page that share a vertical positio
     expect($candidates[0]->confidence)->toBe(0.85);
 });
 
+it('does not extract standalone non-table rows from later pages', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        // Page 1: a real table with a recognized header and one clean row.
+        new PositionedTextFragment('Analysis', 40, 700, 1),
+        new PositionedTextFragment('Value', 210, 700, 1),
+        new PositionedTextFragment('Unit', 300, 700, 1),
+        new PositionedTextFragment('Reference', 390, 700, 1),
+        new PositionedTextFragment('Marker Alpha', 40, 680, 1),
+        new PositionedTextFragment('12,4', 210, 680, 1),
+        new PositionedTextFragment('mg/L', 300, 680, 1),
+        new PositionedTextFragment('10 - 20', 390, 680, 1),
+        // Page 2: prose happens to align with the learned columns, but has no table context.
+        new PositionedTextFragment('Marketing footer', 40, 680, 2),
+        new PositionedTextFragment('12,4', 210, 680, 2),
+        new PositionedTextFragment('mg/L', 300, 680, 2),
+        new PositionedTextFragment('10 - 20', 390, 680, 2),
+    ]);
+
+    expect($candidates)->toHaveCount(1);
+    expect($candidates[0]->extractedName)->toBe('Marker Alpha');
+});
+
 it('extracts continuation rows on a later page without a repeated header', function () {
     $extract = new ExtractTabularBiomarkerCandidates;
 
@@ -253,11 +277,11 @@ it('extracts continuation rows on a later page without a repeated header', funct
         new PositionedTextFragment('Value', 210, 700, 1),
         new PositionedTextFragment('Unit', 300, 700, 1),
         new PositionedTextFragment('Reference', 390, 700, 1),
-        new PositionedTextFragment('Marker Alpha', 40, 680, 1),
-        new PositionedTextFragment('12,4', 210, 680, 1),
-        new PositionedTextFragment('mg/L', 300, 680, 1),
-        new PositionedTextFragment('10 - 20', 390, 680, 1),
-        // Page 2: continuation row at the same y, no repeated header.
+        new PositionedTextFragment('Marker Alpha', 40, 90, 1),
+        new PositionedTextFragment('12,4', 210, 90, 1),
+        new PositionedTextFragment('mg/L', 300, 90, 1),
+        new PositionedTextFragment('10 - 20', 390, 90, 1),
+        // Page 2: continuation row near the top, no repeated header.
         new PositionedTextFragment('Marker Beta', 40, 680, 2),
         new PositionedTextFragment('7,1', 210, 680, 2),
         new PositionedTextFragment('mg/L', 300, 680, 2),

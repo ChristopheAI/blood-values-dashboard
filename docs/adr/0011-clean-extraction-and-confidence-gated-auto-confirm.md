@@ -100,6 +100,12 @@ the backstop.
     rows were clustered by vertical position across pages. Page-aware clustering
     removes the cause; no real content or values were logged or committed.
 
+- Source: synthetic continuation regression (2026-06-19)
+  - Claim type: fact
+  - Summary: Headerless later pages only inherit the active table layout when the
+    previous page ended with a table row near the bottom; standalone later-page prose
+    that merely aligns with the learned columns is ignored.
+
 - Source: competitive UX review (sanitized, 2026-06-19)
   - Claim type: fact
   - Summary: Commercial upload-first demo flows lead with the PDF upload as the first
@@ -133,6 +139,9 @@ the backstop.
 
 - `PositionedTextFragment` carries a page number, and tabular rows are clustered per
   page, so text from a different page never merges into a cell.
+- A later page without its own table header may continue the active layout only after
+  the previous page ended with a table row near the bottom; otherwise it is treated as
+  non-table context.
 - The intake/empty state becomes upload-first (a dropzone, not a form), and the
   post-upload screen lands on auto-confirmed results rather than an empty review form.
   No email or account is introduced; nothing leaves the device.

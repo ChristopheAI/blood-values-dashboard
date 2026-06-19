@@ -8,6 +8,8 @@ class ExtractTabularBiomarkerCandidates
 
     private const NAME_PROSE_GAP = 32.0;
 
+    private const CONTINUATION_PREVIOUS_PAGE_BOTTOM_Y = 160.0;
+
     private const MAX_CANDIDATES = 80;
 
     /**
@@ -17,36 +19,87 @@ class ExtractTabularBiomarkerCandidates
     public function __invoke(array $fragments): array
     {
         $rows = $this->rows($fragments);
-        $headerIndex = $this->headerIndex($rows);
-
-        if ($headerIndex === null) {
-            return [];
-        }
-
-        $columnLayout = $this->columns($rows[$headerIndex]);
-
-        if ($columnLayout === null) {
-            return [];
-        }
+        $rowsByPage = $this->rowsByPage($rows);
 
         $candidates = [];
+        $activeColumnLayout = null;
+        $lastTablePage = null;
+        $lastTableRowY = null;
 
-        foreach (array_slice($rows, $headerIndex + 1) as $row) {
-            $cells = $this->cells($row, $columnLayout['columns']);
-            $candidate = $this->candidate($cells);
+        foreach ($rowsByPage as $page => $pageRows) {
+            $headerIndex = $this->headerIndex($pageRows);
 
-            if ($candidate === null) {
-                continue;
+            if ($headerIndex !== null) {
+                $activeColumnLayout = $this->columns($pageRows[$headerIndex]);
+
+                if ($activeColumnLayout === null) {
+                    continue;
+                }
+
+                $candidateRows = array_slice($pageRows, $headerIndex + 1);
+            } else {
+                if (
+                    $activeColumnLayout === null
+                    || ! $this->canContinueTable((int) $page, $lastTablePage, $lastTableRowY)
+                ) {
+                    continue;
+                }
+
+                $candidateRows = $pageRows;
             }
 
-            $candidates[] = $candidate;
+            foreach ($candidateRows as $row) {
+                $cells = $this->cells($row, $activeColumnLayout['columns']);
+                $candidate = $this->candidate($cells);
 
-            if (count($candidates) >= self::MAX_CANDIDATES) {
-                break;
+                if ($candidate === null) {
+                    continue;
+                }
+
+                $candidates[] = $candidate;
+                $lastTablePage = (int) $page;
+                $lastTableRowY = $this->rowY($row);
+
+                if (count($candidates) >= self::MAX_CANDIDATES) {
+                    return $candidates;
+                }
             }
         }
 
         return $candidates;
+    }
+
+    /**
+     * @param  list<list<PositionedTextFragment>>  $rows
+     * @return array<int, list<list<PositionedTextFragment>>>
+     */
+    private function rowsByPage(array $rows): array
+    {
+        $rowsByPage = [];
+
+        foreach ($rows as $row) {
+            $rowsByPage[$row[0]->page][] = $row;
+        }
+
+        ksort($rowsByPage);
+
+        return $rowsByPage;
+    }
+
+    private function canContinueTable(int $page, ?int $lastTablePage, ?float $lastTableRowY): bool
+    {
+        return $lastTablePage !== null
+            && $lastTableRowY !== null
+            && $page === $lastTablePage + 1
+            && $lastTableRowY <= self::CONTINUATION_PREVIOUS_PAGE_BOTTOM_Y;
+    }
+
+    /**
+     * @param  list<PositionedTextFragment>  $row
+     */
+    private function rowY(array $row): float
+    {
+        return $row[0]->y;
     }
 
     /**
