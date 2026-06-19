@@ -122,6 +122,25 @@ it('does not show corrupted another users context note on a blood test', functio
         ->assertDontSee('Other private context note.');
 });
 
+it('does not show a foreign linked blood test on an owned context note', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $otherBloodTest = BloodTest::factory()->for($otherUser)->create(['title' => 'Other private blood test']);
+
+    ContextNote::factory()->for($owner)->create([
+        'blood_test_id' => $otherBloodTest->id,
+        'category' => ContextNoteCategory::Sleep->value,
+        'body' => 'Owner note with corrupt foreign link.',
+    ]);
+
+    $this->actingAs($owner)
+        ->get(route('context-notes.index'))
+        ->assertOk()
+        ->assertSee('Owner note with corrupt foreign link.')
+        ->assertDontSee('Other private blood test')
+        ->assertDontSee(route('blood-tests.show', $otherBloodTest, false));
+});
+
 it('stores medication and supplement context as descriptive user text', function () {
     $user = User::factory()->create();
     $body = 'Medication noted: 25mg at breakfast. Supplement noted: magnesium in evening.';
