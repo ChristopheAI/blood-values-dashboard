@@ -188,7 +188,7 @@
                 @empty
                     @if ($latestExtractionRun === null)
                         <flux:text>{{ __('No extracted drafts yet.') }}</flux:text>
-                    @else
+                    @elseif ($latestExtractionRun->status === 'done' && (int) $latestExtractionRun->candidate_count > 0)
                         <flux:text>{{ __('No below-threshold rows need review.') }}</flux:text>
                     @endif
                 @endforelse

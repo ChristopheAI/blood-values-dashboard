@@ -192,6 +192,7 @@ it('frames the review form as manual entry when extraction found no drafts', fun
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertSee('Add your values')
         ->assertSee("We couldn't read values from this PDF automatically")
+        ->assertDontSee('No below-threshold rows need review.')
         ->assertDontSee('Confirm a biomarker value');
 });
 
@@ -211,6 +212,7 @@ it('shows a manual-entry fallback when extraction failed', function () {
         ->assertSee('data-test="intake-progress-stage-status" data-state="pending"', false)
         ->assertSee('data-test="intake-progress-stage-trend" data-state="pending"', false)
         ->assertSee('Extraction failed. Manual entry is still available.')
+        ->assertDontSee('No below-threshold rows need review.')
         ->assertSee('Add your values')
         ->assertSee('Add values from the source document when you are ready.');
 });
