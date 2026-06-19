@@ -19,6 +19,8 @@ class RunBloodTestExtraction
 
     public const AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85;
 
+    private const DRAFT_CONFIDENCE_CAP = self::AUTO_CONFIRM_CONFIDENCE_THRESHOLD - 0.01;
+
     public function __construct(private readonly ExtractBiomarkerDrafts $extractBiomarkerDrafts) {}
 
     public function __invoke(BloodTestDocument $document): ExtractionRun
@@ -68,7 +70,8 @@ class RunBloodTestExtraction
                 continue;
             }
 
-            $autoConfirm = $this->shouldAutoConfirm($document, $candidate, $biomarker);
+            $confidence = $this->effectiveConfidence($document, $candidate, $biomarker);
+            $autoConfirm = $this->shouldAutoConfirm($document, $candidate, $biomarker, $confidence);
             $confirmedAt = $autoConfirm ? now() : null;
             $extractedName = $biomarker instanceof Biomarker ? $biomarker->name : $candidate->extractedName;
             $sourceSnippet = Str::limit($candidate->sourceSnippet, 500, '');
@@ -103,7 +106,7 @@ class RunBloodTestExtraction
                 'status' => $autoConfirm ? $this->status($candidate)->value : 'unknown',
                 'entry_source' => 'extracted',
                 'confirmed_at' => $confirmedAt,
-                'extraction_confidence' => $candidate->confidence,
+                'extraction_confidence' => $confidence,
                 'source_snippet' => $sourceSnippet,
             ];
 
@@ -193,11 +196,32 @@ class RunBloodTestExtraction
         return $extractedName === $catalogName || str_starts_with($extractedName, $catalogName.' ');
     }
 
-    private function shouldAutoConfirm(BloodTestDocument $document, ExtractedBiomarkerCandidate $candidate, ?Biomarker $biomarker): bool
+    private function effectiveConfidence(
+        BloodTestDocument $document,
+        ExtractedBiomarkerCandidate $candidate,
+        ?Biomarker $biomarker,
+    ): float {
+        if (! $this->canAutoConfirm($document, $candidate, $biomarker)) {
+            return min($candidate->confidence, self::DRAFT_CONFIDENCE_CAP);
+        }
+
+        return $candidate->confidence;
+    }
+
+    private function shouldAutoConfirm(
+        BloodTestDocument $document,
+        ExtractedBiomarkerCandidate $candidate,
+        ?Biomarker $biomarker,
+        float $confidence,
+    ): bool {
+        return $confidence >= self::AUTO_CONFIRM_CONFIDENCE_THRESHOLD
+            && $this->canAutoConfirm($document, $candidate, $biomarker);
+    }
+
+    private function canAutoConfirm(BloodTestDocument $document, ExtractedBiomarkerCandidate $candidate, ?Biomarker $biomarker): bool
     {
         return $biomarker instanceof Biomarker
             && $this->hasUnambiguousLiteralCatalogMatch($document, $candidate, $biomarker)
-            && $candidate->confidence >= self::AUTO_CONFIRM_CONFIDENCE_THRESHOLD
             && is_numeric($candidate->value)
             && trim($candidate->unit) !== ''
             && ($candidate->referenceMin !== null || $candidate->referenceMax !== null);

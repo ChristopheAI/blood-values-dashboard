@@ -406,12 +406,16 @@ it('auto-confirms high confidence catalog matched candidates and leaves lower co
     expect($confirmed->confirmed_at)->not->toBeNull()
         ->and($confirmed->entry_source)->toBe('extracted')
         ->and($confirmed->extracted_name)->toBe('Marker Alpha')
+        ->and((float) $confirmed->extraction_confidence)->toBe(0.95)
         ->and($confirmed->status)->toBe('normal')
         ->and($missingRangeDraft->confirmed_at)->toBeNull()
+        ->and((float) $missingRangeDraft->extraction_confidence)->toBeLessThan(RunBloodTestExtraction::AUTO_CONFIRM_CONFIDENCE_THRESHOLD)
         ->and($missingUnitDraft->confirmed_at)->toBeNull()
+        ->and((float) $missingUnitDraft->extraction_confidence)->toBeLessThan(RunBloodTestExtraction::AUTO_CONFIRM_CONFIDENCE_THRESHOLD)
         ->and($missingUnitDraft->unit)->toBe('')
         ->and($missingUnitDraft->status)->toBe('unknown')
         ->and($draft->confirmed_at)->toBeNull()
+        ->and((float) $draft->extraction_confidence)->toBeLessThan(RunBloodTestExtraction::AUTO_CONFIRM_CONFIDENCE_THRESHOLD)
         ->and($draft->extracted_name)->toBe('Unmatched Marker')
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
