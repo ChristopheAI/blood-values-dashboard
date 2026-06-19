@@ -5,12 +5,10 @@
 Proposed
 
 The auto-confirm policy relaxes the confirmed-only trust boundary set in ADR-0005
-and ADR-0009, so it is recorded explicitly. Stays Proposed until the name cleaning
-and the confidence threshold are validated on synthetic fixtures and live-verified.
-
-The page-aware row clustering described below is implemented in the working tree and
-awaits local validation. The catalog anchor, confidence threshold, auto-confirm, and
-format tuning were implemented in the earlier V2 commits on this branch.
+and ADR-0009, so it is recorded explicitly. The implementation has been validated
+on synthetic fixtures and automated browser/feature checks on
+`codex/v2-clean-autoconfirm`, but the ADR stays Proposed until owner review and a
+fresh live upload verify the flow with a real local PDF.
 
 ## Context
 
@@ -106,6 +104,29 @@ the backstop.
     previous page ended with a table row near the bottom; standalone later-page prose
     that merely aligns with the learned columns is ignored.
 
+- Source: synthetic ambiguity regressions (2026-06-19)
+  - Claim type: fact
+  - Summary: Ambiguous exact aliases and equally-strong catalog prefixes stay
+    unanchored drafts; they are never auto-confirmed by picking an arbitrary match.
+
+- Source: synthetic missing-unit regression (2026-06-19)
+  - Claim type: fact
+  - Summary: A numeric tabular row without a unit is preserved as a low-confidence
+    draft instead of being dropped or auto-confirmed.
+
+- Source: automated intake UX checks (2026-06-19)
+  - Claim type: fact
+  - Summary: The upload-first screen exposes the PDF dropzone/input selectors,
+    auto-submits file selection into the result flow, removes the separate upload
+    submit button, and keeps the file input constrained to PDFs. Native OS picker
+    opening and drag/drop acceptance remain manual live-review checks.
+
+- Source: extraction-run accounting regression (2026-06-19)
+  - Claim type: fact
+  - Summary: `candidate_count` records extracted candidates even when storage skips a
+    row because a confirmed value already exists, so extraction telemetry does not
+    undercount parser output.
+
 - Source: competitive UX review (sanitized, 2026-06-19)
   - Claim type: fact
   - Summary: Commercial upload-first demo flows lead with the PDF upload as the first
@@ -149,6 +170,10 @@ the backstop.
   high-confidence rows.
 - A named confidence threshold, the catalog anchor, and per-format tuning are added to
   the extraction path; all unit-tested on synthetic fixtures.
+- Catalog anchoring must be unambiguous. Ambiguous exact aliases or equal-length prefix
+  matches stay as drafts instead of becoming auto-confirmed values.
+- Missing-unit rows are kept as low-confidence drafts. They are useful review evidence,
+  but they cannot pass the auto-confirm gate.
 - The review screen shows auto-confirmed values (labelled, editable) plus any remaining
   low-confidence drafts.
 - Owner-scoping, no-overwrite-of-existing-confirmed, `PrivacyBoundaryTest`, and the
@@ -158,14 +183,16 @@ the backstop.
 
 ## Confidence
 
-Medium. The cleaning and the threshold need synthetic-fixture validation and live
-verification before this is Accepted.
+Medium-high for the deterministic implementation path: synthetic unit/feature/browser
+checks cover page-aware clustering, continuation rules, catalog anchoring, ambiguity,
+missing units, candidate accounting, confirmed-only downstream behavior, and the
+upload-first intake result flow. Still Proposed until owner review and a fresh live
+upload verify the same flow outside synthetic fixtures.
 
 ## Follow-Up Questions
 
-- What confidence threshold balances "auto-confirm clean values" against "never
-  auto-confirm a wrong one"?
-- Should auto-confirmed values be visually distinct from user-confirmed ones (an
-  "auto" tag)?
-- How is catalog anchoring scored (exact prefix vs fuzzy) to avoid matching the wrong
-  biomarker?
+- Does owner live review accept `AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85` for the
+  first supported lab format?
+- Does the visible "auto-filled from PDF" treatment give enough distinction from
+  manually confirmed values during real review?
+- Which next real lab format needs a sanitized synthetic fixture in the finetune loop?

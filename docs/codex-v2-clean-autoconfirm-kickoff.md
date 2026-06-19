@@ -2,12 +2,27 @@
 
 Date: 2026-06-19
 
-Implements ADR-0011 (Proposed). V1, tabular extraction, and name-bounding are merged
-on `main` (`689672b`). The page-aware row-clustering fix (the root cause of name
-over-capture) is already written in the working tree by review — uncommitted — and is
-your first job to validate and commit. Goal: zero user friction for confidently-extracted
-values, with a safety net for the uncertain few. Sanitized: no real PDF content, names,
-or values.
+Implements ADR-0011 (Proposed). V1, tabular extraction, and name-bounding were merged
+on `main` before this branch. The V2 implementation work on
+`codex/v2-clean-autoconfirm` is now committed and locally validated through the
+page-aware clustering, catalog anchor, confidence threshold, auto-confirm,
+upload-first intake, and hardening follow-ups. Goal: zero user friction for
+confidently-extracted values, with a safety net for the uncertain few. Sanitized: no
+real PDF content, names, or values.
+
+## Current Branch State
+
+As of the local validation pass on 2026-06-19, the branch contains:
+
+- page-aware row clustering and same-layout page continuation rules;
+- `AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85`;
+- unambiguous catalog anchoring only; ambiguous aliases/prefixes remain drafts;
+- missing-unit rows kept as low-confidence drafts;
+- no overwrite of existing confirmed values;
+- upload-first intake with file-selection auto-submit and result landing;
+- confirmed-only downstream invariants for status/history/compare/consult/export.
+
+ADR-0011 remains Proposed until owner review and a fresh live upload verify the flow.
 
 ## Goal
 
@@ -15,15 +30,15 @@ or values.
 - Imperfect extraction → finetune the parser per format until clean (synthetic
   fixtures), and meanwhile keep uncertain rows as drafts — never a wrong auto-confirm.
 
-## Step 0 — validate the page-aware clustering fix (already implemented)
+## Step 0 — page-aware clustering fix (completed)
 
-The root cause of name over-capture is known and fixed in the working tree — no dump
+The root cause of name over-capture is known and fixed on this branch — no dump
 needed. The merged-in prose lived on a separate non-table page bundled into the same
 PDF; positioned fragments did not record their page and rows were clustered by vertical
 position across the whole document, so a name on the results page and a line on the
 later page that shared a y-coordinate collapsed into one row.
 
-The fix in the working tree (review the diff, then validate):
+The committed fix:
 
 - `PositionedTextFragment` gains a `page` field (defaults to 1).
 - `ExtractBiomarkerDrafts::positionedFragments()` records a 1-based page number per
@@ -33,9 +48,8 @@ The fix in the working tree (review the diff, then validate):
 - Two unit tests added: cross-page text at the same y does not merge into the name; a
   continuation row on a later page (no repeated header) still extracts.
 
-Your first commit on `codex/v2-clean-autoconfirm`: run `sh scripts/validate.sh`, confirm
-the whole suite is green (the two new tests plus all existing ones), then commit this
-fix. Do not re-dump real PDFs or log values.
+This was validated and committed on `codex/v2-clean-autoconfirm`. Do not re-dump real
+PDFs or log values.
 
 ## Build (tests-first, on `codex/v2-clean-autoconfirm`)
 
@@ -113,16 +127,15 @@ a V2 issue; close it from the merge commit.
 
 ```text
 Read AGENTS.md, docs/adr/0009/0010/0011, and docs/codex-v2-clean-autoconfirm-kickoff.md.
-main is at 689672b. ADR-0011 is Proposed.
+Branch is codex/v2-clean-autoconfirm. ADR-0011 is Proposed pending owner live review.
 
-Step 0 (already implemented in the working tree by review — validate, do not re-dump):
-page-aware row clustering. PositionedTextFragment has a page field; positionedFragments()
-records the page; ExtractTabularBiomarkerCandidates::rows() clusters per page; two unit
-tests were added (cross-page no-merge; continuation row on a later page). Run
-sh scripts/validate.sh, confirm green, and commit this as the first commit on
-codex/v2-clean-autoconfirm. Do not log or commit real PDF content/values.
+Already committed and validated on this branch: page-aware row clustering, continuation
+rules, catalog anchor, AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85, confidence-gated
+auto-confirm, upload-first intake, ambiguity hardening, missing-unit drafts, and
+confirmed-only downstream invariants. Do not rebuild those slices unless a fresh failing
+test proves a regression. Do not log or commit real PDF content/values.
 
-Then build on codex/v2-clean-autoconfirm, tests-first:
+Continue on codex/v2-clean-autoconfirm, tests-first:
 1. Clean names: catalog-prefix anchor -> canonical name + biomarker_id (never auto-create
    catalog); per-format tuning to drop prose from the name cell, with a synthetic
    prose-noise fixture.
