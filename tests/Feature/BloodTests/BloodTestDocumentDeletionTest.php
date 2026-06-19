@@ -3,6 +3,7 @@
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
 use App\Models\User;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage;
 
 it('deleting blood test removes or blocks its lab pdf', function () {
@@ -59,6 +60,32 @@ it('keeps the stored lab pdf when blood test deletion fails before the database 
     Storage::disk('local')->assertExists($document->storage_path);
 });
 
+it('keeps the blood test and document record when blood test pdf deletion fails', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => 'blood-test-documents/blood-test-delete-returned-false.pdf',
+    ]);
+    $disk = Mockery::mock(Filesystem::class);
+
+    $disk->shouldReceive('delete')
+        ->once()
+        ->with($document->storage_path)
+        ->andReturnFalse();
+    Storage::shouldReceive('disk')
+        ->once()
+        ->with('local')
+        ->andReturn($disk);
+
+    $this->actingAs($user)
+        ->delete(route('blood-tests.destroy', $bloodTest))
+        ->assertServerError();
+
+    expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue()
+        ->and(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
+});
+
 it('keeps the stored lab pdf when single document deletion fails before the database delete', function () {
     Storage::fake('local');
 
@@ -88,4 +115,29 @@ it('keeps the stored lab pdf when single document deletion fails before the data
     expect($caught?->getMessage())->toBe('Synthetic document deletion failure')
         ->and(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
     Storage::disk('local')->assertExists($document->storage_path);
+});
+
+it('keeps the document record when physical pdf deletion fails', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => 'blood-test-documents/delete-returned-false.pdf',
+    ]);
+    $disk = Mockery::mock(Filesystem::class);
+
+    $disk->shouldReceive('delete')
+        ->once()
+        ->with($document->storage_path)
+        ->andReturnFalse();
+    Storage::shouldReceive('disk')
+        ->once()
+        ->with('local')
+        ->andReturn($disk);
+
+    $this->actingAs($user)
+        ->delete(route('blood-test-documents.destroy', $document))
+        ->assertServerError();
+
+    expect(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
 });

@@ -13,6 +13,7 @@ use App\Models\Reminder;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class DeleteAllHealthData
 {
@@ -22,7 +23,7 @@ class DeleteAllHealthData
             ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $user->id))
             ->get(['id', 'storage_disk', 'storage_path']);
 
-        DB::transaction(function () use ($user): void {
+        DB::transaction(function () use ($user, $documents): void {
             $ownedBiomarkerIds = Biomarker::query()
                 ->where('user_id', $user->id)
                 ->pluck('id');
@@ -60,10 +61,12 @@ class DeleteAllHealthData
             BiomarkerCategory::query()
                 ->where('user_id', $user->id)
                 ->delete();
-        });
 
-        foreach ($documents as $document) {
-            Storage::disk($document->storage_disk)->delete($document->storage_path);
-        }
+            foreach ($documents as $document) {
+                if (! Storage::disk($document->storage_disk)->delete($document->storage_path)) {
+                    throw new RuntimeException('Failed to delete stored lab PDF.');
+                }
+            }
+        });
     }
 }

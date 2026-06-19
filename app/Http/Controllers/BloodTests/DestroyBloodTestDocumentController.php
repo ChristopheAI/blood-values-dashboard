@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\BloodTestDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class DestroyBloodTestDocumentController extends Controller
 {
@@ -19,9 +21,13 @@ class DestroyBloodTestDocumentController extends Controller
         $storageDisk = $bloodTestDocument->storage_disk;
         $storagePath = $bloodTestDocument->storage_path;
 
-        $bloodTestDocument->delete();
+        DB::transaction(function () use ($bloodTestDocument, $storageDisk, $storagePath): void {
+            $bloodTestDocument->delete();
 
-        Storage::disk($storageDisk)->delete($storagePath);
+            if (! Storage::disk($storageDisk)->delete($storagePath)) {
+                throw new RuntimeException('Failed to delete stored lab PDF.');
+            }
+        });
 
         return redirect()->route('blood-tests.show', $bloodTest);
     }

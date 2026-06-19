@@ -10,6 +10,7 @@ use App\Models\ContextNote;
 use App\Models\PinnedBiomarker;
 use App\Models\Reminder;
 use App\Models\User;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -268,6 +269,33 @@ it('keeps private documents when delete all fails before the database transactio
         ->and(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue()
         ->and(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
     Storage::disk('local')->assertExists($document->storage_path);
+});
+
+it('keeps owned health data records when delete all cannot remove a private document', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => 'blood-test-documents/delete-all-returned-false.pdf',
+    ]);
+    $disk = Mockery::mock(Filesystem::class);
+
+    $disk->shouldReceive('delete')
+        ->once()
+        ->with($document->storage_path)
+        ->andReturnFalse();
+    Storage::shouldReceive('disk')
+        ->once()
+        ->with('local')
+        ->andReturn($disk);
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->delete(route('data.destroy'), ['confirmation' => 'DELETE ALL'])
+        ->assertServerError();
+
+    expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue()
+        ->and(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
 });
 
 it('requires explicit typed confirmation before delete all removes health data', function () {
