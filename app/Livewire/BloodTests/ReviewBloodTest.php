@@ -8,6 +8,7 @@ use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 class ReviewBloodTest extends Component
@@ -274,12 +275,19 @@ class ReviewBloodTest extends Component
             return $biomarker;
         }
 
-        return Biomarker::query()->firstOrCreate(
+        $existingBiomarker = Biomarker::query()
+            ->where('user_id', Auth::id())
+            ->whereRaw('lower(name) = ?', [Str::lower($form['name'])])
+            ->first();
+
+        if ($existingBiomarker instanceof Biomarker) {
+            return $existingBiomarker;
+        }
+
+        return Biomarker::query()->create(
             [
                 'user_id' => Auth::id(),
                 'name' => $form['name'],
-            ],
-            [
                 'default_unit' => $form['unit'],
                 'reference_min' => $form['reference_min'],
                 'reference_max' => $form['reference_max'],

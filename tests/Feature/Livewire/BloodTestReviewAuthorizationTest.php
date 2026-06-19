@@ -142,3 +142,23 @@ it('trims padded review form names and units before storing confirmed values', f
         ->and($result->unit)->toBe('ug/L')
         ->and($result->reference_unit)->toBe('ug/L');
 });
+
+it('reuses an owned biomarker when a manual review name only differs by case', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->set('resultForm.name', '  ferritin  ')
+        ->set('resultForm.value', '42')
+        ->set('resultForm.unit', 'ug/L')
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(1)
+        ->and($result->biomarker_id)->toBe($biomarker->id)
+        ->and($result->biomarker->name)->toBe('Ferritin');
+});
