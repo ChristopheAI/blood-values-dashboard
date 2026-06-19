@@ -49,7 +49,7 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
 
         $bloodTests = BloodTest::query()
             ->where('user_id', $user->id)
-            ->orderBy('test_date')
+            ->orderBy('id')
             ->get();
 
         expect($bloodTests)->toHaveCount(2);
@@ -81,18 +81,61 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
     });
 });
 
+test('empty intake uploads through the dropzone and lands on auto-filled results', function () {
+    $email = 'browser-dropzone-'.Str::uuid().'@example.test';
+    $password = 'password';
+
+    $this->browse(function (Browser $browser) use ($email, $password) {
+        $browser->visit('/register')
+            ->type('name', 'Dropzone Smoke')
+            ->type('email', $email)
+            ->type('password', $password)
+            ->type('password_confirmation', $password)
+            ->press('Create account')
+            ->waitForLocation('/dashboard')
+            ->assertAuthenticated();
+
+        $user = User::query()->where('email', $email)->firstOrFail();
+        Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+
+        $browser->visit('/blood-tests')
+            ->waitFor('[data-test="lab-pdf-dropzone"]')
+            ->assertSee('Sleep je lab-PDF hierheen')
+            ->assertPresent('[data-test="lab-pdf-input"]')
+            ->assertMissing('[data-test="blood-test-date-input"]')
+            ->assertMissing('[data-test="blood-test-lab-input"]')
+            ->assertMissing('[data-test="blood-test-title-input"]')
+            ->assertMissing('input[name="email"]')
+            ->assertMissing('input[name="account"]')
+            ->attach('document', base_path('tests/Fixtures/assisted-extraction-lab.pdf'))
+            ->scrollIntoView('[data-test="upload-pdf-button"]')
+            ->click('[data-test="upload-pdf-button"]')
+            ->waitFor('[data-test="blood-test-result"]')
+            ->assertPresent('[data-test="intake-progress-stage-extract"]')
+            ->assertPresent('[data-test="intake-progress-stage-values"]')
+            ->assertPresent('[data-test="intake-progress-stage-status"]')
+            ->assertPresent('[data-test="intake-progress-stage-trend"]')
+            ->assertSee('Confirmed values')
+            ->assertSee('Ferritin')
+            ->assertSee('42 ug/L')
+            ->assertSee('auto-filled from PDF')
+            ->assertSee('normal')
+            ->assertPresent('[data-test="review-strip"]')
+            ->assertDontSee('No confirmed values yet.');
+
+        assertNoForbiddenMedicalCopyAppears($browser);
+    });
+});
+
 function uploadBloodTestPdf(Browser $browser, string $fixturePath, string $date, string $lab, string $title): void
 {
     $browser->visit('/blood-tests')
-        ->waitForText('Blood tests')
+        ->waitFor('[data-test="lab-pdf-dropzone"]')
         ->attach('document', base_path($fixturePath))
-        ->value('input[name="test_date"]', $date)
-        ->type('lab_name', $lab)
-        ->type('title', $title)
         ->scrollIntoView('[data-test="upload-pdf-button"]')
         ->click('[data-test="upload-pdf-button"]')
-        ->waitForText($title)
-        ->assertSee($title);
+        ->waitFor('[data-test="blood-test-result"]')
+        ->assertPresent('[data-test="blood-test-result"]');
 
     assertNoForbiddenMedicalCopyAppears($browser);
 }

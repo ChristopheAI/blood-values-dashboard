@@ -34,6 +34,23 @@ it('owner can upload a lab pdf to private storage', function () {
     Storage::disk('public')->assertMissing($document->storage_path);
 });
 
+it('renders an upload-first empty intake dropzone without metadata or account fields', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('blood-tests.index'))
+        ->assertOk()
+        ->assertSee('Sleep je lab-PDF hierheen')
+        ->assertSee('PDF only')
+        ->assertSee('data-test="lab-pdf-dropzone"', false)
+        ->assertSee('data-test="intake-progress"', false)
+        ->assertDontSee('data-test="blood-test-date-input"', false)
+        ->assertDontSee('data-test="blood-test-lab-input"', false)
+        ->assertDontSee('data-test="blood-test-title-input"', false)
+        ->assertDontSee('name="email"', false)
+        ->assertDontSee('name="account"', false);
+});
+
 it('lab pdf storage path does not use original filename', function () {
     Storage::fake('local');
 

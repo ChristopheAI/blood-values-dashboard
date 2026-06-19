@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -18,6 +19,8 @@ return new class extends Migration
 
     public function down(): void
     {
+        DB::table('biomarker_results')->whereNull('biomarker_id')->delete();
+
         Schema::table('biomarker_results', function (Blueprint $table): void {
             $table->dropColumn(['extracted_name', 'extraction_confidence', 'source_snippet']);
             $table->foreignId('biomarker_id')->nullable(false)->change();

@@ -5,20 +5,93 @@
     $confirmedResults = $bloodTest->results->whereNotNull('confirmed_at');
     $latestExtractionRun = $bloodTest->extractionRuns->sortByDesc('created_at')->first();
     $hasDraftResults = $draftResults->isNotEmpty();
+    $confirmedCount = $confirmedResults->count();
+    $draftCount = $draftResults->count();
     $extractionFoundNoDrafts = $latestExtractionRun?->status === 'done'
         && (int) $latestExtractionRun->candidate_count === 0
         && ! $hasDraftResults;
 @endphp
 
-<section class="mx-auto flex w-full max-w-5xl flex-col gap-8">
+<section class="mx-auto flex w-full max-w-5xl flex-col gap-8" data-test="blood-test-result">
     <header class="flex flex-col gap-2">
-        <flux:heading size="xl">{{ $bloodTest->title ?: __('Blood test review') }}</flux:heading>
+        <flux:heading size="xl">{{ $bloodTest->title ?: __('Resultaat') }}</flux:heading>
         <flux:text>
             {{ $bloodTest->test_date?->toDateString() ?? __('No date yet') }}
             · {{ $bloodTest->lab_name ?: __('Unknown lab') }}
             · {{ $bloodTest->status }}
         </flux:text>
     </header>
+
+    <section class="rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="intake-progress">
+        <div class="grid gap-3 text-sm sm:grid-cols-4">
+            <div class="rounded-md bg-green-50 p-3 font-medium text-green-800 dark:bg-green-950 dark:text-green-200" data-test="intake-progress-stage-extract">{{ __('extract') }}</div>
+            <div class="rounded-md bg-green-50 p-3 font-medium text-green-800 dark:bg-green-950 dark:text-green-200" data-test="intake-progress-stage-values">{{ __('waarden') }}</div>
+            <div class="rounded-md bg-green-50 p-3 font-medium text-green-800 dark:bg-green-950 dark:text-green-200" data-test="intake-progress-stage-status">{{ __('status') }}</div>
+            <div class="rounded-md bg-green-50 p-3 font-medium text-green-800 dark:bg-green-950 dark:text-green-200" data-test="intake-progress-stage-trend">{{ __('trend') }}</div>
+        </div>
+    </section>
+
+    <section class="space-y-4">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <flux:heading size="lg">{{ __('Confirmed values') }}</flux:heading>
+                <flux:text>{{ trans_choice(':count value ready for status and trends|:count values ready for status and trends', $confirmedCount, ['count' => $confirmedCount]) }}</flux:text>
+            </div>
+
+            @if ($draftCount > 0)
+                <span class="text-sm font-medium text-amber-700 dark:text-amber-300">{{ trans_choice(':count row needs review|:count rows need review', $draftCount, ['count' => $draftCount]) }}</span>
+            @endif
+        </div>
+
+        <div class="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
+                    <tr>
+                        <th class="p-3">{{ __('Biomarker') }}</th>
+                        <th class="p-3">{{ __('Value') }}</th>
+                        <th class="p-3">{{ __('Status') }}</th>
+                        <th class="p-3 text-right">{{ __('Trend') }}</th>
+                        <th class="p-3 text-right">{{ __('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($confirmedResults as $result)
+                        <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="confirmed-value-row">
+                            <td class="p-3">{{ $result->biomarker->name }}</td>
+                            <td class="p-3">{{ (float) $result->value }} {{ $result->unit }}</td>
+                            <td class="p-3">
+                                <div class="flex flex-col gap-1">
+                                    <span>{{ $result->status }}</span>
+                                    @if ($result->entry_source === 'extracted')
+                                        <span class="text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400">
+                                            {{ __('auto-filled from PDF') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="p-3 text-right">
+                                <a href="{{ route('biomarkers.show', $result->biomarker) }}" class="text-sm font-medium text-blue-700 underline dark:text-blue-300" data-test="open-trend-button">{{ __('Open trend') }}</a>
+                            </td>
+                            <td class="p-3">
+                                <div class="flex justify-end gap-2">
+                                    <flux:button type="button" size="sm" wire:click="editConfirmedResult({{ $result->id }})" data-test="edit-confirmed-value-button">
+                                        {{ __('Edit') }}
+                                    </flux:button>
+                                    <flux:button type="button" variant="danger" size="sm" wire:click="deleteConfirmedResult({{ $result->id }})" data-test="delete-confirmed-value-button">
+                                        {{ __('Delete') }}
+                                    </flux:button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('No confirmed values yet.') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </section>
 
     <div class="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700">
@@ -44,8 +117,8 @@
             @endforelse
         </section>
 
-        <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="extracted-drafts-panel">
-            <flux:heading size="lg">{{ __('Extracted drafts') }}</flux:heading>
+        <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="review-strip">
+            <flux:heading size="lg">{{ __('Review strip') }}</flux:heading>
 
             @if ($latestExtractionRun?->status === 'failed')
                 <flux:text data-test="extraction-status">{{ __('Extraction failed. Manual entry is still available.') }}</flux:text>
@@ -55,7 +128,7 @@
 
             <div class="space-y-3">
                 @forelse ($draftResults as $draft)
-                    <article class="space-y-3 rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="extracted-draft-row">
+                    <article class="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40" data-test="extracted-draft-row">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <div class="font-medium">{{ $draft->biomarker?->name ?? $draft->extracted_name ?? __('Unknown marker') }}</div>
@@ -87,6 +160,8 @@
                 @empty
                     @if ($latestExtractionRun === null)
                         <flux:text>{{ __('No extracted drafts yet.') }}</flux:text>
+                    @else
+                        <flux:text>{{ __('No below-threshold rows need review.') }}</flux:text>
                     @endif
                 @endforelse
             </div>
@@ -127,55 +202,6 @@
             <flux:button type="submit" variant="primary" data-test="confirm-value-button">{{ $hasDraftResults ? __('Confirm value') : __('Add value') }}</flux:button>
         </form>
     </div>
-
-    <section class="space-y-4">
-        <flux:heading size="lg">{{ __('Confirmed values') }}</flux:heading>
-
-        <div class="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700">
-            <table class="w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
-                    <tr>
-                        <th class="p-3">{{ __('Biomarker') }}</th>
-                        <th class="p-3">{{ __('Value') }}</th>
-                        <th class="p-3">{{ __('Status') }}</th>
-                        <th class="p-3 text-right">{{ __('Actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($confirmedResults as $result)
-                        <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="confirmed-value-row">
-                            <td class="p-3">{{ $result->biomarker->name }}</td>
-                            <td class="p-3">{{ (float) $result->value }} {{ $result->unit }}</td>
-                            <td class="p-3">
-                                <div class="flex flex-col gap-1">
-                                    <span>{{ $result->status }}</span>
-                                    @if ($result->entry_source === 'extracted')
-                                        <span class="text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400">
-                                            {{ __('auto-filled from PDF') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="p-3">
-                                <div class="flex justify-end gap-2">
-                                    <flux:button type="button" size="sm" wire:click="editConfirmedResult({{ $result->id }})" data-test="edit-confirmed-value-button">
-                                        {{ __('Edit') }}
-                                    </flux:button>
-                                    <flux:button type="button" variant="danger" size="sm" wire:click="deleteConfirmedResult({{ $result->id }})" data-test="delete-confirmed-value-button">
-                                        {{ __('Delete') }}
-                                    </flux:button>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('No confirmed values yet.') }}</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </section>
 
     <section class="space-y-4" data-test="blood-test-context-notes">
         <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
