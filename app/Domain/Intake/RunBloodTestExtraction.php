@@ -92,23 +92,29 @@ class RunBloodTestExtraction
                 $attributes['source_snippet'] = $sourceSnippet;
             }
 
-            BiomarkerResult::query()->updateOrCreate(
-                $attributes,
-                [
-                    'biomarker_id' => $biomarker?->id,
-                    'extracted_name' => $extractedName,
-                    'value' => $candidate->value,
-                    'unit' => $candidate->unit,
-                    'reference_min' => $candidate->referenceMin,
-                    'reference_max' => $candidate->referenceMax,
-                    'reference_unit' => $candidate->referenceUnit,
-                    'status' => $autoConfirm ? $this->status($candidate)->value : 'unknown',
-                    'entry_source' => 'extracted',
-                    'confirmed_at' => $confirmedAt,
-                    'extraction_confidence' => $candidate->confidence,
-                    'source_snippet' => $sourceSnippet,
-                ],
-            );
+            $values = [
+                'biomarker_id' => $biomarker?->id,
+                'extracted_name' => $extractedName,
+                'value' => $candidate->value,
+                'unit' => $candidate->unit,
+                'reference_min' => $candidate->referenceMin,
+                'reference_max' => $candidate->referenceMax,
+                'reference_unit' => $candidate->referenceUnit,
+                'status' => $autoConfirm ? $this->status($candidate)->value : 'unknown',
+                'entry_source' => 'extracted',
+                'confirmed_at' => $confirmedAt,
+                'extraction_confidence' => $candidate->confidence,
+                'source_snippet' => $sourceSnippet,
+            ];
+
+            if (! $biomarker instanceof Biomarker) {
+                BiomarkerResult::query()->create(array_merge($attributes, $values));
+                $stored++;
+
+                continue;
+            }
+
+            BiomarkerResult::query()->updateOrCreate($attributes, $values);
 
             $stored++;
         }

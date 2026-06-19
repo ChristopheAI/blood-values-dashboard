@@ -501,6 +501,46 @@ it('does not collapse unmatched drafts when source snippets truncate to the same
         ->and($draftValues)->toBe([5.0, 7.0]);
 });
 
+it('preserves identical repeated unmatched candidates as separate draft rows', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    $run = runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Repeated Marker',
+            value: '5',
+            unit: 'U/mL',
+            referenceMin: null,
+            referenceMax: '8',
+            referenceUnit: 'U/mL',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic identical row',
+        ),
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Repeated Marker',
+            value: '5',
+            unit: 'U/mL',
+            referenceMin: null,
+            referenceMax: '8',
+            referenceUnit: 'U/mL',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic identical row',
+        ),
+    ]);
+
+    $drafts = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->whereNull('biomarker_id')
+        ->orderBy('id')
+        ->get();
+
+    expect($run->status)->toBe('done')
+        ->and($run->candidate_count)->toBe(2)
+        ->and($drafts)->toHaveCount(2);
+});
+
 it('marks the blood test confirmed when every extracted candidate is auto-confirmed', function () {
     Storage::fake('local');
 
