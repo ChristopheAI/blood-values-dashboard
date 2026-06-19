@@ -16,7 +16,7 @@ class RunBloodTestExtraction
 {
     private const ENGINE = 'smalot/pdfparser';
 
-    private const AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85;
+    public const AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85;
 
     public function __construct(private readonly ExtractBiomarkerDrafts $extractBiomarkerDrafts) {}
 
@@ -46,14 +46,7 @@ class RunBloodTestExtraction
             ]);
         }
 
-        $hasDrafts = $bloodTest->results()
-            ->where('entry_source', 'extracted')
-            ->whereNull('confirmed_at')
-            ->exists();
-
-        $bloodTest->update([
-            'status' => $candidateCount > 0 && ! $hasDrafts ? 'confirmed' : 'reviewing',
-        ]);
+        $bloodTest->recalculateStatusFromResults();
 
         return $run->refresh();
     }

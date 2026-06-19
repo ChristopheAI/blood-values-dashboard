@@ -337,14 +337,9 @@ it('does not overwrite a previously confirmed value when extraction sees the sam
 
     $user = User::factory()->create();
     $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
-    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
-    $document = BloodTestDocument::factory()->for($bloodTest)->create([
-        'storage_path' => 'blood-test-documents/fixture.pdf',
-    ]);
-    Storage::disk('local')->put(
-        $document->storage_path,
-        File::get(base_path('tests/Fixtures/assisted-extraction-lab.pdf')),
-    );
+    $bloodTest = bloodTestWithStoredDocument($user);
+    $bloodTest->update(['status' => 'confirmed']);
+    $document = $bloodTest->documents()->firstOrFail();
 
     $confirmed = BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
         'value' => 50,
@@ -355,7 +350,18 @@ it('does not overwrite a previously confirmed value when extraction sees the sam
         'note' => 'User confirmed value.',
     ]);
 
-    app(RunBloodTestExtraction::class)($document);
+    runExtractionWithCandidates($document, [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Ferritin',
+            value: '42',
+            unit: 'ug/L',
+            referenceMin: '30',
+            referenceMax: '150',
+            referenceUnit: 'ug/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic rerun row',
+        ),
+    ]);
 
     $confirmed->refresh();
 
@@ -367,7 +373,8 @@ it('does not overwrite a previously confirmed value when extraction sees the sam
         ->where('blood_test_id', $bloodTest->id)
         ->where('biomarker_id', $ferritin->id)
         ->where('entry_source', 'extracted')
-        ->exists())->toBeFalse();
+        ->exists())->toBeFalse()
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
 it('matches extracted names only against the owning users biomarker catalog', function () {

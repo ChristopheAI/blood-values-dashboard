@@ -45,6 +45,74 @@ it('shows extracted drafts and lets the owner confirm a draft through the review
         ->and($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
+it('keeps the blood test in review while confirming one draft if other extracted drafts remain', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $vitaminD = Biomarker::factory()->for($user)->create(['name' => 'Vitamin D']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    $draft = BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'reference_min' => 30,
+        'reference_max' => 150,
+        'reference_unit' => 'ug/L',
+        'status' => 'unknown',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Ferritin',
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($vitaminD)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Vitamin D',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('useDraft', $draft->id)
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    expect($draft->refresh()->confirmed_at)->not->toBeNull()
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
+it('recalculates the blood test status after deleting drafts and confirmed values', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $vitaminD = Biomarker::factory()->for($user)->create(['name' => 'Vitamin D']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    $confirmed = BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'reference_min' => 30,
+        'reference_max' => 150,
+        'reference_unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'extracted_name' => 'Ferritin',
+    ]);
+    $draft = BiomarkerResult::factory()->for($bloodTest)->for($vitaminD)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Vitamin D',
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('deleteDraft', $draft->id)
+        ->assertHasNoErrors();
+
+    expect($bloodTest->refresh()->status)->toBe('confirmed');
+
+    $component
+        ->call('deleteConfirmedResult', $confirmed->id)
+        ->assertHasNoErrors();
+
+    expect($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('frames the review form as extracted value review when drafts exist', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
@@ -60,6 +128,22 @@ it('frames the review form as extracted value review when drafts exist', functio
         ->assertSee('Review extracted values')
         ->assertSee('Read from your PDF')
         ->assertDontSee('Add your values');
+});
+
+it('marks below auto-confirm threshold drafts as low confidence in the review strip', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Ferritin',
+        'extraction_confidence' => 0.84,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('Low confidence');
 });
 
 it('frames the review form as manual entry when extraction found no drafts', function () {

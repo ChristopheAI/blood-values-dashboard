@@ -152,7 +152,7 @@
 
                         <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                             {{ __('Extracted - please confirm') }}
-                            @if ($draft->extraction_confidence !== null && (float) $draft->extraction_confidence < 0.8)
+                            @if ($draft->extraction_confidence !== null && (float) $draft->extraction_confidence < \App\Domain\Intake\RunBloodTestExtraction::AUTO_CONFIRM_CONFIDENCE_THRESHOLD)
                                 · {{ __('Low confidence') }}
                             @endif
                         </div>

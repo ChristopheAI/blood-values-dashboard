@@ -69,6 +69,21 @@ class BloodTest extends Model
         return $this->results()->whereNotNull('confirmed_at');
     }
 
+    public function recalculateStatusFromResults(): void
+    {
+        $hasDrafts = $this->results()
+            ->where('entry_source', 'extracted')
+            ->whereNull('confirmed_at')
+            ->exists();
+        $hasConfirmedValues = $this->results()
+            ->whereNotNull('confirmed_at')
+            ->exists();
+
+        $this->update([
+            'status' => $hasConfirmedValues && ! $hasDrafts ? 'confirmed' : 'reviewing',
+        ]);
+    }
+
     /**
      * @return HasMany<ExtractionRun, $this>
      */

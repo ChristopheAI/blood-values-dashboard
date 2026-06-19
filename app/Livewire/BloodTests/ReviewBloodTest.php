@@ -88,7 +88,7 @@ class ReviewBloodTest extends Component
             $bloodTest->results()->updateOrCreate(['biomarker_id' => $biomarker->id], $payload);
         }
 
-        $bloodTest->update(['status' => 'confirmed']);
+        $bloodTest->recalculateStatusFromResults();
 
         $this->resetResultForm();
     }
@@ -122,6 +122,8 @@ class ReviewBloodTest extends Component
         if ($this->editingResultId === $resultId) {
             $this->resetResultForm();
         }
+
+        $bloodTest->recalculateStatusFromResults();
     }
 
     public function useDraft(int $draftResultId): void
@@ -156,6 +158,8 @@ class ReviewBloodTest extends Component
         if ($this->draftResultId === $draftResultId) {
             $this->resetResultForm();
         }
+
+        $bloodTest->recalculateStatusFromResults();
     }
 
     private function resetResultForm(): void
