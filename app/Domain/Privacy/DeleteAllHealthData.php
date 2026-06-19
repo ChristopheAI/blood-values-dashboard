@@ -52,6 +52,11 @@ class DeleteAllHealthData
                 ->whereHas('bloodTest', fn ($query) => $query->where('user_id', '!=', $user->id))
                 ->update(['biomarker_id' => null]);
 
+            PinnedBiomarker::query()
+                ->whereIn('biomarker_id', $ownedBiomarkerIds)
+                ->where('user_id', '!=', $user->id)
+                ->update(['biomarker_id' => null]);
+
             Biomarker::query()
                 ->where('user_id', $user->id)
                 ->delete();

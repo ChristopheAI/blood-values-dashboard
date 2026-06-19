@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $user_id
- * @property int $biomarker_id
+ * @property int|null $biomarker_id
  * @property string|null $note
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
