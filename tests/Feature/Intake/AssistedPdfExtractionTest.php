@@ -298,6 +298,8 @@ it('keeps ambiguous exact catalog alias matches as drafts', function () {
     $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
 
     expect($result->confirmed_at)->toBeNull()
+        ->and($result->biomarker_id)->toBeNull()
+        ->and($result->extracted_name)->toBe('CRP')
         ->and($result->status)->toBe('unknown')
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });

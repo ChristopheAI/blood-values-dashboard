@@ -110,11 +110,22 @@ class RunBloodTestExtraction
 
     private function matchingBiomarker(BloodTestDocument $document, ExtractedBiomarkerCandidate $candidate): ?Biomarker
     {
-        $name = Str::lower($candidate->extractedName);
-
-        return Biomarker::query()
+        $name = $this->normalizedName($candidate->extractedName);
+        $biomarkers = Biomarker::query()
             ->where('user_id', $document->bloodTest->user_id)
-            ->get()
+            ->get();
+
+        $literalMatches = $biomarkers
+            ->filter(function (Biomarker $biomarker) use ($name): bool {
+                return $this->normalizedName($biomarker->name) === $name
+                    || ($biomarker->short_name !== null && $this->normalizedName($biomarker->short_name) === $name);
+            });
+
+        if ($literalMatches->count() > 1) {
+            return null;
+        }
+
+        return $biomarkers
             ->filter(function (Biomarker $biomarker) use ($name): bool {
                 return $this->isCatalogPrefix($name, $biomarker->name)
                     || ($biomarker->short_name !== null && $this->isCatalogPrefix($name, $biomarker->short_name));
