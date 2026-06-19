@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
 use App\Models\User;
@@ -115,6 +116,37 @@ it('keeps the stored lab pdf when single document deletion fails before the data
     expect($caught?->getMessage())->toBe('Synthetic document deletion failure')
         ->and(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
     Storage::disk('local')->assertExists($document->storage_path);
+});
+
+it('clears extracted source snippets when deleting a source document', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_path' => 'blood-test-documents/with-snippets.pdf',
+    ]);
+    $confirmed = BiomarkerResult::factory()->for($bloodTest)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'source_snippet' => 'Synthetic PDF evidence for confirmed row',
+    ]);
+    $draft = BiomarkerResult::factory()->for($bloodTest)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'source_snippet' => 'Synthetic PDF evidence for draft row',
+    ]);
+
+    Storage::disk('local')->put($document->storage_path, 'pdf bytes');
+
+    $this->actingAs($user)
+        ->delete(route('blood-test-documents.destroy', $document))
+        ->assertRedirect(route('blood-tests.show', $bloodTest));
+
+    expect($confirmed->refresh()->source_snippet)->toBeNull()
+        ->and($draft->refresh()->source_snippet)->toBeNull()
+        ->and(BiomarkerResult::query()->whereKey($confirmed->id)->exists())->toBeTrue()
+        ->and(BiomarkerResult::query()->whereKey($draft->id)->exists())->toBeTrue();
 });
 
 it('keeps the document record when physical pdf deletion fails', function () {

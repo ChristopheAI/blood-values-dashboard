@@ -21,8 +21,12 @@ class DestroyBloodTestDocumentController extends Controller
         $storageDisk = $bloodTestDocument->storage_disk;
         $storagePath = $bloodTestDocument->storage_path;
 
-        DB::transaction(function () use ($bloodTestDocument, $storageDisk, $storagePath): void {
+        DB::transaction(function () use ($bloodTest, $bloodTestDocument, $storageDisk, $storagePath): void {
             $bloodTestDocument->delete();
+            $bloodTest->results()
+                ->where('entry_source', 'extracted')
+                ->whereNotNull('source_snippet')
+                ->update(['source_snippet' => null]);
 
             if (! Storage::disk($storageDisk)->delete($storagePath)) {
                 throw new RuntimeException('Failed to delete stored lab PDF.');
