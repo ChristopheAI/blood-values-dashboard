@@ -76,6 +76,11 @@ class BloodTest extends Model
         $hasDrafts = $this->results()
             ->where('entry_source', 'extracted')
             ->whereNull('confirmed_at')
+            ->where(function ($query): void {
+                $query
+                    ->whereNull('biomarker_id')
+                    ->orWhereHas('biomarker', fn ($query) => $query->where('user_id', $this->user_id));
+            })
             ->exists();
         $hasConfirmedValues = $this->confirmedResults()->exists();
 
