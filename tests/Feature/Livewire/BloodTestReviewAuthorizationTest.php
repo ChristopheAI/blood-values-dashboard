@@ -85,6 +85,66 @@ it('rejects review state with a cross-owner biomarker relation', function () {
         ->assertForbidden();
 });
 
+it('tampered livewire action cannot delete another users extracted draft', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($owner)->create(['name' => 'Ferritin']);
+    $ownersBloodTest = BloodTest::factory()->for($owner)->create(['status' => 'reviewing']);
+    $otherUsersBloodTest = BloodTest::factory()->for($otherUser)->create(['status' => 'reviewing']);
+    $ownersDraft = BiomarkerResult::factory()->for($ownersBloodTest)->for($biomarker)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Ferritin',
+    ]);
+
+    Livewire::actingAs($otherUser)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $otherUsersBloodTest])
+        ->call('deleteDraft', $ownersDraft->id)
+        ->assertForbidden();
+
+    expect(BiomarkerResult::query()->whereKey($ownersDraft->id)->exists())->toBeTrue();
+});
+
+it('tampered livewire action cannot edit another users confirmed result', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($owner)->create(['name' => 'Ferritin']);
+    $ownersBloodTest = BloodTest::factory()->for($owner)->create(['status' => 'confirmed']);
+    $otherUsersBloodTest = BloodTest::factory()->for($otherUser)->create(['status' => 'reviewing']);
+    $ownersResult = BiomarkerResult::factory()->for($ownersBloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+
+    Livewire::actingAs($otherUser)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $otherUsersBloodTest])
+        ->call('editConfirmedResult', $ownersResult->id)
+        ->assertForbidden();
+});
+
+it('tampered livewire action cannot delete another users confirmed result', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($owner)->create(['name' => 'Ferritin']);
+    $ownersBloodTest = BloodTest::factory()->for($owner)->create(['status' => 'confirmed']);
+    $otherUsersBloodTest = BloodTest::factory()->for($otherUser)->create(['status' => 'reviewing']);
+    $ownersResult = BiomarkerResult::factory()->for($ownersBloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+
+    Livewire::actingAs($otherUser)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $otherUsersBloodTest])
+        ->call('deleteConfirmedResult', $ownersResult->id)
+        ->assertForbidden();
+
+    expect(BiomarkerResult::query()->whereKey($ownersResult->id)->exists())->toBeTrue();
+});
+
 it('rejects confirmed review state without a biomarker relation', function () {
     $owner = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($owner)->create(['status' => 'confirmed']);
