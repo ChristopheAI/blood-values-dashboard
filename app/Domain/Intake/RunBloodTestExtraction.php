@@ -23,7 +23,10 @@ class RunBloodTestExtraction
 
     public function __construct(private readonly ExtractBiomarkerDrafts $extractBiomarkerDrafts) {}
 
-    public function __invoke(BloodTestDocument $document): ExtractionRun
+    /**
+     * @param  (callable(string, string): void)|null  $progress
+     */
+    public function __invoke(BloodTestDocument $document, ?callable $progress = null): ExtractionRun
     {
         $bloodTest = $document->bloodTest;
         $run = $bloodTest->extractionRuns()->create([
@@ -32,27 +35,60 @@ class RunBloodTestExtraction
             'candidate_count' => 0,
         ]);
         $candidateCount = 0;
+        $currentStage = 'extract';
+        $extractionSucceeded = false;
 
         try {
+            $this->reportProgress($progress, 'extract', 'active');
             $path = Storage::disk($document->storage_disk)->path($document->storage_path);
             $candidates = ($this->extractBiomarkerDrafts)($path);
             $candidateCount = count($candidates);
+            $this->reportProgress($progress, 'extract', 'done');
+
+            $currentStage = 'values';
+            $this->reportProgress($progress, 'values', 'active');
             DB::transaction(fn (): int => $this->storeDrafts($document, $candidates));
+            $this->reportProgress($progress, 'values', 'done');
 
             $run->update([
                 'status' => 'done',
                 'candidate_count' => $candidateCount,
             ]);
+
+            $extractionSucceeded = true;
         } catch (Throwable) {
+            $this->reportProgress($progress, $currentStage, 'failed');
+
             $run->update([
                 'status' => 'failed',
                 'candidate_count' => 0,
             ]);
         }
 
-        $bloodTest->recalculateStatusFromResults();
+        if ($extractionSucceeded) {
+            $this->reportProgress($progress, 'status', 'active');
+            $bloodTest->recalculateStatusFromResults();
+            $this->reportProgress($progress, 'status', 'done');
+
+            $this->reportProgress($progress, 'trend', 'active');
+            $this->reportProgress($progress, 'trend', 'done');
+        } else {
+            $bloodTest->recalculateStatusFromResults();
+        }
 
         return $run->refresh();
+    }
+
+    /**
+     * @param  (callable(string, string): void)|null  $progress
+     */
+    private function reportProgress(?callable $progress, string $stage, string $state): void
+    {
+        if ($progress === null) {
+            return;
+        }
+
+        $progress($stage, $state);
     }
 
     /**

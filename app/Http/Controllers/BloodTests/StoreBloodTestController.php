@@ -12,11 +12,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 class StoreBloodTestController extends Controller
 {
-    public function __invoke(Request $request, RunBloodTestExtraction $runBloodTestExtraction): RedirectResponse
+    public function __invoke(Request $request, RunBloodTestExtraction $runBloodTestExtraction): RedirectResponse|StreamedResponse
     {
         $validated = $request->validate([
             'document' => ['required', 'file', 'mimetypes:application/pdf', 'max:12000'],
@@ -61,9 +62,53 @@ class StoreBloodTestController extends Controller
         assert($bloodTest instanceof BloodTest);
         assert($document instanceof BloodTestDocument);
 
+        if ($this->wantsProgressStream($request)) {
+            return $this->streamExtractionProgress($bloodTest, $document, $runBloodTestExtraction);
+        }
+
         $runBloodTestExtraction($document);
 
         return redirect()->route('blood-tests.show', $bloodTest);
+    }
+
+    private function wantsProgressStream(Request $request): bool
+    {
+        return $request->header('X-Intake-Stream') === '1'
+            && $request->accepts('application/x-ndjson');
+    }
+
+    private function streamExtractionProgress(
+        BloodTest $bloodTest,
+        BloodTestDocument $document,
+        RunBloodTestExtraction $runBloodTestExtraction,
+    ): StreamedResponse {
+        return response()->stream(function () use ($bloodTest, $document, $runBloodTestExtraction): void {
+            $emit = function (array $payload): void {
+                echo json_encode($payload, JSON_THROW_ON_ERROR)."\n";
+
+                if (ob_get_level() > 0) {
+                    ob_flush();
+                }
+
+                flush();
+            };
+
+            $runBloodTestExtraction(
+                $document,
+                function (string $stage, string $state) use ($emit): void {
+                    $emit([
+                        'stage' => $stage,
+                        'state' => $state,
+                    ]);
+                },
+            );
+
+            $emit(['redirect' => route('blood-tests.show', $bloodTest, false)]);
+        }, 200, [
+            'Content-Type' => 'application/x-ndjson',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ]);
     }
 
     private function sanitizeFilename(string $filename): string

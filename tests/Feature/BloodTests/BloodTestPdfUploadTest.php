@@ -81,11 +81,66 @@ it('renders the dropzone choose control as a button and keeps the input pdf only
 
     expect($html)
         ->toContain('data-test="lab-pdf-dropzone"')
+        ->toContain('fetch(form.action')
+        ->toContain("'Accept': 'application/x-ndjson'")
+        ->toContain("'X-Intake-Stream': '1'")
+        ->toContain('progressStages[payload.stage] = payload.state')
+        ->toContain('window.location.href = payload.redirect')
         ->toContain('@drop.prevent="dragging = false; setFiles($event.dataTransfer.files); if (fileName) $nextTick(() => $el.closest(\'form\').requestSubmit())"')
         ->toContain('@change="fileName = $event.target.files[0]?.name ?? \'\'; if (fileName) $nextTick(() => $el.form.requestSubmit())"')
         ->toContain('data-test="selected-file-name"')
         ->toMatch('/<button\s+[^>]*type="button"[^>]*data-test="choose-pdf-button"/s')
         ->toMatch('/<input\s+[^>]*name="document"[^>]*accept="application\/pdf"[^>]*data-test="lab-pdf-input"/s');
+});
+
+it('streams safe real-stage progress for enhanced pdf uploads', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $file = new UploadedFile(
+        base_path('tests/Fixtures/assisted-extraction-lab.pdf'),
+        'assisted-extraction-lab.pdf',
+        'application/pdf',
+        null,
+        true,
+    );
+
+    $response = $this->actingAs($user)
+        ->post(route('blood-tests.store'), [
+            'document' => $file,
+        ], [
+            'Accept' => 'application/x-ndjson',
+            'X-Intake-Stream' => '1',
+        ]);
+
+    $response->assertOk()
+        ->assertHeader('Content-Type', 'application/x-ndjson');
+
+    $content = trim($response->streamedContent());
+    $events = collect(explode("\n", $content))
+        ->map(fn (string $line): array => json_decode($line, true, flags: JSON_THROW_ON_ERROR))
+        ->all();
+
+    expect($events)->sequence(
+        fn ($event) => $event->toMatchArray(['stage' => 'extract', 'state' => 'active']),
+        fn ($event) => $event->toMatchArray(['stage' => 'extract', 'state' => 'done']),
+        fn ($event) => $event->toMatchArray(['stage' => 'values', 'state' => 'active']),
+        fn ($event) => $event->toMatchArray(['stage' => 'values', 'state' => 'done']),
+        fn ($event) => $event->toMatchArray(['stage' => 'status', 'state' => 'active']),
+        fn ($event) => $event->toMatchArray(['stage' => 'status', 'state' => 'done']),
+        fn ($event) => $event->toMatchArray(['stage' => 'trend', 'state' => 'active']),
+        fn ($event) => $event->toMatchArray(['stage' => 'trend', 'state' => 'done']),
+        fn ($event) => $event->toHaveKey('redirect'),
+    );
+
+    expect($content)
+        ->not->toContain('Ferritin')
+        ->not->toContain('42')
+        ->not->toContain('assisted-extraction-lab.pdf');
+
+    $bloodTest = BloodTest::query()->firstOrFail();
+
+    expect($events[8]['redirect'])->toBe(route('blood-tests.show', $bloodTest, false));
 });
 
 it('lab pdf storage path does not use original filename', function () {

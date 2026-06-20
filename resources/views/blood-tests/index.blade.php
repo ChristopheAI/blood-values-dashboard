@@ -6,21 +6,12 @@
             enctype="multipart/form-data"
             class="space-y-5"
             data-test="blood-test-upload-form"
-            onsubmit="document.querySelector('[data-test=&quot;intake-progress&quot;]').hidden = false; this.querySelector('[data-test=&quot;choose-pdf-button&quot;]').setAttribute('disabled', 'disabled');"
+            x-data="labPdfIntake()"
+            @submit="submitUpload($event)"
         >
             @csrf
 
             <section
-                x-data="{
-                    dragging: false,
-                    fileName: '',
-                    setFiles(files) {
-                        if (files && files.length) {
-                            $refs.input.files = files;
-                            this.fileName = files[0].name;
-                        }
-                    },
-                }"
                 @dragover.prevent="dragging = true"
                 @dragleave.prevent="dragging = false"
                 @drop.prevent="dragging = false; setFiles($event.dataTransfer.files); if (fileName) $nextTick(() => $el.closest('form').requestSubmit())"
@@ -48,6 +39,8 @@
 
                     <button
                         type="button"
+                        x-ref="chooseButton"
+                        :disabled="isUploading"
                         @click="$refs.input.click()"
                         class="inline-flex h-10 cursor-pointer items-center rounded-lg bg-neutral-900 px-4 text-sm font-medium text-white dark:bg-white dark:text-neutral-900"
                         data-test="choose-pdf-button"
@@ -61,12 +54,12 @@
                 @enderror
             </section>
 
-            <section hidden class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" data-test="intake-progress">
+            <section hidden x-bind:hidden="! progressVisible" class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" data-test="intake-progress">
                 <div class="grid gap-3 text-sm sm:grid-cols-4">
-                    <div class="rounded-md bg-neutral-100 p-3 dark:bg-neutral-900" data-test="intake-progress-stage-extract" data-state="pending">{{ __('extract') }}</div>
-                    <div class="rounded-md bg-neutral-100 p-3 dark:bg-neutral-900" data-test="intake-progress-stage-values" data-state="pending">{{ __('waarden') }}</div>
-                    <div class="rounded-md bg-neutral-100 p-3 dark:bg-neutral-900" data-test="intake-progress-stage-status" data-state="pending">{{ __('status') }}</div>
-                    <div class="rounded-md bg-neutral-100 p-3 dark:bg-neutral-900" data-test="intake-progress-stage-trend" data-state="pending">{{ __('trend') }}</div>
+                    <div class="rounded-md p-3 font-medium" :class="stageClass('extract')" :data-state="progressStages.extract" data-test="intake-progress-stage-extract" data-state="pending">{{ __('extract') }}</div>
+                    <div class="rounded-md p-3 font-medium" :class="stageClass('values')" :data-state="progressStages.values" data-test="intake-progress-stage-values" data-state="pending">{{ __('waarden') }}</div>
+                    <div class="rounded-md p-3 font-medium" :class="stageClass('status')" :data-state="progressStages.status" data-test="intake-progress-stage-status" data-state="pending">{{ __('status') }}</div>
+                    <div class="rounded-md p-3 font-medium" :class="stageClass('trend')" :data-state="progressStages.trend" data-test="intake-progress-stage-trend" data-state="pending">{{ __('trend') }}</div>
                 </div>
             </section>
         </form>
@@ -90,4 +83,112 @@
             @endforelse
         </div>
     </section>
+
+    <script>
+        window.labPdfIntake = function () {
+            return {
+                dragging: false,
+                fileName: '',
+                isUploading: false,
+                progressVisible: false,
+                progressStages: {
+                    extract: 'pending',
+                    values: 'pending',
+                    status: 'pending',
+                    trend: 'pending',
+                },
+                setFiles(files) {
+                    if (files && files.length) {
+                        this.$refs.input.files = files;
+                        this.fileName = files[0].name;
+                    }
+                },
+                resetProgress() {
+                    this.progressStages = {
+                        extract: 'pending',
+                        values: 'pending',
+                        status: 'pending',
+                        trend: 'pending',
+                    };
+                },
+                stageClass(stage) {
+                    return {
+                        active: 'bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-200',
+                        done: 'bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200',
+                        failed: 'bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200',
+                        pending: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-900 dark:text-neutral-300',
+                    }[this.progressStages[stage] ?? 'pending'];
+                },
+                async submitUpload(event) {
+                    if (this.isUploading) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    const form = event.target;
+                    this.isUploading = true;
+                    this.progressVisible = true;
+                    this.resetProgress();
+                    this.$refs.chooseButton.disabled = true;
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            body: new FormData(form),
+                            headers: { 'Accept': 'application/x-ndjson', 'X-Intake-Stream': '1' },
+                        });
+
+                        if (! response.ok || ! response.body) {
+                            form.submit();
+                            return;
+                        }
+
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+
+                        while (true) {
+                            const { done, value } = await reader.read();
+
+                            if (done) {
+                                break;
+                            }
+
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop() ?? '';
+
+                            for (const line of lines) {
+                                this.handleProgressLine(line);
+                            }
+                        }
+
+                        if (buffer.trim() !== '') {
+                            this.handleProgressLine(buffer);
+                        }
+                    } catch (error) {
+                        form.submit();
+                    }
+                },
+                handleProgressLine(line) {
+                    const trimmed = line.trim();
+
+                    if (trimmed === '') {
+                        return;
+                    }
+
+                    const payload = JSON.parse(trimmed);
+
+                    if (payload.stage && payload.state) {
+                        this.progressStages[payload.stage] = payload.state;
+                    }
+
+                    if (payload.redirect) {
+                        window.location.href = payload.redirect;
+                    }
+                },
+            };
+        };
+    </script>
 </x-layouts::app>
