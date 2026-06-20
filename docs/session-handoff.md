@@ -71,6 +71,9 @@ Update this section after each meaningful session.
   - Review-form biomarker names collapse Unicode/PDF whitespace before catalog
     lookup and creation, so manual/draft confirmation reuses existing catalog
     entries instead of creating spacing-only duplicates.
+  - If multiple existing catalog entries normalize to the same review-form name,
+    name-only confirmation is rejected and the owner must choose an explicit
+    biomarker, avoiding arbitrary history/trend attachment.
   - Wrapper/trailing punctuation around extracted value/reference units is
     normalized centrally before auto-confirm, so candidate sources behave
     consistently.

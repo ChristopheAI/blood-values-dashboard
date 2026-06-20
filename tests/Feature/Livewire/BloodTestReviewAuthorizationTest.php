@@ -374,3 +374,30 @@ it('reuses an owned biomarker when a manual review name contains pdf whitespace'
         ->and($result->biomarker_id)->toBe($biomarker->id)
         ->and($result->biomarker->name)->toBe('Marker Alpha');
 });
+
+it('rejects name-only confirmation when normalized biomarker names are ambiguous', function () {
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    Biomarker::factory()->for($user)->create(['name' => 'Marker  Alpha']);
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    $component = Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->set('resultForm.name', 'marker alpha')
+        ->set('resultForm.value', '12.4')
+        ->set('resultForm.unit', 'mg/L');
+
+    $exception = null;
+
+    try {
+        $component->call('confirmResult');
+    } catch (Throwable $caught) {
+        $exception = $caught;
+    }
+
+    expect($exception)->toBeNull();
+
+    $component->assertHasErrors(['resultForm.name']);
+
+    expect(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->exists())->toBeFalse();
+});

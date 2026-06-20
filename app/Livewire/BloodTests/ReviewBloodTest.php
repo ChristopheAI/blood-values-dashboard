@@ -61,6 +61,11 @@ class ReviewBloodTest extends Component
 
         $form = $this->normalizeResultForm($validated['resultForm']);
         $biomarker = $this->ownedBiomarker($form);
+
+        if (! $biomarker instanceof Biomarker) {
+            return;
+        }
+
         $currentResultId = $editingResult->id ?? $draft->id ?? null;
 
         if ($this->hasOtherResultForBiomarker($bloodTest, $biomarker, $currentResultId)) {
@@ -400,7 +405,7 @@ class ReviewBloodTest extends Component
     /**
      * @param  array<string, mixed>  $form
      */
-    private function ownedBiomarker(array $form): Biomarker
+    private function ownedBiomarker(array $form): ?Biomarker
     {
         if ($form['biomarker_id'] !== null) {
             $biomarker = Biomarker::query()->whereKey((int) $form['biomarker_id'])->firstOrFail();
@@ -411,13 +416,22 @@ class ReviewBloodTest extends Component
         }
 
         $normalizedFormName = $this->normalizedNameForMatch((string) $form['name']);
-        $existingBiomarker = Biomarker::query()
-            ->where('user_id', Auth::id())
-            ->get()
-            ->first(fn (Biomarker $biomarker): bool => $this->normalizedNameForMatch($biomarker->name) === $normalizedFormName);
+        $matchingBiomarkers = [];
 
-        if ($existingBiomarker instanceof Biomarker) {
-            return $existingBiomarker;
+        foreach (Biomarker::query()->where('user_id', Auth::id())->get() as $biomarker) {
+            if ($this->normalizedNameForMatch($biomarker->name) === $normalizedFormName) {
+                $matchingBiomarkers[] = $biomarker;
+            }
+        }
+
+        if (count($matchingBiomarkers) > 1) {
+            $this->addError('resultForm.name', 'This biomarker name matches multiple catalog entries. Choose one from the catalog.');
+
+            return null;
+        }
+
+        if (count($matchingBiomarkers) === 1) {
+            return $matchingBiomarkers[0];
         }
 
         return Biomarker::query()->create(
