@@ -178,18 +178,28 @@
                     @endphp
 
                     <article class="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40" data-test="extracted-draft-row" data-state="draft" data-confidence="{{ $confidenceLevel }}">
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] sm:items-start">
                             <div>
+                                <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Biomarker') }}</div>
                                 <div class="font-medium">{{ $draft->biomarker?->name ?? $draft->extracted_name ?? __('Unknown marker') }}</div>
-                                <div class="text-neutral-600 dark:text-neutral-400">
-                                    {{ (float) $draft->value }} {{ $draft->unit }}
-                                    @if ($referenceRange !== null)
-                                        · {{ $referenceRange }}
-                                    @endif
-                                </div>
                             </div>
 
-                            <div class="flex flex-wrap gap-2">
+                            <div data-test="draft-value">
+                                <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Value') }}</div>
+                                <div class="font-medium text-neutral-900 dark:text-white">{{ (float) $draft->value }} {{ $draft->unit }}</div>
+                            </div>
+
+                            <div data-test="draft-reference">
+                                <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Reference') }}</div>
+                                <div class="text-neutral-700 dark:text-neutral-300">{{ $referenceRange ?? __('Unknown') }}</div>
+                            </div>
+
+                            <div data-test="draft-review-state">
+                                <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Review state') }}</div>
+                                <div class="text-neutral-700 dark:text-neutral-300">{{ __('Needs confirmation') }}</div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2 sm:justify-end">
                                 <flux:button type="button" size="sm" wire:click="useDraft({{ $draft->id }})" data-test="use-draft-button">
                                     {{ __('Use draft') }}
                                 </flux:button>

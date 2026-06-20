@@ -22,6 +22,10 @@
         <div class="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border border-neutral-200 bg-white p-8 shadow-xs dark:border-neutral-700 dark:bg-neutral-800">
             <span class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ __('Sleep je lab-PDF hierheen') }}</span>
             <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('PDF only') }}</span>
+            <div class="max-w-md space-y-1 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300" data-test="upload-trust-notice">
+                <p>{{ __('Parsed locally from the PDF text layer. No external processing.') }}</p>
+                <p>{{ __('Values affect status and trends only after you confirm them.') }}</p>
+            </div>
 
             <input
                 x-ref="input"

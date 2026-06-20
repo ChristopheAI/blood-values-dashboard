@@ -257,6 +257,37 @@ it('marks below auto-confirm threshold drafts as low confidence in the review st
         ->assertSee('Low confidence');
 });
 
+it('separates extracted draft value and reference fields in the review strip', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Apolipoprotein B']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 162,
+        'unit' => 'mg/dL',
+        'reference_min' => null,
+        'reference_max' => 100,
+        'reference_unit' => 'mg/dL',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Apolipoprotein B',
+        'extraction_confidence' => 0.82,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('data-test="draft-value"', false)
+        ->assertSee('data-test="draft-reference"', false)
+        ->assertSee('data-test="draft-review-state"', false)
+        ->assertSee('Value')
+        ->assertSee('162 mg/dL')
+        ->assertSee('Reference')
+        ->assertSee('<= 100 mg/dL')
+        ->assertSee('Review state')
+        ->assertSee('Needs confirmation')
+        ->assertDontSee('162 mg/dL · <= 100 mg/dL');
+});
+
 it('uses neutral review-strip copy when extraction has no drafts left', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
