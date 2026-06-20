@@ -8,6 +8,7 @@ use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
 use App\Models\ContextNote;
+use App\Models\ExtractionRun;
 use App\Models\PinnedBiomarker;
 use App\Models\Reminder;
 use App\Models\User;
@@ -23,6 +24,7 @@ class BuildDataExport
      *     biomarkers: list<array<string, mixed>>,
      *     biomarker_results: list<array<string, mixed>>,
      *     documents: list<array<string, mixed>>,
+     *     extraction_runs: list<array<string, mixed>>,
      *     pinned_biomarkers: list<array<string, mixed>>,
      *     context_notes: list<array<string, mixed>>,
      *     reminders: list<array<string, mixed>>
@@ -38,6 +40,7 @@ class BuildDataExport
             'biomarkers' => $this->biomarkers($user),
             'biomarker_results' => $this->biomarkerResults($user),
             'documents' => $this->documents($user),
+            'extraction_runs' => $this->extractionRuns($user),
             'pinned_biomarkers' => $this->pinnedBiomarkers($user),
             'context_notes' => $this->contextNotes($user),
             'reminders' => $this->reminders($user),
@@ -63,6 +66,30 @@ class BuildDataExport
                 'status' => $bloodTest->status,
                 'created_at' => $bloodTest->created_at?->toISOString(),
                 'updated_at' => $bloodTest->updated_at?->toISOString(),
+            ])
+            ->all());
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function extractionRuns(User $user): array
+    {
+        return array_values(ExtractionRun::query()
+            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $user->id))
+            ->join('blood_tests', 'extraction_runs.blood_test_id', '=', 'blood_tests.id')
+            ->orderBy('blood_tests.test_date')
+            ->orderBy('extraction_runs.id')
+            ->select('extraction_runs.*')
+            ->get()
+            ->map(fn (ExtractionRun $run): array => [
+                'id' => $run->id,
+                'blood_test_id' => $run->blood_test_id,
+                'engine' => $run->engine,
+                'status' => $run->status,
+                'candidate_count' => $run->candidate_count,
+                'created_at' => $run->created_at?->toISOString(),
+                'updated_at' => $run->updated_at?->toISOString(),
             ])
             ->all());
     }

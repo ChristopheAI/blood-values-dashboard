@@ -8,6 +8,7 @@ use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
 use App\Models\ContextNote;
+use App\Models\ExtractionRun;
 use App\Models\PinnedBiomarker;
 use App\Models\Reminder;
 use App\Models\User;
@@ -183,6 +184,39 @@ it('exports trace metadata for confirmed auto-filled values without exporting dr
         ->and((float) $result['extraction_confidence'])->toBe(0.95)
         ->and($result['source_snippet'])->toBe('Ferritin 42 ug/L ref 30-150 ug/L')
         ->and($result['value'])->not->toBe(999);
+});
+
+it('exports owner scoped extraction run metadata without parser content', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+    $otherBloodTest = BloodTest::factory()->for($otherUser)->create(['test_date' => '2026-06-01']);
+
+    ExtractionRun::factory()->for($bloodTest)->create([
+        'engine' => 'smalot/pdfparser',
+        'status' => 'done',
+        'candidate_count' => 3,
+    ]);
+    ExtractionRun::factory()->for($otherBloodTest)->create([
+        'engine' => 'other-private-engine',
+        'status' => 'done',
+        'candidate_count' => 99,
+    ]);
+
+    $export = app(BuildDataExport::class)($user);
+
+    expect($export['extraction_runs'])->toHaveCount(1);
+
+    $run = $export['extraction_runs'][0];
+
+    expect($run['blood_test_id'])->toBe($bloodTest->id)
+        ->and($run['engine'])->toBe('smalot/pdfparser')
+        ->and($run['status'])->toBe('done')
+        ->and($run['candidate_count'])->toBe(3)
+        ->and($run)->not->toHaveKey('source_snippet')
+        ->and($run)->not->toHaveKey('parser_output')
+        ->and($run)->not->toHaveKey('pdf_text')
+        ->and(json_encode($export, JSON_THROW_ON_ERROR))->not->toContain('other-private-engine');
 });
 
 it('requires password confirmation before accessing data privacy actions', function () {
