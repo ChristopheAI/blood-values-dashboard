@@ -778,6 +778,36 @@ it('auto-confirms clean extracted decimal comma values after normalizing numbers
         ->and((float) $result->extraction_confidence)->toBe(0.95);
 });
 
+it('normalizes extracted units before auto-confirming clean rows', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '12.4',
+            unit: ' mg/L ',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic padded unit row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($bloodTest->refresh()->status)->toBe('confirmed')
+        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->status)->toBe('normal')
+        ->and($result->unit)->toBe('mg/L')
+        ->and($result->reference_unit)->toBe('mg/L')
+        ->and((float) $result->extraction_confidence)->toBe(0.95);
+});
+
 it('does not overwrite a previously confirmed value when extraction sees the same biomarker', function () {
     Storage::fake('local');
 

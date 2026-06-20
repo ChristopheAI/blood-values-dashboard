@@ -119,6 +119,8 @@ class RunBloodTestExtraction
             $sourceSnippet = $this->sourceSnippet($candidate);
             $referenceMin = $this->normalizedNullableNumber($candidate->referenceMin);
             $referenceMax = $this->normalizedNullableNumber($candidate->referenceMax);
+            $unit = $this->normalizedUnit($candidate->unit);
+            $referenceUnit = $this->normalizedNullableUnit($candidate->referenceUnit);
 
             $attributes = [
                 'blood_test_id' => $bloodTest->id,
@@ -131,10 +133,10 @@ class RunBloodTestExtraction
                 $attributes['biomarker_id'] = null;
                 $attributes['extracted_name'] = $extractedName;
                 $attributes['value'] = $value;
-                $attributes['unit'] = $candidate->unit;
+                $attributes['unit'] = $unit;
                 $attributes['reference_min'] = $referenceMin;
                 $attributes['reference_max'] = $referenceMax;
-                $attributes['reference_unit'] = $candidate->referenceUnit;
+                $attributes['reference_unit'] = $referenceUnit;
                 $attributes['confirmed_at'] = null;
                 $attributes['source_snippet'] = $sourceSnippet;
             }
@@ -143,11 +145,11 @@ class RunBloodTestExtraction
                 'biomarker_id' => $biomarker?->id,
                 'extracted_name' => $extractedName,
                 'value' => $value,
-                'unit' => $candidate->unit,
+                'unit' => $unit,
                 'reference_min' => $referenceMin,
                 'reference_max' => $referenceMax,
-                'reference_unit' => $candidate->referenceUnit,
-                'status' => $autoConfirm ? $this->status($candidate, $value, $referenceMin, $referenceMax)->value : 'unknown',
+                'reference_unit' => $referenceUnit,
+                'status' => $autoConfirm ? $this->status($unit, $referenceUnit, $value, $referenceMin, $referenceMax)->value : 'unknown',
                 'entry_source' => 'extracted',
                 'confirmed_at' => $confirmedAt,
                 'extraction_confidence' => $confidence,
@@ -278,7 +280,7 @@ class RunBloodTestExtraction
         return $biomarker instanceof Biomarker
             && $this->hasUnambiguousLiteralCatalogMatch($document, $candidate, $biomarker)
             && is_numeric($this->normalizedNumber($candidate->value))
-            && trim($candidate->unit) !== ''
+            && $this->normalizedUnit($candidate->unit) !== ''
             && $this->hasParseableReferenceBounds($candidate)
             && $this->hasCompatibleReferenceUnit($candidate);
     }
@@ -296,9 +298,9 @@ class RunBloodTestExtraction
 
     private function hasCompatibleReferenceUnit(ExtractedBiomarkerCandidate $candidate): bool
     {
-        $referenceUnit = trim((string) $candidate->referenceUnit);
+        $referenceUnit = $this->normalizedNullableUnit($candidate->referenceUnit);
 
-        return $referenceUnit === '' || $referenceUnit === trim($candidate->unit);
+        return $referenceUnit === null || $referenceUnit === $this->normalizedUnit($candidate->unit);
     }
 
     private function hasUnambiguousLiteralCatalogMatch(
@@ -324,18 +326,14 @@ class RunBloodTestExtraction
         return Str::lower(trim($name));
     }
 
-    private function status(
-        ExtractedBiomarkerCandidate $candidate,
-        string $value,
-        ?string $referenceMin,
-        ?string $referenceMax,
-    ): BiomarkerStatus {
+    private function status(string $unit, ?string $referenceUnit, string $value, ?string $referenceMin, ?string $referenceMax): BiomarkerStatus
+    {
         return (new DetermineBiomarkerStatus)(
             value: (float) $value,
-            valueUnit: $candidate->unit,
+            valueUnit: $unit,
             referenceMinimum: $referenceMin === null ? null : (float) $referenceMin,
             referenceMaximum: $referenceMax === null ? null : (float) $referenceMax,
-            referenceUnit: $candidate->referenceUnit ?: $candidate->unit,
+            referenceUnit: $referenceUnit ?: $unit,
         );
     }
 
@@ -353,6 +351,22 @@ class RunBloodTestExtraction
         $number = $this->normalizedNumber($number);
 
         return is_numeric($number) ? $number : null;
+    }
+
+    private function normalizedUnit(string $unit): string
+    {
+        return trim($unit);
+    }
+
+    private function normalizedNullableUnit(?string $unit): ?string
+    {
+        if ($unit === null) {
+            return null;
+        }
+
+        $unit = $this->normalizedUnit($unit);
+
+        return $unit === '' ? null : $unit;
     }
 
     private function hasConfirmedValue(int $bloodTestId, int $biomarkerId): bool
