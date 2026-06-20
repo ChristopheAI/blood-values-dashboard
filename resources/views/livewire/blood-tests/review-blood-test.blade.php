@@ -72,6 +72,14 @@
                 </thead>
                 <tbody>
                     @forelse ($confirmedResults as $result)
+                        @php
+                            $trendSummary = $trendSummaries[$result->id] ?? [
+                                'state' => 'first',
+                                'label' => __('First tracked value'),
+                                'detail' => null,
+                            ];
+                        @endphp
+
                         <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="confirmed-value-row">
                             <td class="p-3">{{ $result->biomarker->name }}</td>
                             <td class="p-3">{{ (float) $result->value }} {{ $result->unit }}</td>
@@ -86,7 +94,15 @@
                                 </div>
                             </td>
                             <td class="p-3 text-right">
-                                <a href="{{ route('biomarkers.show', $result->biomarker) }}" class="text-sm font-medium text-blue-700 underline dark:text-blue-300" data-test="open-trend-button">{{ __('Open trend') }}</a>
+                                <div class="flex flex-col items-end gap-1" data-test="confirmed-value-trend" data-state="{{ $trendSummary['state'] }}">
+                                    <span class="font-medium">{{ $trendSummary['label'] }}</span>
+
+                                    @if ($trendSummary['detail'] !== null)
+                                        <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $trendSummary['detail'] }}</span>
+                                    @endif
+
+                                    <a href="{{ route('biomarkers.show', $result->biomarker) }}" class="text-sm font-medium text-blue-700 underline dark:text-blue-300" data-test="open-trend-button">{{ __('Open trend') }}</a>
+                                </div>
                             </td>
                             <td class="p-3">
                                 <div class="flex justify-end gap-2">

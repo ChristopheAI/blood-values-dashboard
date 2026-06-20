@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Biomarker;
+use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\User;
 use Illuminate\Support\Facades\File;
@@ -96,7 +97,17 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertAuthenticated();
 
         $user = User::query()->where('email', $email)->firstOrFail();
-        Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+        $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+        $previousBloodTest = BloodTest::factory()->for($user)->create([
+            'test_date' => '2026-05-01',
+            'status' => 'confirmed',
+        ]);
+        BiomarkerResult::factory()->for($previousBloodTest)->for($ferritin)->create([
+            'value' => 40,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
 
         $browser->visit('/blood-tests')
             ->waitFor('[data-test="lab-pdf-dropzone"]')
@@ -123,6 +134,9 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertSee('42 ug/L')
             ->assertSee('auto-filled from PDF')
             ->assertSee('normal')
+            ->assertPresent('[data-test="confirmed-value-trend"][data-state="compared"]')
+            ->assertSee('+2 ug/L')
+            ->assertSee('previous 40 ug/L')
             ->assertPresent('[data-test="review-strip"]')
             ->assertPresent('[data-test="extracted-draft-row"][data-state="draft"][data-confidence="low"]')
             ->assertSee('CRP')

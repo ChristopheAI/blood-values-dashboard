@@ -330,6 +330,39 @@ it('marks auto-filled values when the source PDF is gone', function () {
         ->assertSee('auto-filled from PDF (source deleted)');
 });
 
+it('shows a compact trend summary for confirmed values on the result screen', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $previousBloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => '2026-05-01',
+        'status' => 'confirmed',
+    ]);
+    $bloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => null,
+        'status' => 'confirmed',
+    ]);
+
+    BiomarkerResult::factory()->for($previousBloodTest)->for($biomarker)->create([
+        'value' => 40,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('data-test="confirmed-value-trend" data-state="compared"', false)
+        ->assertSee('+2 ug/L')
+        ->assertSee('previous 40 ug/L');
+});
+
 it('marks the values stage done when confirmed values already exist', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
