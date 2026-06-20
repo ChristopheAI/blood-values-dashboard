@@ -249,11 +249,6 @@ class ExtractBiomarkerDrafts
         return [
             $this->compactUnitFirstAttachedPattern(),
             $this->compactUnitFirstSeparatedPattern(),
-            '~(?<name>[A-Za-z][A-Za-z0-9 .()/-]*?[A-Za-z0-9)])(?<unit>'.$this->compactUnitPattern().')\s+'.
-                $this->commaSeparatedRangePattern().'~u',
-            '~(?<name>[A-Za-z][A-Za-z0-9 .()/-]*?)\s+'.
-                '(?<unit>'.$this->compactUnitPattern().')\s+'.
-                $this->commaSeparatedRangePattern().'~u',
         ];
     }
 
@@ -262,13 +257,6 @@ class ExtractBiomarkerDrafts
         return '(?<value>-?\d+(?:[,.]\d+)?)\s*[-–]\s*'.
             '(?<reference_min>-?\d+(?:[,.]\d+)?)\s*[-–]\s*'.
             '(?<reference_max>-?\d+(?:[,.]\d+)?)[<>]?';
-    }
-
-    private function commaSeparatedRangePattern(): string
-    {
-        return '(?<value>-?\d+(?:[,.]\d+)?)\s*[-–]\s*'.
-            '(?<reference_min>-?\d+(?:[,.]\d+)?)\s*,\s*'.
-            '(?<reference_max>-?\d+(?:[,.]\d+)?)(?!\s*[-–])[<>]?';
     }
 
     private function compactUnitPattern(): string

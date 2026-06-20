@@ -131,7 +131,7 @@ it('extracts compact unit-first candidates with symbolic slash units', function 
         ->and($candidates[1]->referenceUnit)->toBe('3°U/L');
 });
 
-it('extracts compact unit-first candidates with comma separated reference ranges', function () {
+it('skips ambiguous compact unit-first candidates with comma separated numeric groups', function () {
     $path = syntheticCommaRangeUnitFirstInlinePdfPath();
 
     try {
@@ -140,17 +140,7 @@ it('extracts compact unit-first candidates with comma separated reference ranges
         @unlink($path);
     }
 
-    expect($candidates)->toHaveCount(2)
-        ->and($candidates[0]->extractedName)->toBe('MarkerAlpha')
-        ->and($candidates[0]->value)->toBe('12.4')
-        ->and($candidates[0]->unit)->toBe('K°U/L')
-        ->and($candidates[0]->referenceMin)->toBe('10.0')
-        ->and($candidates[0]->referenceMax)->toBe('20.0')
-        ->and($candidates[1]->extractedName)->toBe('Marker Beta')
-        ->and($candidates[1]->value)->toBe('8.4')
-        ->and($candidates[1]->unit)->toBe('3°U/L')
-        ->and($candidates[1]->referenceMin)->toBe('6.0')
-        ->and($candidates[1]->referenceMax)->toBe('10.0');
+    expect($candidates)->toHaveCount(0);
 });
 
 it('creates extracted draft rows and an extraction run after pdf upload', function () {
