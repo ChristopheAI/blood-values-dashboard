@@ -55,23 +55,32 @@ it('uses the sanitized pdf filename as the upload-first title when no metadata i
 it('renders an upload-first empty intake dropzone without metadata or account fields', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user)
-        ->get(route('blood-tests.index'))
+    $response = $this->actingAs($user)->get(route('blood-tests.index'));
+    $html = $response->getContent();
+
+    $response
         ->assertOk()
         ->assertSee('Sleep je lab-PDF hierheen')
         ->assertSee('PDF only')
         ->assertSee('data-test="lab-pdf-dropzone"', false)
         ->assertSee('data-test="intake-progress"', false)
-        ->assertSee('data-test="intake-progress-stage-extract" data-state="pending"', false)
-        ->assertSee('data-test="intake-progress-stage-values" data-state="pending"', false)
-        ->assertSee('data-test="intake-progress-stage-status" data-state="pending"', false)
-        ->assertSee('data-test="intake-progress-stage-trend" data-state="pending"', false)
         ->assertDontSee('data-test="upload-pdf-button"', false)
         ->assertDontSee('data-test="blood-test-date-input"', false)
         ->assertDontSee('data-test="blood-test-lab-input"', false)
         ->assertDontSee('data-test="blood-test-title-input"', false)
         ->assertDontSee('name="email"', false)
         ->assertDontSee('name="account"', false);
+
+    expect($html)
+        ->toContain('data-test="intake-progress-stage-extract"')
+        ->toContain(':data-state="progressStages.extract"')
+        ->toContain('data-test="intake-progress-stage-values"')
+        ->toContain(':data-state="progressStages.values"')
+        ->toContain('data-test="intake-progress-stage-status"')
+        ->toContain(':data-state="progressStages.status"')
+        ->toContain('data-test="intake-progress-stage-trend"')
+        ->toContain(':data-state="progressStages.trend"')
+        ->not->toContain('data-state="pending"');
 });
 
 it('renders the dropzone choose control as a button and keeps the input pdf only', function () {

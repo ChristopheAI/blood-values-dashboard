@@ -56,10 +56,10 @@
 
             <section hidden x-bind:hidden="! progressVisible" class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" data-test="intake-progress">
                 <div class="grid gap-3 text-sm sm:grid-cols-4">
-                    <div class="rounded-md p-3 font-medium" :class="stageClass('extract')" :data-state="progressStages.extract" data-test="intake-progress-stage-extract" data-state="pending">{{ __('extract') }}</div>
-                    <div class="rounded-md p-3 font-medium" :class="stageClass('values')" :data-state="progressStages.values" data-test="intake-progress-stage-values" data-state="pending">{{ __('waarden') }}</div>
-                    <div class="rounded-md p-3 font-medium" :class="stageClass('status')" :data-state="progressStages.status" data-test="intake-progress-stage-status" data-state="pending">{{ __('status') }}</div>
-                    <div class="rounded-md p-3 font-medium" :class="stageClass('trend')" :data-state="progressStages.trend" data-test="intake-progress-stage-trend" data-state="pending">{{ __('trend') }}</div>
+                    <div class="rounded-md p-3 font-medium" :class="stageClass('extract')" :data-state="progressStages.extract" data-test="intake-progress-stage-extract">{{ __('extract') }}</div>
+                    <div class="rounded-md p-3 font-medium" :class="stageClass('values')" :data-state="progressStages.values" data-test="intake-progress-stage-values">{{ __('waarden') }}</div>
+                    <div class="rounded-md p-3 font-medium" :class="stageClass('status')" :data-state="progressStages.status" data-test="intake-progress-stage-status">{{ __('status') }}</div>
+                    <div class="rounded-md p-3 font-medium" :class="stageClass('trend')" :data-state="progressStages.trend" data-test="intake-progress-stage-trend">{{ __('trend') }}</div>
                 </div>
             </section>
         </form>
