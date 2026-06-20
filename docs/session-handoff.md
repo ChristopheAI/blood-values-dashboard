@@ -53,6 +53,8 @@ Update this section after each meaningful session.
   - `AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85`; clean, unambiguous,
     catalog-matched rows may be auto-confirmed, while prefix-only, ambiguous,
     missing-unit, missing-range, unmatched, or noisy rows remain drafts.
+  - Extracted biomarker names are whitespace-normalized before catalog matching,
+    so PDF spacing artifacts do not turn clean rows into unmatched drafts.
   - Catalog anchoring accepts punctuation/whitespace boundaries after a
     canonical name, but still keeps those prefix-only rows as drafts.
   - Extracted decimal-comma values are normalized before confidence gating,

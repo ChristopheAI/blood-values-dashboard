@@ -323,7 +323,9 @@ class RunBloodTestExtraction
 
     private function normalizedName(string $name): string
     {
-        return Str::lower(trim($name));
+        $name = preg_replace('/\s+/u', ' ', trim($name)) ?? $name;
+
+        return Str::lower($name);
     }
 
     private function status(string $unit, ?string $referenceUnit, string $value, ?string $referenceMin, ?string $referenceMax): BiomarkerStatus
