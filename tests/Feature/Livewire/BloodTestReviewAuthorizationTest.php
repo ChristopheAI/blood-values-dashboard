@@ -354,3 +354,23 @@ it('reuses an owned biomarker when a manual review name only differs by case', f
         ->and($result->biomarker_id)->toBe($biomarker->id)
         ->and($result->biomarker->name)->toBe('Ferritin');
 });
+
+it('reuses an owned biomarker when a manual review name contains pdf whitespace', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->set('resultForm.name', "\u{00A0}marker\u{00A0}alpha\u{00A0}")
+        ->set('resultForm.value', '12.4')
+        ->set('resultForm.unit', 'mg/L')
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(1)
+        ->and($result->biomarker_id)->toBe($biomarker->id)
+        ->and($result->biomarker->name)->toBe('Marker Alpha');
+});

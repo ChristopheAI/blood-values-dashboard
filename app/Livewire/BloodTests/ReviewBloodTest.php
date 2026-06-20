@@ -356,7 +356,11 @@ class ReviewBloodTest extends Component
      */
     private function normalizeResultForm(array $form): array
     {
-        foreach (['name', 'unit', 'reference_unit', 'note'] as $field) {
+        if (array_key_exists('name', $form) && is_string($form['name'])) {
+            $form['name'] = $this->normalizeNameInput($form['name']);
+        }
+
+        foreach (['unit', 'reference_unit', 'note'] as $field) {
             if (array_key_exists($field, $form) && is_string($form[$field])) {
                 $form[$field] = $this->trimUnicodeWhitespace($form[$field]);
             }
@@ -374,6 +378,18 @@ class ReviewBloodTest extends Component
         }
 
         return $form;
+    }
+
+    private function normalizeNameInput(string $value): string
+    {
+        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+
+        return $this->trimUnicodeWhitespace($value);
+    }
+
+    private function normalizedNameForMatch(string $value): string
+    {
+        return Str::lower($this->normalizeNameInput($value));
     }
 
     private function trimUnicodeWhitespace(string $value): string
@@ -394,10 +410,11 @@ class ReviewBloodTest extends Component
             return $biomarker;
         }
 
+        $normalizedFormName = $this->normalizedNameForMatch((string) $form['name']);
         $existingBiomarker = Biomarker::query()
             ->where('user_id', Auth::id())
-            ->whereRaw('lower(name) = ?', [Str::lower($form['name'])])
-            ->first();
+            ->get()
+            ->first(fn (Biomarker $biomarker): bool => $this->normalizedNameForMatch($biomarker->name) === $normalizedFormName);
 
         if ($existingBiomarker instanceof Biomarker) {
             return $existingBiomarker;

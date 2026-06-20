@@ -68,6 +68,9 @@ Update this section after each meaningful session.
   - Review-form confirmation trims Unicode/PDF whitespace from draft and manual
     inputs before status calculation and storage, so the manual trust gate does
     not reintroduce parser spacing artifacts.
+  - Review-form biomarker names collapse Unicode/PDF whitespace before catalog
+    lookup and creation, so manual/draft confirmation reuses existing catalog
+    entries instead of creating spacing-only duplicates.
   - Wrapper/trailing punctuation around extracted value/reference units is
     normalized centrally before auto-confirm, so candidate sources behave
     consistently.
