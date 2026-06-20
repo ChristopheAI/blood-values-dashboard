@@ -65,6 +65,9 @@ Update this section after each meaningful session.
     gating, status calculation, and storage, including non-breaking PDF spacing,
     so padding cannot create an `unknown` auto-confirmed value or false unit
     mismatch.
+  - Review-form confirmation trims Unicode/PDF whitespace from draft and manual
+    inputs before status calculation and storage, so the manual trust gate does
+    not reintroduce parser spacing artifacts.
   - Wrapper/trailing punctuation around extracted value/reference units is
     normalized centrally before auto-confirm, so candidate sources behave
     consistently.

@@ -358,13 +358,13 @@ class ReviewBloodTest extends Component
     {
         foreach (['name', 'unit', 'reference_unit', 'note'] as $field) {
             if (array_key_exists($field, $form) && is_string($form[$field])) {
-                $form[$field] = trim($form[$field]);
+                $form[$field] = $this->trimUnicodeWhitespace($form[$field]);
             }
         }
 
         foreach (['value', 'reference_min', 'reference_max'] as $field) {
             if (array_key_exists($field, $form) && is_string($form[$field])) {
-                $value = str_replace(',', '.', trim($form[$field]));
+                $value = str_replace(',', '.', $this->trimUnicodeWhitespace($form[$field]));
                 $form[$field] = $value === '' && $field !== 'value' ? null : $value;
             }
         }
@@ -374,6 +374,11 @@ class ReviewBloodTest extends Component
         }
 
         return $form;
+    }
+
+    private function trimUnicodeWhitespace(string $value): string
+    {
+        return preg_replace('/^\s+|\s+$/u', '', $value) ?? trim($value);
     }
 
     /**
