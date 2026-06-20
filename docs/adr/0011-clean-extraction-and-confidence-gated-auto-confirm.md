@@ -127,6 +127,12 @@ the backstop.
     row because a confirmed value already exists, so extraction telemetry does not
     undercount parser output.
 
+- Source: synthetic reviewed-draft unit normalization regression (2026-06-20)
+  - Claim type: fact
+  - Summary: When a below-threshold draft is manually confirmed, wrapper/trailing
+    punctuation around value and reference units is stripped before storage and status
+    calculation, matching the auto-confirm path for common PDF formatting.
+
 - Source: competitive UX review (sanitized, 2026-06-19)
   - Claim type: fact
   - Summary: Commercial upload-first demo flows lead with the PDF upload as the first
@@ -176,6 +182,9 @@ the backstop.
   but they cannot pass the auto-confirm gate.
 - The review screen shows auto-confirmed values (labelled, editable) plus any remaining
   low-confidence drafts.
+- Reviewed draft confirmation normalizes wrapper/trailing punctuation around units
+  before status calculation and storage, so the manual trust gate does not reintroduce
+  formatting artifacts already handled by auto-confirm.
 - Owner-scoping, no-overwrite-of-existing-confirmed, `PrivacyBoundaryTest`, and the
   no-OCR/AI boundary all stay.
 - "Perfect for every PDF" is explicitly not promised; the threshold plus the draft

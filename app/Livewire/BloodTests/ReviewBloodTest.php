@@ -365,10 +365,14 @@ class ReviewBloodTest extends Component
             $form['name'] = $this->normalizeNameInput($form['name']);
         }
 
-        foreach (['unit', 'reference_unit', 'note'] as $field) {
+        foreach (['unit', 'reference_unit'] as $field) {
             if (array_key_exists($field, $form) && is_string($form[$field])) {
-                $form[$field] = $this->trimUnicodeWhitespace($form[$field]);
+                $form[$field] = $this->normalizeUnitInput($form[$field]);
             }
+        }
+
+        if (array_key_exists('note', $form) && is_string($form['note'])) {
+            $form['note'] = $this->trimUnicodeWhitespace($form['note']);
         }
 
         foreach (['value', 'reference_min', 'reference_max'] as $field) {
@@ -390,6 +394,13 @@ class ReviewBloodTest extends Component
         $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
 
         return $this->trimUnicodeWhitespace($value);
+    }
+
+    private function normalizeUnitInput(string $value): string
+    {
+        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+
+        return trim($value, " \t\n\r\0\x0B()[]{}.,;:");
     }
 
     private function normalizedNameForMatch(string $value): string

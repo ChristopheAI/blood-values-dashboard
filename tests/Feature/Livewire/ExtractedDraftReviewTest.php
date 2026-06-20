@@ -79,6 +79,39 @@ it('normalizes unicode whitespace from extracted drafts before confirming throug
         ->and($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
+it('normalizes wrapped units from extracted drafts before confirming through the review form', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    $draft = BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => '(ug/L)',
+        'reference_min' => 30,
+        'reference_max' => 150,
+        'reference_unit' => '[ug/L]',
+        'status' => 'unknown',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Ferritin',
+        'extraction_confidence' => 0.84,
+        'source_snippet' => 'Ferritin 42 ug/L ref 30-150 ug/L',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('useDraft', $draft->id)
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    $draft->refresh();
+
+    expect($draft->unit)->toBe('ug/L')
+        ->and($draft->reference_unit)->toBe('ug/L')
+        ->and($draft->confirmed_at)->not->toBeNull()
+        ->and($draft->status)->toBe('normal')
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
 it('keeps the blood test in review while confirming one draft if other extracted drafts remain', function () {
     $user = User::factory()->create();
     $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
