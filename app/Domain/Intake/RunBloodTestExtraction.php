@@ -341,6 +341,8 @@ class RunBloodTestExtraction
 
     private function normalizedNumber(string $number): string
     {
+        $number = preg_replace('/\s+/u', ' ', $number) ?? $number;
+
         return str_replace(',', '.', trim($number));
     }
 

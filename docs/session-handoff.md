@@ -58,8 +58,9 @@ Update this section after each meaningful session.
     drafts because of layout artifacts.
   - Catalog anchoring accepts punctuation/whitespace boundaries after a
     canonical name, but still keeps those prefix-only rows as drafts.
-  - Extracted decimal-comma values are normalized before confidence gating,
-    status calculation, and storage, matching manual review input behavior.
+  - Extracted decimal-comma values and numeric PDF whitespace are normalized
+    before confidence gating, status calculation, and storage, matching manual
+    review input behavior.
   - Extracted units/reference units are whitespace-normalized before confidence
     gating, status calculation, and storage, including non-breaking PDF spacing,
     so padding cannot create an `unknown` auto-confirmed value or false unit

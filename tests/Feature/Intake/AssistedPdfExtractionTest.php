@@ -836,6 +836,37 @@ it('auto-confirms clean extracted decimal comma values after normalizing numbers
         ->and((float) $result->extraction_confidence)->toBe(0.95);
 });
 
+it('normalizes non-breaking numeric whitespace before auto-confirming clean rows', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: "\u{00A0}12.4\u{00A0}",
+            unit: 'mg/L',
+            referenceMin: "\u{00A0}10\u{00A0}",
+            referenceMax: "\u{00A0}20\u{00A0}",
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic non-breaking numeric whitespace row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($bloodTest->refresh()->status)->toBe('confirmed')
+        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->status)->toBe('normal')
+        ->and((float) $result->value)->toBe(12.4)
+        ->and((float) $result->reference_min)->toBe(10.0)
+        ->and((float) $result->reference_max)->toBe(20.0)
+        ->and((float) $result->extraction_confidence)->toBe(0.95);
+});
+
 it('normalizes extracted units before auto-confirming clean rows', function () {
     Storage::fake('local');
 
