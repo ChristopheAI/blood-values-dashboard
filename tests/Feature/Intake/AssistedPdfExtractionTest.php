@@ -245,6 +245,35 @@ it('anchors a noisy extracted name to the owners catalog without creating a biom
         ->and($result->confirmed_at)->toBeNull();
 });
 
+it('anchors catalog prefixes followed by punctuation as drafts', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $marker = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha: sentence tail',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic punctuation-prefixed row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(1)
+        ->and($result->biomarker_id)->toBe($marker->id)
+        ->and($result->extracted_name)->toBe('Marker Alpha')
+        ->and($result->confirmed_at)->toBeNull()
+        ->and($result->status)->toBe('unknown');
+});
+
 it('keeps high confidence prefix-only catalog matches as drafts', function () {
     Storage::fake('local');
 

@@ -53,6 +53,8 @@ Update this section after each meaningful session.
   - `AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85`; clean, unambiguous,
     catalog-matched rows may be auto-confirmed, while prefix-only, ambiguous,
     missing-unit, missing-range, unmatched, or noisy rows remain drafts.
+  - Catalog anchoring accepts punctuation/whitespace boundaries after a
+    canonical name, but still keeps those prefix-only rows as drafts.
   - Empty intake is upload-first with a PDF dropzone and file-selection
     auto-submit. No metadata form, email, account field, OCR, AI, external
     service, or new package was introduced.

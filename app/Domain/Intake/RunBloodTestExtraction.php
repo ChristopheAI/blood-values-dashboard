@@ -236,7 +236,11 @@ class RunBloodTestExtraction
     {
         $catalogName = $this->normalizedName($catalogName);
 
-        return $extractedName === $catalogName || str_starts_with($extractedName, $catalogName.' ');
+        if ($extractedName === $catalogName) {
+            return true;
+        }
+
+        return preg_match('/^'.preg_quote($catalogName, '/').'[^\p{L}\p{N}]/u', $extractedName) === 1;
     }
 
     private function effectiveConfidence(
