@@ -29,6 +29,28 @@ class DashboardTest extends TestCase
         $response->assertOk();
     }
 
+    public function test_empty_dashboard_is_upload_first_without_metadata_or_account_fields(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Sleep je lab-PDF hierheen')
+            ->assertSee('PDF only')
+            ->assertSee('data-test="lab-pdf-dropzone"', false)
+            ->assertSee('data-test="lab-pdf-input"', false)
+            ->assertSee('data-test="choose-pdf-button"', false)
+            ->assertSee('data-test="selected-file-name"', false)
+            ->assertSee('data-test="intake-progress"', false)
+            ->assertDontSee('Personal overview')
+            ->assertDontSee('data-test="blood-test-date-input"', false)
+            ->assertDontSee('data-test="blood-test-lab-input"', false)
+            ->assertDontSee('data-test="blood-test-title-input"', false)
+            ->assertDontSee('name="email"', false)
+            ->assertDontSee('name="account"', false);
+    }
+
     public function test_dashboard_shows_only_owned_confirmed_values_needing_attention(): void
     {
         $user = User::factory()->create();

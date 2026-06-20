@@ -318,10 +318,13 @@ function deleteAllHealthData(Browser $browser): void
         ->click('[data-test="delete-all-health-data-button"]')
         ->waitForText('Your personal tracking records were deleted.')
         ->visit('/dashboard')
-        ->waitForText('No blood tests yet.')
-        ->assertSee('No pinned biomarkers yet.')
-        ->assertSee('No reminders yet.')
-        ->assertSee('No confirmed low, high, or unknown values yet.');
+        ->waitFor('[data-test="lab-pdf-dropzone"]')
+        ->assertSee('Sleep je lab-PDF hierheen')
+        ->assertPresent('[data-test="lab-pdf-input"]')
+        ->assertPresent('[data-test="choose-pdf-button"]')
+        ->assertMissing('[data-test="dashboard-pinned-biomarkers"]')
+        ->assertMissing('[data-test="dashboard-next-reminder"]')
+        ->assertMissing('[data-test="dashboard-attention-results"]');
 
     assertNoForbiddenMedicalCopyAppears($browser);
 }
