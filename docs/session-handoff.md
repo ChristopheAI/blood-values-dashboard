@@ -60,6 +60,8 @@ Update this section after each meaningful session.
   - Present but unparseable reference bounds keep extracted rows below the
     auto-confirm gate; parser output must be numerically parseable, not just
     non-empty.
+  - Candidates with unparseable values are counted in extraction telemetry but
+    are not stored as biomarker results.
   - Empty intake is upload-first with a PDF dropzone and file-selection
     auto-submit. No metadata form, email, account field, OCR, AI, external
     service, or new package was introduced.

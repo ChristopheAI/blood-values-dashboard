@@ -482,6 +482,32 @@ it('keeps candidates with unparseable reference bounds as drafts', function () {
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
+it('skips candidates with unparseable values without failing the extraction run', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    $run = runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: 'not-a-number',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic malformed value row',
+        ),
+    ]);
+
+    expect($run->status)->toBe('done')
+        ->and($run->candidate_count)->toBe(1)
+        ->and(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->count())->toBe(0)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('preserves repeated unmatched extracted names as separate draft rows', function () {
     Storage::fake('local');
 

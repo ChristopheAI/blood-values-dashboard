@@ -100,6 +100,12 @@ class RunBloodTestExtraction
         $stored = 0;
 
         foreach ($candidates as $candidate) {
+            $value = $this->normalizedNumber($candidate->value);
+
+            if (! is_numeric($value)) {
+                continue;
+            }
+
             $biomarker = $this->matchingBiomarker($document, $candidate);
 
             if ($biomarker instanceof Biomarker && $this->hasConfirmedValue($bloodTest->id, $biomarker->id)) {
@@ -111,7 +117,6 @@ class RunBloodTestExtraction
             $confirmedAt = $autoConfirm ? now() : null;
             $extractedName = $biomarker instanceof Biomarker ? $biomarker->name : $candidate->extractedName;
             $sourceSnippet = $this->sourceSnippet($candidate);
-            $value = $this->normalizedNumber($candidate->value);
             $referenceMin = $this->normalizedNullableNumber($candidate->referenceMin);
             $referenceMax = $this->normalizedNullableNumber($candidate->referenceMax);
 
