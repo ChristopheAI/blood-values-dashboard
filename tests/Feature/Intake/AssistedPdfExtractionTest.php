@@ -508,6 +508,38 @@ it('skips candidates with unparseable values without failing the extraction run'
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
+it('keeps candidates with mismatched reference units as drafts', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $marker = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'g/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic mismatched reference unit row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $marker->id)
+        ->firstOrFail();
+
+    expect($result->confirmed_at)->toBeNull()
+        ->and($result->status)->toBe('unknown')
+        ->and($result->reference_unit)->toBe('g/L')
+        ->and((float) $result->extraction_confidence)->toBeLessThan(RunBloodTestExtraction::AUTO_CONFIRM_CONFIDENCE_THRESHOLD)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('preserves repeated unmatched extracted names as separate draft rows', function () {
     Storage::fake('local');
 

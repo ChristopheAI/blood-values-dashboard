@@ -62,6 +62,8 @@ Update this section after each meaningful session.
     non-empty.
   - Candidates with unparseable values are counted in extraction telemetry but
     are not stored as biomarker results.
+  - Reference-unit mismatches keep extracted rows below the auto-confirm gate
+    because comparison rules are not trustworthy.
   - Empty intake is upload-first with a PDF dropzone and file-selection
     auto-submit. No metadata form, email, account field, OCR, AI, external
     service, or new package was introduced.
