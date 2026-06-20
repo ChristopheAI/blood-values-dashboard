@@ -191,6 +191,21 @@ it('marks below auto-confirm threshold drafts as low confidence in the review st
         ->assertSee('Low confidence');
 });
 
+it('uses neutral review-strip copy when extraction has no drafts left', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    ExtractionRun::factory()->for($bloodTest)->create([
+        'engine' => 'smalot/pdfparser',
+        'status' => 'done',
+        'candidate_count' => 2,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('No extracted drafts found.')
+        ->assertDontSee('No below-threshold rows need review.');
+});
+
 it('shows one-sided draft reference ranges in the review strip', function () {
     $user = User::factory()->create();
     $maxOnly = Biomarker::factory()->for($user)->create(['name' => 'Marker Max']);
