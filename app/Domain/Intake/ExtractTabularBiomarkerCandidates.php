@@ -366,7 +366,7 @@ class ExtractTabularBiomarkerCandidates
             unit: $cells['unit'],
             referenceMin: $reference['min'],
             referenceMax: $reference['max'],
-            referenceUnit: $cells['unit'],
+            referenceUnit: $reference['unit'] ?? $cells['unit'],
             confidence: $confidence,
             sourceSnippet: $this->sourceSnippet($cells),
         );
@@ -382,34 +382,38 @@ class ExtractTabularBiomarkerCandidates
     }
 
     /**
-     * @return array{min: string|null, max: string|null}
+     * @return array{min: string|null, max: string|null, unit: string|null}
      */
     private function reference(string $text): array
     {
-        if (preg_match('/(?<min>-?\d+(?:[,.]\d+)?)\s*[-–]\s*(?<max>-?\d+(?:[,.]\d+)?)/u', $text, $match)) {
+        if (preg_match('/(?<min>-?\d+(?:[,.]\d+)?)\s*[-–]\s*(?<max>-?\d+(?:[,.]\d+)?)(?:\s+(?<unit>\S+))?/u', $text, $match)) {
             return [
                 'min' => $this->cleanNumber($match['min']),
                 'max' => $this->cleanNumber($match['max']),
+                'unit' => $this->cleanUnit($match['unit'] ?? null),
             ];
         }
 
-        if (preg_match('/<\s*(?<max>-?\d+(?:[,.]\d+)?)/u', $text, $match)) {
+        if (preg_match('/<\s*(?<max>-?\d+(?:[,.]\d+)?)(?:\s+(?<unit>\S+))?/u', $text, $match)) {
             return [
                 'min' => null,
                 'max' => $this->cleanNumber($match['max']),
+                'unit' => $this->cleanUnit($match['unit'] ?? null),
             ];
         }
 
-        if (preg_match('/>\s*(?<min>-?\d+(?:[,.]\d+)?)/u', $text, $match)) {
+        if (preg_match('/>\s*(?<min>-?\d+(?:[,.]\d+)?)(?:\s+(?<unit>\S+))?/u', $text, $match)) {
             return [
                 'min' => $this->cleanNumber($match['min']),
                 'max' => null,
+                'unit' => $this->cleanUnit($match['unit'] ?? null),
             ];
         }
 
         return [
             'min' => null,
             'max' => null,
+            'unit' => null,
         ];
     }
 
@@ -434,6 +438,17 @@ class ExtractTabularBiomarkerCandidates
     private function cleanNumber(string $number): string
     {
         return str_replace(',', '.', trim($number));
+    }
+
+    private function cleanUnit(?string $unit): ?string
+    {
+        if ($unit === null) {
+            return null;
+        }
+
+        $unit = $this->cleanText($unit);
+
+        return $unit === '' ? null : $unit;
     }
 
     private function sanitizeName(string $name): string
