@@ -274,7 +274,17 @@ class RunBloodTestExtraction
             && $this->hasUnambiguousLiteralCatalogMatch($document, $candidate, $biomarker)
             && is_numeric($this->normalizedNumber($candidate->value))
             && trim($candidate->unit) !== ''
-            && ($candidate->referenceMin !== null || $candidate->referenceMax !== null);
+            && $this->hasParseableReferenceBounds($candidate);
+    }
+
+    private function hasParseableReferenceBounds(ExtractedBiomarkerCandidate $candidate): bool
+    {
+        $referenceMin = $this->normalizedNullableNumber($candidate->referenceMin);
+        $referenceMax = $this->normalizedNullableNumber($candidate->referenceMax);
+
+        return ($candidate->referenceMin === null || $referenceMin !== null)
+            && ($candidate->referenceMax === null || $referenceMax !== null)
+            && ($referenceMin !== null || $referenceMax !== null);
     }
 
     private function hasUnambiguousLiteralCatalogMatch(
@@ -326,7 +336,9 @@ class RunBloodTestExtraction
             return null;
         }
 
-        return $this->normalizedNumber($number);
+        $number = $this->normalizedNumber($number);
+
+        return is_numeric($number) ? $number : null;
     }
 
     private function hasConfirmedValue(int $bloodTestId, int $biomarkerId): bool

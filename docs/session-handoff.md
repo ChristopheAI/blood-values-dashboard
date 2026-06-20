@@ -57,6 +57,9 @@ Update this section after each meaningful session.
     canonical name, but still keeps those prefix-only rows as drafts.
   - Extracted decimal-comma values are normalized before confidence gating,
     status calculation, and storage, matching manual review input behavior.
+  - Present but unparseable reference bounds keep extracted rows below the
+    auto-confirm gate; parser output must be numerically parseable, not just
+    non-empty.
   - Empty intake is upload-first with a PDF dropzone and file-selection
     auto-submit. No metadata form, email, account field, OCR, AI, external
     service, or new package was introduced.
