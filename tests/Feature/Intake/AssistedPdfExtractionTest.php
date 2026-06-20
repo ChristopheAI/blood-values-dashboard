@@ -462,6 +462,32 @@ it('preserves repeated unmatched extracted names as separate draft rows', functi
         ->and($drafts->pluck('value')->map(fn (string $value): float => (float) $value)->all())->toBe([5.0, 7.0]);
 });
 
+it('stores extracted source snippets as compact single-line trace metadata', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Unmatched Marker',
+            value: '5',
+            unit: 'U/mL',
+            referenceMin: null,
+            referenceMax: '8',
+            referenceUnit: 'U/mL',
+            confidence: 0.75,
+            sourceSnippet: "Unmatched Marker\t5 U/mL\nsynthetic continuation",
+        ),
+    ]);
+
+    $draft = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->firstOrFail();
+
+    expect($draft->source_snippet)->toBe('Unmatched Marker 5 U/mL synthetic continuation');
+});
+
 it('does not collapse unmatched drafts when source snippets truncate to the same text', function () {
     Storage::fake('local');
 

@@ -110,7 +110,7 @@ class RunBloodTestExtraction
             $autoConfirm = $this->shouldAutoConfirm($document, $candidate, $biomarker, $confidence);
             $confirmedAt = $autoConfirm ? now() : null;
             $extractedName = $biomarker instanceof Biomarker ? $biomarker->name : $candidate->extractedName;
-            $sourceSnippet = Str::limit($candidate->sourceSnippet, 500, '');
+            $sourceSnippet = $this->sourceSnippet($candidate);
 
             $attributes = [
                 'blood_test_id' => $bloodTest->id,
@@ -159,6 +159,13 @@ class RunBloodTestExtraction
         }
 
         return $stored;
+    }
+
+    private function sourceSnippet(ExtractedBiomarkerCandidate $candidate): string
+    {
+        $snippet = preg_replace('/\s+/u', ' ', $candidate->sourceSnippet) ?? $candidate->sourceSnippet;
+
+        return Str::limit(trim($snippet), 500, '');
     }
 
     private function matchingBiomarker(BloodTestDocument $document, ExtractedBiomarkerCandidate $candidate): ?Biomarker

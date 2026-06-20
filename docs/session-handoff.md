@@ -63,6 +63,8 @@ Update this section after each meaningful session.
     count as confirmed, drafts do not.
   - Blood-test status recalculation is owner-scoped: corrupt cross-owner
     biomarker drafts cannot make, feed, or block confirmed owner status.
+  - Extracted source snippets are stored as compact single-line trace metadata,
+    preserving short provenance without raw line-break/control whitespace.
   - Failed and empty extraction states are inspectable and fall back to manual
     entry.
   - Latest full local validation passed on this branch with `sh
