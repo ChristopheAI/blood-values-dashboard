@@ -50,6 +50,109 @@ it('uses inline extraction before tabular fallback when both are present', funct
         ->and($candidates[0]->confidence)->toBe(0.95);
 });
 
+it('extracts inline candidates from glyph-spaced text-layer pdfs', function () {
+    $path = syntheticGlyphSpacedInlinePdfPath();
+
+    try {
+        $candidates = app(ExtractBiomarkerDrafts::class)($path);
+    } finally {
+        @unlink($path);
+    }
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->extractedName)->toBe('Marker Alpha')
+        ->and($candidates[0]->value)->toBe('12.4')
+        ->and($candidates[0]->unit)->toBe('mg/L')
+        ->and($candidates[0]->referenceMin)->toBe('10')
+        ->and($candidates[0]->referenceMax)->toBe('20')
+        ->and($candidates[0]->referenceUnit)->toBe('mg/L')
+        ->and($candidates[0]->confidence)->toBe(0.95);
+});
+
+it('extracts inline candidates when glyph spacing loses numeric field boundaries', function () {
+    $path = syntheticCompactInlinePdfPath();
+
+    try {
+        $candidates = app(ExtractBiomarkerDrafts::class)($path);
+    } finally {
+        @unlink($path);
+    }
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->extractedName)->toBe('MarkerAlpha')
+        ->and($candidates[0]->value)->toBe('12.4')
+        ->and($candidates[0]->unit)->toBe('mg/L')
+        ->and($candidates[0]->referenceMin)->toBe('10')
+        ->and($candidates[0]->referenceMax)->toBe('20')
+        ->and($candidates[0]->referenceUnit)->toBe('mg/L')
+        ->and($candidates[0]->confidence)->toBe(0.8);
+});
+
+it('extracts compact inline candidates when the unit precedes numeric fields', function () {
+    $path = syntheticCompactUnitFirstInlinePdfPath();
+
+    try {
+        $candidates = app(ExtractBiomarkerDrafts::class)($path);
+    } finally {
+        @unlink($path);
+    }
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->extractedName)->toBe('MarkerAlpha')
+        ->and($candidates[0]->value)->toBe('12.4')
+        ->and($candidates[0]->unit)->toBe('mg/L')
+        ->and($candidates[0]->referenceMin)->toBe('10.0')
+        ->and($candidates[0]->referenceMax)->toBe('20.0')
+        ->and($candidates[0]->referenceUnit)->toBe('mg/L')
+        ->and($candidates[0]->confidence)->toBe(0.8);
+});
+
+it('extracts compact unit-first candidates with symbolic slash units', function () {
+    $path = syntheticSymbolicUnitFirstInlinePdfPath();
+
+    try {
+        $candidates = app(ExtractBiomarkerDrafts::class)($path);
+    } finally {
+        @unlink($path);
+    }
+
+    expect($candidates)->toHaveCount(2)
+        ->and($candidates[0]->extractedName)->toBe('MarkerAlpha')
+        ->and($candidates[0]->value)->toBe('12.4')
+        ->and($candidates[0]->unit)->toBe('K°U/L')
+        ->and($candidates[0]->referenceMin)->toBe('10.0')
+        ->and($candidates[0]->referenceMax)->toBe('20.0')
+        ->and($candidates[0]->referenceUnit)->toBe('K°U/L')
+        ->and($candidates[1]->extractedName)->toBe('Marker Beta')
+        ->and($candidates[1]->value)->toBe('8.4')
+        ->and($candidates[1]->unit)->toBe('3°U/L')
+        ->and($candidates[1]->referenceMin)->toBe('6.0')
+        ->and($candidates[1]->referenceMax)->toBe('10.0')
+        ->and($candidates[1]->referenceUnit)->toBe('3°U/L');
+});
+
+it('extracts compact unit-first candidates with comma separated reference ranges', function () {
+    $path = syntheticCommaRangeUnitFirstInlinePdfPath();
+
+    try {
+        $candidates = app(ExtractBiomarkerDrafts::class)($path);
+    } finally {
+        @unlink($path);
+    }
+
+    expect($candidates)->toHaveCount(2)
+        ->and($candidates[0]->extractedName)->toBe('MarkerAlpha')
+        ->and($candidates[0]->value)->toBe('12.4')
+        ->and($candidates[0]->unit)->toBe('K°U/L')
+        ->and($candidates[0]->referenceMin)->toBe('10.0')
+        ->and($candidates[0]->referenceMax)->toBe('20.0')
+        ->and($candidates[1]->extractedName)->toBe('Marker Beta')
+        ->and($candidates[1]->value)->toBe('8.4')
+        ->and($candidates[1]->unit)->toBe('3°U/L')
+        ->and($candidates[1]->referenceMin)->toBe('6.0')
+        ->and($candidates[1]->referenceMax)->toBe('10.0');
+});
+
 it('creates extracted draft rows and an extraction run after pdf upload', function () {
     Storage::fake('local');
 
@@ -1271,6 +1374,73 @@ function syntheticInlineAndTabularPdfPath(): string
         positionedPdfText('12,4', 210, 160),
         positionedPdfText('mg/L', 300, 160),
         positionedPdfText('10 - 20', 390, 160),
+        'ET',
+        '',
+    ]);
+
+    return syntheticPdfPath($stream);
+}
+
+function syntheticGlyphSpacedInlinePdfPath(): string
+{
+    $stream = implode("\n", [
+        'BT',
+        '/F1 12 Tf',
+        positionedPdfText('M a r k e r   A l p h a   1 2 , 4   m g / L   r e f   1 0 - 2 0   m g / L', 40, 200),
+        'ET',
+        '',
+    ]);
+
+    return syntheticPdfPath($stream);
+}
+
+function syntheticCompactInlinePdfPath(): string
+{
+    $stream = implode("\n", [
+        'BT',
+        '/F1 12 Tf',
+        positionedPdfText('MarkerAlpha12,4mg/L10-20mg/L', 40, 200),
+        'ET',
+        '',
+    ]);
+
+    return syntheticPdfPath($stream);
+}
+
+function syntheticCompactUnitFirstInlinePdfPath(): string
+{
+    $stream = implode("\n", [
+        'BT',
+        '/F1 12 Tf',
+        positionedPdfText('MarkerAlphamg/L12,4-10,0-20,0<', 40, 200),
+        'ET',
+        '',
+    ]);
+
+    return syntheticPdfPath($stream);
+}
+
+function syntheticSymbolicUnitFirstInlinePdfPath(): string
+{
+    $stream = implode("\n", [
+        'BT',
+        '/F1 12 Tf',
+        positionedPdfText('MarkerAlphaK°U/L12,4-10,0-20,0<', 40, 200),
+        positionedPdfText('Marker Beta 3°U/L 8,4-6,0-10,0<', 40, 180),
+        'ET',
+        '',
+    ]);
+
+    return syntheticPdfPath($stream);
+}
+
+function syntheticCommaRangeUnitFirstInlinePdfPath(): string
+{
+    $stream = implode("\n", [
+        'BT',
+        '/F1 12 Tf',
+        positionedPdfText('MarkerAlphaK°U/L12,4-10,0,20,0<', 40, 200),
+        positionedPdfText('Marker Beta 3°U/L 8,4-6,0,10,0<', 40, 180),
         'ET',
         '',
     ]);
