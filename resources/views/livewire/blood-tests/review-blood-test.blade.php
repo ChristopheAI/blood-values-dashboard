@@ -155,9 +155,13 @@
                         } elseif ($draft->reference_max !== null) {
                             $referenceRange = '<= '.(float) $draft->reference_max.' '.$referenceUnit;
                         }
+
+                        $confidenceLevel = $draft->extraction_confidence !== null && (float) $draft->extraction_confidence < \App\Domain\Intake\RunBloodTestExtraction::AUTO_CONFIRM_CONFIDENCE_THRESHOLD
+                            ? 'low'
+                            : 'standard';
                     @endphp
 
-                    <article class="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40" data-test="extracted-draft-row">
+                    <article class="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40" data-test="extracted-draft-row" data-state="draft" data-confidence="{{ $confidenceLevel }}">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <div class="font-medium">{{ $draft->biomarker?->name ?? $draft->extracted_name ?? __('Unknown marker') }}</div>

@@ -124,6 +124,9 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertSee('auto-filled from PDF')
             ->assertSee('normal')
             ->assertPresent('[data-test="review-strip"]')
+            ->assertPresent('[data-test="extracted-draft-row"][data-state="draft"][data-confidence="low"]')
+            ->assertSee('CRP')
+            ->assertSee('Vitamin D')
             ->assertDontSee('No confirmed values yet.');
 
         assertNoForbiddenMedicalCopyAppears($browser);

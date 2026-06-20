@@ -187,6 +187,7 @@ it('marks below auto-confirm threshold drafts as low confidence in the review st
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('data-test="extracted-draft-row" data-state="draft" data-confidence="low"', false)
         ->assertSee('Low confidence');
 });
 
