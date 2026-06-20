@@ -111,6 +111,9 @@ class RunBloodTestExtraction
             $confirmedAt = $autoConfirm ? now() : null;
             $extractedName = $biomarker instanceof Biomarker ? $biomarker->name : $candidate->extractedName;
             $sourceSnippet = $this->sourceSnippet($candidate);
+            $value = $this->normalizedNumber($candidate->value);
+            $referenceMin = $this->normalizedNullableNumber($candidate->referenceMin);
+            $referenceMax = $this->normalizedNullableNumber($candidate->referenceMax);
 
             $attributes = [
                 'blood_test_id' => $bloodTest->id,
@@ -122,10 +125,10 @@ class RunBloodTestExtraction
             } else {
                 $attributes['biomarker_id'] = null;
                 $attributes['extracted_name'] = $extractedName;
-                $attributes['value'] = $candidate->value;
+                $attributes['value'] = $value;
                 $attributes['unit'] = $candidate->unit;
-                $attributes['reference_min'] = $candidate->referenceMin;
-                $attributes['reference_max'] = $candidate->referenceMax;
+                $attributes['reference_min'] = $referenceMin;
+                $attributes['reference_max'] = $referenceMax;
                 $attributes['reference_unit'] = $candidate->referenceUnit;
                 $attributes['confirmed_at'] = null;
                 $attributes['source_snippet'] = $sourceSnippet;
@@ -134,12 +137,12 @@ class RunBloodTestExtraction
             $values = [
                 'biomarker_id' => $biomarker?->id,
                 'extracted_name' => $extractedName,
-                'value' => $candidate->value,
+                'value' => $value,
                 'unit' => $candidate->unit,
-                'reference_min' => $candidate->referenceMin,
-                'reference_max' => $candidate->referenceMax,
+                'reference_min' => $referenceMin,
+                'reference_max' => $referenceMax,
                 'reference_unit' => $candidate->referenceUnit,
-                'status' => $autoConfirm ? $this->status($candidate)->value : 'unknown',
+                'status' => $autoConfirm ? $this->status($candidate, $value, $referenceMin, $referenceMax)->value : 'unknown',
                 'entry_source' => 'extracted',
                 'confirmed_at' => $confirmedAt,
                 'extraction_confidence' => $confidence,
@@ -269,7 +272,7 @@ class RunBloodTestExtraction
     {
         return $biomarker instanceof Biomarker
             && $this->hasUnambiguousLiteralCatalogMatch($document, $candidate, $biomarker)
-            && is_numeric($candidate->value)
+            && is_numeric($this->normalizedNumber($candidate->value))
             && trim($candidate->unit) !== ''
             && ($candidate->referenceMin !== null || $candidate->referenceMax !== null);
     }
@@ -297,15 +300,33 @@ class RunBloodTestExtraction
         return Str::lower(trim($name));
     }
 
-    private function status(ExtractedBiomarkerCandidate $candidate): BiomarkerStatus
-    {
+    private function status(
+        ExtractedBiomarkerCandidate $candidate,
+        string $value,
+        ?string $referenceMin,
+        ?string $referenceMax,
+    ): BiomarkerStatus {
         return (new DetermineBiomarkerStatus)(
-            value: (float) $candidate->value,
+            value: (float) $value,
             valueUnit: $candidate->unit,
-            referenceMinimum: $candidate->referenceMin === null ? null : (float) $candidate->referenceMin,
-            referenceMaximum: $candidate->referenceMax === null ? null : (float) $candidate->referenceMax,
+            referenceMinimum: $referenceMin === null ? null : (float) $referenceMin,
+            referenceMaximum: $referenceMax === null ? null : (float) $referenceMax,
             referenceUnit: $candidate->referenceUnit ?: $candidate->unit,
         );
+    }
+
+    private function normalizedNumber(string $number): string
+    {
+        return str_replace(',', '.', trim($number));
+    }
+
+    private function normalizedNullableNumber(?string $number): ?string
+    {
+        if ($number === null) {
+            return null;
+        }
+
+        return $this->normalizedNumber($number);
     }
 
     private function hasConfirmedValue(int $bloodTestId, int $biomarkerId): bool

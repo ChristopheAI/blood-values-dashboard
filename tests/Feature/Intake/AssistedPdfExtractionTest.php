@@ -623,6 +623,37 @@ it('marks the blood test confirmed when every extracted candidate is auto-confir
     expect($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
+it('auto-confirms clean extracted decimal comma values after normalizing numbers', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '12,4',
+            unit: 'mg/L',
+            referenceMin: '10,0',
+            referenceMax: '20,0',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic decimal comma row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($bloodTest->refresh()->status)->toBe('confirmed')
+        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->status)->toBe('normal')
+        ->and((float) $result->value)->toBe(12.4)
+        ->and((float) $result->reference_min)->toBe(10.0)
+        ->and((float) $result->reference_max)->toBe(20.0)
+        ->and((float) $result->extraction_confidence)->toBe(0.95);
+});
+
 it('does not overwrite a previously confirmed value when extraction sees the same biomarker', function () {
     Storage::fake('local');
 
