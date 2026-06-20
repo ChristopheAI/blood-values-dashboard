@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Privacy\BuildDataExport;
 use App\Enums\ContextNoteCategory;
 use App\Models\Biomarker;
 use App\Models\BiomarkerCategory;
@@ -139,6 +140,49 @@ it('exports owned health data as a downloadable json file without other users ro
     expect($payload['documents'][0])->not->toHaveKey('storage_path');
     expect($payload['documents'][0])->not->toHaveKey('binary');
     expect(privacyExportKeys($payload))->not->toContain('diagnosis', 'treatment', 'advice', 'recommendation', 'score');
+});
+
+it('exports trace metadata for confirmed auto-filled values without exporting drafts', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $draftBiomarker = Biomarker::factory()->for($user)->create(['name' => 'Draft marker']);
+    $bloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => '2026-06-01',
+        'status' => 'reviewing',
+    ]);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'extracted_name' => 'Ferritin',
+        'extraction_confidence' => 0.95,
+        'source_snippet' => 'Ferritin 42 ug/L ref 30-150 ug/L',
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($draftBiomarker)->create([
+        'value' => 999,
+        'unit' => 'ug/L',
+        'status' => 'unknown',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Draft marker',
+        'extraction_confidence' => 0.6,
+        'source_snippet' => 'Draft marker 999 ug/L',
+    ]);
+
+    $export = app(BuildDataExport::class)($user);
+
+    expect($export['biomarker_results'])->toHaveCount(1);
+
+    $result = $export['biomarker_results'][0];
+
+    expect($result['entry_source'])->toBe('extracted')
+        ->and($result['extracted_name'])->toBe('Ferritin')
+        ->and((float) $result['extraction_confidence'])->toBe(0.95)
+        ->and($result['source_snippet'])->toBe('Ferritin 42 ug/L ref 30-150 ug/L')
+        ->and($result['value'])->not->toBe(999);
 });
 
 it('requires password confirmation before accessing data privacy actions', function () {
