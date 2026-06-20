@@ -33,7 +33,7 @@ class BuildDataExport
     public function __invoke(User $user): array
     {
         return [
-            'format' => 'blood-values-dashboard.v1',
+            'format' => 'blood-values-dashboard.v2',
             'exported_at' => now()->toISOString(),
             'blood_tests' => $this->bloodTests($user),
             'biomarker_categories' => $this->biomarkerCategories($user),

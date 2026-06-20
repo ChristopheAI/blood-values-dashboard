@@ -186,6 +186,22 @@ it('exports trace metadata for confirmed auto-filled values without exporting dr
         ->and($result['value'])->not->toBe(999);
 });
 
+it('marks the data export schema as v2 when extraction metadata is included', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+
+    ExtractionRun::factory()->for($bloodTest)->create([
+        'engine' => 'smalot/pdfparser',
+        'status' => 'done',
+        'candidate_count' => 1,
+    ]);
+
+    $export = app(BuildDataExport::class)($user);
+
+    expect($export['format'])->toBe('blood-values-dashboard.v2')
+        ->and($export)->toHaveKey('extraction_runs');
+});
+
 it('exports owner scoped extraction run metadata without parser content', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
