@@ -60,6 +60,9 @@ Update this section after each meaningful session.
   - Extracted units/reference units are trimmed before confidence gating,
     status calculation, and storage, so padding cannot create an `unknown`
     auto-confirmed value.
+  - Wrapper/trailing punctuation around extracted value/reference units is
+    normalized centrally before auto-confirm, so candidate sources behave
+    consistently.
   - Present but unparseable reference bounds keep extracted rows below the
     auto-confirm gate; parser output must be numerically parseable, not just
     non-empty.

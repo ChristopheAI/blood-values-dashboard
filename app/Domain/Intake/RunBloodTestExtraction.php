@@ -355,7 +355,7 @@ class RunBloodTestExtraction
 
     private function normalizedUnit(string $unit): string
     {
-        return trim($unit);
+        return trim($unit, " \t\n\r\0\x0B()[]{}.,;:");
     }
 
     private function normalizedNullableUnit(?string $unit): ?string
