@@ -31,8 +31,8 @@ Rules:
   other third-party processing of private lab PDFs are out of scope;
 - clean, unambiguous rows at or above the configured confidence threshold may be
   auto-confirmed at upload time;
-- below-threshold, unmatched, ambiguous, missing-unit, missing-range, or noisy
-  rows remain drafts until the user confirms them;
+- below-threshold, unmatched, ambiguous, duplicate-matched, missing-unit,
+  missing-range, or noisy rows remain drafts until the user confirms them;
 - drafts must not feed status, history, compare, consult overview, data export,
   or dashboard attention lists;
 - auto-confirmed rows count as confirmed data for downstream workflows, remain
@@ -62,6 +62,8 @@ Rules:
 - unknown names must remain as extracted names and never silently create catalog
   entries;
 - an extracted row must not overwrite an existing confirmed result;
+- duplicate extracted rows that map to the same catalog biomarker in one run
+  remain separate drafts instead of auto-confirming or overwriting one row;
 - if a draft for the same blood test and biomarker already exists, extraction may
   update that draft;
 - confidence-gated auto-confirm may set `confirmed_at` for clean rows;
@@ -127,7 +129,8 @@ Tests must prove:
   `confirmed_at = null` for below-threshold rows;
 - clean, unambiguous catalog-matched rows at the threshold are auto-confirmed
   with `confirmed_at` set;
-- prefix-only, ambiguous, missing-unit, and missing-range rows remain drafts;
+- prefix-only, ambiguous, duplicate-matched, missing-unit, and missing-range rows
+  remain drafts;
 - drafts do not appear in status, history, compare, consult overview, data
   export, or dashboard attention lists until confirmed;
 - auto-confirmed rows do appear in those downstream confirmed-only workflows;

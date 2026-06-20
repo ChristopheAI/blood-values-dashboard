@@ -68,6 +68,9 @@ Update this section after each meaningful session.
   - Wrapper/trailing punctuation around extracted value/reference units is
     normalized centrally before auto-confirm, so candidate sources behave
     consistently.
+  - Duplicate extracted candidates that map to the same catalog biomarker in one
+    run stay as separate drafts, preventing silent overwrite/auto-confirm of an
+    ambiguous repeated row.
   - Present but unparseable reference bounds keep extracted rows below the
     auto-confirm gate; parser output must be numerically parseable, not just
     non-empty.

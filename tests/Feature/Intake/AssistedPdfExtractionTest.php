@@ -782,6 +782,52 @@ it('preserves identical repeated unmatched candidates as separate draft rows', f
         ->and($drafts)->toHaveCount(2);
 });
 
+it('keeps duplicate catalog-matched candidates as separate drafts instead of auto-confirming one', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    $run = runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '5',
+            unit: 'U/mL',
+            referenceMin: null,
+            referenceMax: '8',
+            referenceUnit: 'U/mL',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic duplicate catalog row one',
+        ),
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '7',
+            unit: 'U/mL',
+            referenceMin: null,
+            referenceMax: '8',
+            referenceUnit: 'U/mL',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic duplicate catalog row two',
+        ),
+    ]);
+
+    $drafts = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->orderBy('id')
+        ->get();
+
+    expect($run->status)->toBe('done')
+        ->and($run->candidate_count)->toBe(2)
+        ->and($drafts)->toHaveCount(2)
+        ->and($drafts->pluck('biomarker_id')->all())->toBe([null, null])
+        ->and($drafts->pluck('confirmed_at')->all())->toBe([null, null])
+        ->and($drafts->pluck('value')->map(fn (string $value): float => (float) $value)->all())->toBe([5.0, 7.0])
+        ->and($drafts->pluck('extraction_confidence')->map(fn (string $confidence): float => (float) $confidence)->all())
+        ->toBe([0.84, 0.84])
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('marks the blood test confirmed when every extracted candidate is auto-confirmed', function () {
     Storage::fake('local');
 

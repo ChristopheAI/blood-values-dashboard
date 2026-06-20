@@ -97,6 +97,7 @@ class RunBloodTestExtraction
     private function storeDrafts(BloodTestDocument $document, array $candidates): int
     {
         $bloodTest = $document->bloodTest;
+        $duplicateMatchedBiomarkerIds = $this->duplicateMatchedBiomarkerIds($document, $candidates);
         $stored = 0;
 
         foreach ($candidates as $candidate) {
@@ -110,6 +111,10 @@ class RunBloodTestExtraction
 
             if ($biomarker instanceof Biomarker && $this->hasConfirmedValue($bloodTest->id, $biomarker->id)) {
                 continue;
+            }
+
+            if ($biomarker instanceof Biomarker && isset($duplicateMatchedBiomarkerIds[$biomarker->id])) {
+                $biomarker = null;
             }
 
             $confidence = $this->effectiveConfidence($document, $candidate, $biomarker);
@@ -169,6 +174,39 @@ class RunBloodTestExtraction
         }
 
         return $stored;
+    }
+
+    /**
+     * @param  list<ExtractedBiomarkerCandidate>  $candidates
+     * @return array<int, true>
+     */
+    private function duplicateMatchedBiomarkerIds(BloodTestDocument $document, array $candidates): array
+    {
+        $matchedCounts = [];
+
+        foreach ($candidates as $candidate) {
+            if (! is_numeric($this->normalizedNumber($candidate->value))) {
+                continue;
+            }
+
+            $biomarker = $this->matchingBiomarker($document, $candidate);
+
+            if (! $biomarker instanceof Biomarker) {
+                continue;
+            }
+
+            $matchedCounts[$biomarker->id] = ($matchedCounts[$biomarker->id] ?? 0) + 1;
+        }
+
+        $duplicates = [];
+
+        foreach ($matchedCounts as $biomarkerId => $count) {
+            if ($count > 1) {
+                $duplicates[(int) $biomarkerId] = true;
+            }
+        }
+
+        return $duplicates;
     }
 
     private function sourceSnippet(ExtractedBiomarkerCandidate $candidate): string
