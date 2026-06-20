@@ -60,9 +60,10 @@ Update this section after each meaningful session.
     canonical name, but still keeps those prefix-only rows as drafts.
   - Extracted decimal-comma values are normalized before confidence gating,
     status calculation, and storage, matching manual review input behavior.
-  - Extracted units/reference units are trimmed before confidence gating,
-    status calculation, and storage, so padding cannot create an `unknown`
-    auto-confirmed value.
+  - Extracted units/reference units are whitespace-normalized before confidence
+    gating, status calculation, and storage, including non-breaking PDF spacing,
+    so padding cannot create an `unknown` auto-confirmed value or false unit
+    mismatch.
   - Wrapper/trailing punctuation around extracted value/reference units is
     normalized centrally before auto-confirm, so candidate sources behave
     consistently.

@@ -357,6 +357,8 @@ class RunBloodTestExtraction
 
     private function normalizedUnit(string $unit): string
     {
+        $unit = preg_replace('/\s+/u', ' ', $unit) ?? $unit;
+
         return trim($unit, " \t\n\r\0\x0B()[]{}.,;:");
     }
 
