@@ -68,7 +68,8 @@ Update this section after each meaningful session.
   - Reference-unit mismatches keep extracted rows below the auto-confirm gate
     because comparison rules are not trustworthy.
   - Tabular reference cells with an explicit unit preserve that `reference_unit`
-    instead of falling back to the value unit, so mismatches are not masked.
+    instead of falling back to the value unit, including compact forms like
+    `10-20g/L` and `<8g/L`, so mismatches are not masked.
   - Reversed two-sided reference ranges keep extracted rows below the
     auto-confirm gate; one-sided parseable ranges remain allowed.
   - Empty intake is upload-first with a PDF dropzone and file-selection

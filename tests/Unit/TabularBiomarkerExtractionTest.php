@@ -96,6 +96,46 @@ it('keeps an explicit reference unit from the reference column', function () {
         ->and($candidates[0]->referenceUnit)->toBe('g/L');
 });
 
+it('keeps a compact explicit reference unit from the reference column', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analysis', 40, 700),
+        new PositionedTextFragment('Value', 210, 700),
+        new PositionedTextFragment('Unit', 300, 700),
+        new PositionedTextFragment('Reference', 390, 700),
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('12,4', 210, 680),
+        new PositionedTextFragment('mg/L', 300, 680),
+        new PositionedTextFragment('10 - 20g/L', 390, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->referenceMin)->toBe('10')
+        ->and($candidates[0]->referenceMax)->toBe('20')
+        ->and($candidates[0]->referenceUnit)->toBe('g/L');
+});
+
+it('keeps a compact explicit reference unit from one-sided reference cells', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analysis', 40, 700),
+        new PositionedTextFragment('Value', 210, 700),
+        new PositionedTextFragment('Unit', 300, 700),
+        new PositionedTextFragment('Reference', 390, 700),
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('5', 210, 680),
+        new PositionedTextFragment('mg/L', 300, 680),
+        new PositionedTextFragment('<8g/L', 390, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->referenceMin)->toBeNull()
+        ->and($candidates[0]->referenceMax)->toBe('8')
+        ->and($candidates[0]->referenceUnit)->toBe('g/L');
+});
+
 it('infers the value column when a lab header omits the explicit value label', function () {
     $extract = new ExtractTabularBiomarkerCandidates;
 

@@ -386,7 +386,7 @@ class ExtractTabularBiomarkerCandidates
      */
     private function reference(string $text): array
     {
-        if (preg_match('/(?<min>-?\d+(?:[,.]\d+)?)\s*[-–]\s*(?<max>-?\d+(?:[,.]\d+)?)(?:\s+(?<unit>\S+))?/u', $text, $match)) {
+        if (preg_match('/(?<min>-?\d+(?:[,.]\d+)?)\s*[-–]\s*(?<max>-?\d+(?:[,.]\d+)?)(?:\s*(?<unit>\S+))?/u', $text, $match)) {
             return [
                 'min' => $this->cleanNumber($match['min']),
                 'max' => $this->cleanNumber($match['max']),
@@ -394,7 +394,7 @@ class ExtractTabularBiomarkerCandidates
             ];
         }
 
-        if (preg_match('/<\s*(?<max>-?\d+(?:[,.]\d+)?)(?:\s+(?<unit>\S+))?/u', $text, $match)) {
+        if (preg_match('/<\s*(?<max>-?\d+(?:[,.]\d+)?)(?:\s*(?<unit>\S+))?/u', $text, $match)) {
             return [
                 'min' => null,
                 'max' => $this->cleanNumber($match['max']),
@@ -402,7 +402,7 @@ class ExtractTabularBiomarkerCandidates
             ];
         }
 
-        if (preg_match('/>\s*(?<min>-?\d+(?:[,.]\d+)?)(?:\s+(?<unit>\S+))?/u', $text, $match)) {
+        if (preg_match('/>\s*(?<min>-?\d+(?:[,.]\d+)?)(?:\s*(?<unit>\S+))?/u', $text, $match)) {
             return [
                 'min' => $this->cleanNumber($match['min']),
                 'max' => null,
