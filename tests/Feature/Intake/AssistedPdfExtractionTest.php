@@ -540,6 +540,39 @@ it('keeps candidates with mismatched reference units as drafts', function () {
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
+it('keeps candidates with reversed reference ranges as drafts', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $marker = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '20',
+            referenceMax: '10',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic reversed reference range row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $marker->id)
+        ->firstOrFail();
+
+    expect($result->confirmed_at)->toBeNull()
+        ->and($result->status)->toBe('unknown')
+        ->and((float) $result->reference_min)->toBe(20.0)
+        ->and((float) $result->reference_max)->toBe(10.0)
+        ->and((float) $result->extraction_confidence)->toBeLessThan(RunBloodTestExtraction::AUTO_CONFIRM_CONFIDENCE_THRESHOLD)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('preserves repeated unmatched extracted names as separate draft rows', function () {
     Storage::fake('local');
 

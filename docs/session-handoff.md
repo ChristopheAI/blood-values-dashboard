@@ -64,6 +64,8 @@ Update this section after each meaningful session.
     are not stored as biomarker results.
   - Reference-unit mismatches keep extracted rows below the auto-confirm gate
     because comparison rules are not trustworthy.
+  - Reversed two-sided reference ranges keep extracted rows below the
+    auto-confirm gate; one-sided parseable ranges remain allowed.
   - Empty intake is upload-first with a PDF dropzone and file-selection
     auto-submit. No metadata form, email, account field, OCR, AI, external
     service, or new package was introduced.

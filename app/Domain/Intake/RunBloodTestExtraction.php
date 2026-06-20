@@ -290,7 +290,8 @@ class RunBloodTestExtraction
 
         return ($candidate->referenceMin === null || $referenceMin !== null)
             && ($candidate->referenceMax === null || $referenceMax !== null)
-            && ($referenceMin !== null || $referenceMax !== null);
+            && ($referenceMin !== null || $referenceMax !== null)
+            && ($referenceMin === null || $referenceMax === null || (float) $referenceMin <= (float) $referenceMax);
     }
 
     private function hasCompatibleReferenceUnit(ExtractedBiomarkerCandidate $candidate): bool
