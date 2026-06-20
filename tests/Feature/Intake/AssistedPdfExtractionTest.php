@@ -2,6 +2,7 @@
 
 use App\Domain\Intake\ExtractBiomarkerDrafts;
 use App\Domain\Intake\ExtractedBiomarkerCandidate;
+use App\Domain\Intake\ExtractPdfLayoutText;
 use App\Domain\Intake\RunBloodTestExtraction;
 use App\Domain\Privacy\BuildDataExport;
 use App\Models\Biomarker;
@@ -141,6 +142,47 @@ it('skips ambiguous compact unit-first candidates with comma separated numeric g
     }
 
     expect($candidates)->toHaveCount(0);
+});
+
+it('uses CMA layout text fallback when compact extraction is ambiguous', function () {
+    $layoutText = assistedCmaLayoutText([
+        assistedCmaLayoutRow('Marker Alpha°', '10,1', 'umol/L', '5,0 - 15,0'),
+        assistedCmaLayoutRow('Marker Beta C°', '0,81', 'mg/L', '0,68 - 1,22'),
+    ]);
+
+    app()->instance(ExtractPdfLayoutText::class, new class($layoutText) extends ExtractPdfLayoutText
+    {
+        public function __construct(private readonly string $layoutText) {}
+
+        public function __invoke(string $pdfPath): ?string
+        {
+            return $this->layoutText;
+        }
+    });
+
+    $path = syntheticCommaRangeUnitFirstInlinePdfPath();
+
+    try {
+        $candidates = app(ExtractBiomarkerDrafts::class)($path);
+    } finally {
+        @unlink($path);
+    }
+
+    expect($candidates)->toHaveCount(2);
+
+    expect($candidates[0]->extractedName)->toBe('Marker Alpha')
+        ->and($candidates[0]->value)->toBe('10.1')
+        ->and($candidates[0]->unit)->toBe('umol/L')
+        ->and($candidates[0]->referenceMin)->toBe('5.0')
+        ->and($candidates[0]->referenceMax)->toBe('15.0')
+        ->and($candidates[0]->confidence)->toBe(0.84);
+
+    expect($candidates[1]->extractedName)->toBe('Marker Beta C')
+        ->and($candidates[1]->value)->toBe('0.81')
+        ->and($candidates[1]->unit)->toBe('mg/L')
+        ->and($candidates[1]->referenceMin)->toBe('0.68')
+        ->and($candidates[1]->referenceMax)->toBe('1.22')
+        ->and($candidates[1]->confidence)->toBe(0.84);
 });
 
 it('creates extracted draft rows and an extraction run after pdf upload', function () {
@@ -1436,6 +1478,19 @@ function syntheticCommaRangeUnitFirstInlinePdfPath(): string
     ]);
 
     return syntheticPdfPath($stream);
+}
+
+function assistedCmaLayoutText(array $rows): string
+{
+    return implode("\n", array_merge([
+        str_pad('Analyse', 36).str_pad('822.434.825', 36).str_pad('Eenheid', 24).'Referentie',
+        'STOLLING',
+    ], $rows));
+}
+
+function assistedCmaLayoutRow(string $name, string $value, string $unit, string $reference): string
+{
+    return str_pad($name, 36).str_pad($value, 36).str_pad($unit, 24).$reference.'        <';
 }
 
 function syntheticInferredValueTabularPdfPath(): string

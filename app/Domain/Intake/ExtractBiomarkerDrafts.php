@@ -10,6 +10,8 @@ class ExtractBiomarkerDrafts
     public function __construct(
         private readonly Parser $parser,
         private readonly ExtractTabularBiomarkerCandidates $extractTabularBiomarkerCandidates,
+        private readonly ExtractPdfLayoutText $extractPdfLayoutText,
+        private readonly ExtractCmaLayoutBiomarkerCandidates $extractCmaLayoutBiomarkerCandidates,
     ) {}
 
     /**
@@ -51,7 +53,19 @@ class ExtractBiomarkerDrafts
             return $this->inlineCandidates($unitFirstMatches, 0.8);
         }
 
-        return ($this->extractTabularBiomarkerCandidates)($this->positionedFragments($pdf));
+        $tabularCandidates = ($this->extractTabularBiomarkerCandidates)($this->positionedFragments($pdf));
+
+        if ($tabularCandidates !== []) {
+            return $tabularCandidates;
+        }
+
+        $layoutText = ($this->extractPdfLayoutText)($pdfPath);
+
+        if ($layoutText === null) {
+            return [];
+        }
+
+        return ($this->extractCmaLayoutBiomarkerCandidates)($layoutText);
     }
 
     /**
