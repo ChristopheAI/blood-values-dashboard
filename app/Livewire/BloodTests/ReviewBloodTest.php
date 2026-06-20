@@ -82,23 +82,30 @@ class ReviewBloodTest extends Component
 
         $payload = [
             'biomarker_id' => $biomarker->id,
-            'extracted_name' => $draft?->extracted_name,
             'value' => $form['value'],
             'unit' => $form['unit'],
             'reference_min' => $form['reference_min'],
             'reference_max' => $form['reference_max'],
             'reference_unit' => $form['reference_unit'] ?: $form['unit'],
             'status' => $status->value,
-            'entry_source' => 'pdf_reviewed',
             'confirmed_at' => now(),
             'note' => $form['note'],
         ];
 
         if ($editingResult instanceof BiomarkerResult) {
+            $payload['entry_source'] = $editingResult->entry_source;
+            $payload['extracted_name'] = $editingResult->extracted_name;
+
             $editingResult->update($payload);
         } elseif ($draft instanceof BiomarkerResult) {
+            $payload['entry_source'] = 'pdf_reviewed';
+            $payload['extracted_name'] = $draft->extracted_name;
+
             $draft->update($payload);
         } else {
+            $payload['entry_source'] = 'pdf_reviewed';
+            $payload['extracted_name'] = null;
+
             $bloodTest->results()->updateOrCreate(['biomarker_id' => $biomarker->id], $payload);
         }
 

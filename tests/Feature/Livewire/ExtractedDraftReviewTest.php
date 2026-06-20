@@ -325,6 +325,43 @@ it('shows auto-confirmed extracted values as auto-filled and lets the owner edit
     expect(BiomarkerResult::query()->whereKey($result->id)->exists())->toBeFalse();
 });
 
+it('keeps auto-filled PDF trace when the owner edits an auto-confirmed value', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    BloodTestDocument::factory()->for($bloodTest)->create();
+    $result = BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'reference_min' => 30,
+        'reference_max' => 150,
+        'reference_unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'extracted_name' => 'Ferritin',
+        'extraction_confidence' => 0.95,
+        'source_snippet' => 'Ferritin 42 ug/L ref 30-150 ug/L',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('editConfirmedResult', $result->id)
+        ->set('resultForm.value', '43')
+        ->call('confirmResult')
+        ->assertHasNoErrors()
+        ->assertSee('auto-filled from PDF');
+
+    $result->refresh();
+
+    expect((float) $result->value)->toBe(43.0)
+        ->and($result->entry_source)->toBe('extracted')
+        ->and($result->extracted_name)->toBe('Ferritin')
+        ->and($result->source_snippet)->toBe('Ferritin 42 ug/L ref 30-150 ug/L')
+        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->status)->toBe('normal');
+});
+
 it('marks auto-filled values when the source PDF is gone', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
