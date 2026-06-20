@@ -178,6 +178,72 @@ it('rejects a tampered zero biomarker id instead of treating it as a new biomark
         ->and(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->count())->toBe(0);
 });
 
+it('rejects manually adding a value with another users biomarker id', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $foreignBiomarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+    $bloodTest = BloodTest::factory()->for($owner)->create();
+
+    Livewire::actingAs($owner)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->set('resultForm.biomarker_id', $foreignBiomarker->id)
+        ->set('resultForm.value', '42')
+        ->set('resultForm.unit', 'ug/L')
+        ->call('confirmResult')
+        ->assertForbidden();
+
+    expect(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->exists())->toBeFalse();
+});
+
+it('rejects confirming an extracted draft with another users biomarker id', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $foreignBiomarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+    $ownedBiomarker = Biomarker::factory()->for($owner)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($owner)->create(['status' => 'reviewing']);
+    $draft = BiomarkerResult::factory()->for($bloodTest)->for($ownedBiomarker)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Ferritin',
+        'value' => 42,
+        'unit' => 'ug/L',
+    ]);
+
+    Livewire::actingAs($owner)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('useDraft', $draft->id)
+        ->set('resultForm.biomarker_id', $foreignBiomarker->id)
+        ->call('confirmResult')
+        ->assertForbidden();
+
+    expect($draft->refresh()->confirmed_at)->toBeNull()
+        ->and($draft->biomarker_id)->toBe($ownedBiomarker->id);
+});
+
+it('rejects editing a confirmed result with another users biomarker id', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $foreignBiomarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+    $ownedBiomarker = Biomarker::factory()->for($owner)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($owner)->create(['status' => 'confirmed']);
+    $result = BiomarkerResult::factory()->for($bloodTest)->for($ownedBiomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+
+    Livewire::actingAs($owner)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('editConfirmedResult', $result->id)
+        ->set('resultForm.biomarker_id', $foreignBiomarker->id)
+        ->call('confirmResult')
+        ->assertForbidden();
+
+    expect($result->refresh()->biomarker_id)->toBe($ownedBiomarker->id)
+        ->and((float) $result->value)->toBe(42.0);
+});
+
 it('treats the create-new select empty value as no biomarker id', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create();
