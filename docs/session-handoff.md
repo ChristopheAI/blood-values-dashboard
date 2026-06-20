@@ -70,6 +70,8 @@ Update this section after each meaningful session.
   - Tabular reference cells with an explicit unit preserve that `reference_unit`
     instead of falling back to the value unit, including compact forms like
     `10-20g/L` and `<8g/L`, so mismatches are not masked.
+  - Wrapper/trailing punctuation around tabular reference units is stripped, so
+    common formatting like `10-20 (mg/L)` does not force a clean row to draft.
   - Reversed two-sided reference ranges keep extracted rows below the
     auto-confirm gate; one-sided parseable ranges remain allowed.
   - Empty intake is upload-first with a PDF dropzone and file-selection

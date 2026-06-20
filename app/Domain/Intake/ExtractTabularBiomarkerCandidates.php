@@ -446,7 +446,7 @@ class ExtractTabularBiomarkerCandidates
             return null;
         }
 
-        $unit = $this->cleanText($unit);
+        $unit = trim($this->cleanText($unit), " \t\n\r\0\x0B()[]{}.,;:");
 
         return $unit === '' ? null : $unit;
     }
