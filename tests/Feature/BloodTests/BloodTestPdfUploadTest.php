@@ -2,6 +2,7 @@
 
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
+use App\Models\ExtractionRun;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -141,6 +142,48 @@ it('streams safe real-stage progress for enhanced pdf uploads', function () {
     $bloodTest = BloodTest::query()->firstOrFail();
 
     expect($events[8]['redirect'])->toBe(route('blood-tests.show', $bloodTest, false));
+});
+
+it('streams a safe failed extract stage when enhanced pdf parsing fails', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $file = UploadedFile::fake()->create('malformed-lab.pdf', 64, 'application/pdf');
+
+    $response = $this->actingAs($user)
+        ->post(route('blood-tests.store'), [
+            'document' => $file,
+        ], [
+            'Accept' => 'application/x-ndjson',
+            'X-Intake-Stream' => '1',
+        ]);
+
+    $response->assertOk()
+        ->assertHeader('Content-Type', 'application/x-ndjson');
+
+    $content = trim($response->streamedContent());
+    $events = collect(explode("\n", $content))
+        ->map(fn (string $line): array => json_decode($line, true, flags: JSON_THROW_ON_ERROR))
+        ->all();
+
+    expect($events)->sequence(
+        fn ($event) => $event->toMatchArray(['stage' => 'extract', 'state' => 'active']),
+        fn ($event) => $event->toMatchArray(['stage' => 'extract', 'state' => 'failed']),
+        fn ($event) => $event->toHaveKey('redirect'),
+    );
+
+    expect($content)
+        ->not->toContain('malformed-lab.pdf')
+        ->not->toContain('Ferritin')
+        ->not->toContain('42');
+
+    $bloodTest = BloodTest::query()->firstOrFail();
+    $run = ExtractionRun::query()->firstOrFail();
+
+    expect($events[2]['redirect'])->toBe(route('blood-tests.show', $bloodTest, false))
+        ->and($run->status)->toBe('failed')
+        ->and($run->candidate_count)->toBe(0)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
 it('lab pdf storage path does not use original filename', function () {
