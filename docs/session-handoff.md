@@ -54,7 +54,8 @@ Update this section after each meaningful session.
     catalog-matched rows may be auto-confirmed, while prefix-only, ambiguous,
     missing-unit, missing-range, unmatched, or noisy rows remain drafts.
   - Extracted biomarker names are whitespace-normalized before catalog matching,
-    so PDF spacing artifacts do not turn clean rows into unmatched drafts.
+    including non-breaking PDF spacing, so clean rows do not become unmatched
+    drafts because of layout artifacts.
   - Catalog anchoring accepts punctuation/whitespace boundaries after a
     canonical name, but still keeps those prefix-only rows as drafts.
   - Extracted decimal-comma values are normalized before confidence gating,

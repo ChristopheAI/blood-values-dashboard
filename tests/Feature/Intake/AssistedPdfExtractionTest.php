@@ -274,6 +274,35 @@ it('normalizes extracted name whitespace before catalog matching', function () {
         ->and($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
+it('normalizes non-breaking extracted name whitespace before catalog matching', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $marker = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: "\u{00A0}Marker\u{00A0}Alpha\u{00A0}",
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic non-breaking whitespace name row',
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($result->biomarker_id)->toBe($marker->id)
+        ->and($result->extracted_name)->toBe('Marker Alpha')
+        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->status)->toBe('normal')
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
 it('anchors catalog prefixes followed by punctuation as drafts', function () {
     Storage::fake('local');
 

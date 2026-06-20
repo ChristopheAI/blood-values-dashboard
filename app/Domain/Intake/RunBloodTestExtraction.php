@@ -325,7 +325,7 @@ class RunBloodTestExtraction
     {
         $name = preg_replace('/\s+/u', ' ', trim($name)) ?? $name;
 
-        return Str::lower($name);
+        return Str::lower(trim($name));
     }
 
     private function status(string $unit, ?string $referenceUnit, string $value, ?string $referenceMin, ?string $referenceMax): BiomarkerStatus
