@@ -61,3 +61,25 @@ it('lab pdf intake has no runtime outbound network client', function () {
         }
     }
 });
+
+it('test lab pdf filenames stay synthetic and avoid owner-identifying tokens', function () {
+    $files = collect([
+        ...File::allFiles(base_path('tests')),
+        ...File::allFiles(base_path('docs/testing')),
+    ]);
+
+    $forbiddenFixtureTerms = [
+        'Van'.'_Hoof',
+        'bloedafname '.'8april2026',
+        '20260519'.'-Labo_CMA',
+    ];
+
+    foreach ($files as $file) {
+        $contents = File::get($file->getRealPath());
+
+        foreach ($forbiddenFixtureTerms as $term) {
+            expect(str_contains($contents, $term))
+                ->toBeFalse("Test source {$file->getRelativePathname()} contains owner-identifying lab PDF fixture token {$term}.");
+        }
+    }
+});

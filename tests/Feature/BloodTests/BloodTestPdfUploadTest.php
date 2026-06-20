@@ -18,7 +18,7 @@ it('owner can upload a lab pdf to private storage', function () {
         ->post(route('blood-tests.store'), [
             'document' => $file,
             'test_date' => '2026-05-19',
-            'lab_name' => 'CMA Antwerpen',
+            'lab_name' => 'Synthetic Lab',
             'title' => 'Mei 2026',
         ])
         ->assertRedirect();
@@ -39,7 +39,7 @@ it('uses the sanitized pdf filename as the upload-first title when no metadata i
     Storage::fake('local');
 
     $user = User::factory()->create();
-    $file = UploadedFile::fake()->create('bloedafname 8april2026.pdf', 64, 'application/pdf');
+    $file = UploadedFile::fake()->create('synthetic-april-lab.pdf', 64, 'application/pdf');
 
     $this->actingAs($user)
         ->post(route('blood-tests.store'), ['document' => $file])
@@ -47,7 +47,7 @@ it('uses the sanitized pdf filename as the upload-first title when no metadata i
 
     $bloodTest = BloodTest::query()->firstOrFail();
 
-    expect($bloodTest->title)->toBe('bloedafname 8april2026')
+    expect($bloodTest->title)->toBe('synthetic-april-lab')
         ->and($bloodTest->test_date)->toBeNull()
         ->and($bloodTest->lab_name)->toBeNull();
 });
@@ -199,7 +199,7 @@ it('lab pdf storage path does not use original filename', function () {
     Storage::fake('local');
 
     $user = User::factory()->create();
-    $file = UploadedFile::fake()->create('Van_Hoof-Christophe-20260519-Labo_CMA.pdf', 64, 'application/pdf');
+    $file = UploadedFile::fake()->create('synthetic-private-lab-2026-05-19.pdf', 64, 'application/pdf');
 
     $this->actingAs($user)
         ->post(route('blood-tests.store'), ['document' => $file])
@@ -207,8 +207,8 @@ it('lab pdf storage path does not use original filename', function () {
 
     $document = BloodTestDocument::query()->firstOrFail();
 
-    expect($document->storage_path)->not->toContain('Van_Hoof-Christophe-20260519-Labo_CMA.pdf')
-        ->and($document->original_filename)->toBe('Van_Hoof-Christophe-20260519-Labo_CMA.pdf');
+    expect($document->storage_path)->not->toContain('synthetic-private-lab-2026-05-19.pdf')
+        ->and($document->original_filename)->toBe('synthetic-private-lab-2026-05-19.pdf');
 });
 
 it('original filename is sanitized before display storage', function () {

@@ -135,7 +135,7 @@ Why:
 
 Proof expected:
 
-- upload file named `Van_Hoof-Christophe-20260519-Labo_CMA.pdf`;
+- upload file named `synthetic-private-lab-2026-05-19.pdf`;
 - stored path does not contain the original filename;
 - stored path contains a generated identifier or server-chosen path segment;
 - original filename is stored only as sanitized display metadata.
