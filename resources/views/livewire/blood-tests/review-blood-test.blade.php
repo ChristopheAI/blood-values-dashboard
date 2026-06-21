@@ -11,6 +11,19 @@
     $extractionFoundNoDrafts = $latestExtractionRun?->status === 'done'
         && (int) $latestExtractionRun->candidate_count === 0
         && ! $hasDraftResults;
+    $showReviewStrip = $hasDraftResults
+        || $latestExtractionRun?->status === 'failed'
+        || $extractionFoundNoDrafts;
+    $showManualForm = $hasDraftResults
+        || $confirmedCount === 0
+        || $extractionFoundNoDrafts
+        || $latestExtractionRun?->status === 'failed'
+        || $this->showManualEntryForm
+        || $this->draftResultId !== null
+        || $this->editingResultId !== null;
+    $reviewGridColumnsClass = $showReviewStrip || $showManualForm
+        ? 'lg:grid-cols-[1fr_1.2fr]'
+        : '';
     $extractStageState = match ($latestExtractionRun?->status) {
         'done' => 'done',
         'failed' => 'failed',
@@ -125,7 +138,7 @@
         </div>
     </section>
 
-    <div class="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+    <div class="grid gap-6 {{ $reviewGridColumnsClass }}">
         <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700">
             <flux:heading size="lg">{{ __('Source document') }}</flux:heading>
 
@@ -149,7 +162,8 @@
             @endforelse
         </section>
 
-        <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="review-strip">
+        @if ($showReviewStrip)
+            <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="review-strip">
             <flux:heading size="lg">{{ __('Review strip') }}</flux:heading>
 
             @if ($latestExtractionRun?->status === 'failed')
@@ -224,9 +238,17 @@
                     @endif
                 @endforelse
             </div>
-        </section>
+            </section>
+        @endif
 
-        <form wire:submit="confirmResult" class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="confirm-biomarker-form">
+        @if (! $showManualForm)
+            <div class="flex justify-end">
+                <flux:button type="button" wire:click="showManualEntry" data-test="show-manual-entry-button">
+                    {{ __('Add value manually') }}
+                </flux:button>
+            </div>
+        @else
+            <form wire:submit="confirmResult" class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="confirm-biomarker-form">
             <div class="space-y-2">
                 <flux:heading size="lg">{{ $hasDraftResults ? __('Review extracted values') : __('Add your values') }}</flux:heading>
                 <flux:text>
@@ -266,8 +288,17 @@
             </div>
 
             <flux:textarea wire:model="resultForm.note" :label="__('Note')" data-test="result-note-input" />
-            <flux:button type="submit" variant="primary" data-test="confirm-value-button">{{ $hasDraftResults ? __('Confirm value') : __('Add value') }}</flux:button>
-        </form>
+            <div class="flex flex-wrap gap-3">
+                <flux:button type="submit" variant="primary" data-test="confirm-value-button">{{ $hasDraftResults ? __('Confirm value') : __('Add value') }}</flux:button>
+
+                @if (! $hasDraftResults && $confirmedCount > 0)
+                    <flux:button type="button" wire:click="cancelManualEntry" data-test="cancel-manual-entry-button">
+                        {{ __('Cancel') }}
+                    </flux:button>
+                @endif
+            </div>
+            </form>
+        @endif
     </div>
 
     <section class="space-y-4" data-test="blood-test-context-notes">

@@ -288,7 +288,7 @@ it('separates extracted draft value and reference fields in the review strip', f
         ->assertDontSee('162 mg/dL · <= 100 mg/dL');
 });
 
-it('uses neutral review-strip copy when extraction has no drafts left', function () {
+it('hides the review strip when extraction has no drafts left', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
     ExtractionRun::factory()->for($bloodTest)->create([
@@ -299,8 +299,39 @@ it('uses neutral review-strip copy when extraction has no drafts left', function
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('No extracted drafts found.')
+        ->assertDontSee('data-test="review-strip"', false)
+        ->assertDontSee('No extracted drafts found.')
         ->assertDontSee('No below-threshold rows need review.');
+});
+
+it('collapses manual entry when extracted values are already confirmed', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    BloodTestDocument::factory()->for($bloodTest)->create();
+    ExtractionRun::factory()->for($bloodTest)->create([
+        'engine' => 'smalot/pdfparser',
+        'status' => 'done',
+        'candidate_count' => 1,
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'extracted_name' => 'Ferritin',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('Confirmed values')
+        ->assertDontSee('data-test="confirm-biomarker-form"', false)
+        ->assertSee('data-test="show-manual-entry-button"', false)
+        ->assertDontSee('Add your values')
+        ->call('showManualEntry')
+        ->assertSee('data-test="confirm-biomarker-form"', false)
+        ->assertSee('Add your values');
 });
 
 it('shows one-sided draft reference ranges in the review strip', function () {

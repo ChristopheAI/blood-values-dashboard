@@ -19,6 +19,8 @@ class ReviewBloodTest extends Component
 
     public ?int $editingResultId = null;
 
+    public bool $showManualEntryForm = false;
+
     /** @var array<string, mixed> */
     public array $resultForm = [
         'biomarker_id' => null,
@@ -126,6 +128,7 @@ class ReviewBloodTest extends Component
 
         $this->editingResultId = $result->id;
         $this->draftResultId = null;
+        $this->showManualEntryForm = true;
         $this->resultForm = [
             'biomarker_id' => $result->biomarker_id,
             'name' => $result->biomarker->name,
@@ -162,6 +165,7 @@ class ReviewBloodTest extends Component
 
         $this->draftResultId = $draft->id;
         $this->editingResultId = null;
+        $this->showManualEntryForm = true;
         $this->resultForm = [
             'biomarker_id' => $draft->biomarker_id,
             'name' => $biomarkerName ?? $draft->extracted_name ?? '',
@@ -188,9 +192,21 @@ class ReviewBloodTest extends Component
         $bloodTest->recalculateStatusFromResults();
     }
 
+    public function showManualEntry(): void
+    {
+        $this->draftResultId = null;
+        $this->editingResultId = null;
+        $this->showManualEntryForm = true;
+    }
+
+    public function cancelManualEntry(): void
+    {
+        $this->resetResultForm();
+    }
+
     private function resetResultForm(): void
     {
-        $this->reset('resultForm', 'draftResultId', 'editingResultId');
+        $this->reset('resultForm', 'draftResultId', 'editingResultId', 'showManualEntryForm');
         $this->resultForm = [
             'biomarker_id' => null,
             'name' => '',
