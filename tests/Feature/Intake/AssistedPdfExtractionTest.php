@@ -12,6 +12,7 @@ use App\Models\BloodTestDocument;
 use App\Models\ExtractionRun;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
@@ -1003,6 +1004,60 @@ it('auto-confirms high confidence catalog matched candidates and leaves lower co
         ->and((float) $draft->extraction_confidence)->toBeLessThan(RunBloodTestExtraction::AUTO_CONFIRM_CONFIDENCE_THRESHOLD)
         ->and($draft->extracted_name)->toBe('Unmatched Marker')
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
+it('keeps catalog lookups bounded while storing a batch of trusted candidates', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = bloodTestWithStoredDocument($user);
+    $candidates = [];
+
+    foreach (range(1, 12) as $index) {
+        $name = sprintf('Marker %02d', $index);
+
+        Biomarker::query()->create([
+            'user_id' => $user->id,
+            'name' => $name,
+            'active' => true,
+        ]);
+
+        $candidates[] = new ExtractedBiomarkerCandidate(
+            extractedName: $name,
+            value: (string) (10 + $index),
+            unit: 'mg/L',
+            referenceMin: '5',
+            referenceMax: '30',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic batch row',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        );
+    }
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    try {
+        runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), $candidates);
+    } finally {
+        $queries = DB::getQueryLog();
+        DB::disableQueryLog();
+    }
+
+    $catalogSelects = collect($queries)
+        ->filter(fn (array $query): bool => str_contains($query['query'], 'from "biomarkers"')
+            && str_contains($query['query'], '"user_id" ='))
+        ->count();
+    $confirmedValueSelects = collect($queries)
+        ->filter(fn (array $query): bool => str_contains($query['query'], 'from "biomarker_results"')
+            && str_contains($query['query'], '"confirmed_at" is not null'))
+        ->count();
+
+    expect($catalogSelects)->toBeLessThanOrEqual(4)
+        ->and($confirmedValueSelects)->toBeLessThanOrEqual(2)
+        ->and(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->whereNotNull('confirmed_at')->count())->toBe(12)
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
 it('keeps candidates with unparseable reference bounds as drafts', function () {

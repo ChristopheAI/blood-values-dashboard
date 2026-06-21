@@ -8,6 +8,7 @@ use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTestDocument;
 use App\Models\ExtractionRun;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -21,6 +22,16 @@ class RunBloodTestExtraction
 
     private const DRAFT_CONFIDENCE_CAP = self::AUTO_CONFIRM_CONFIDENCE_THRESHOLD - 0.01;
 
+    /**
+     * @var array<int, Collection<int, Biomarker>>
+     */
+    private array $biomarkersByUserId = [];
+
+    /**
+     * @var array<int, array<int, true>>
+     */
+    private array $confirmedBiomarkerIdsByBloodTestId = [];
+
     public function __construct(private readonly ExtractBiomarkerDrafts $extractBiomarkerDrafts) {}
 
     /**
@@ -28,6 +39,9 @@ class RunBloodTestExtraction
      */
     public function __invoke(BloodTestDocument $document, ?callable $progress = null): ExtractionRun
     {
+        $this->biomarkersByUserId = [];
+        $this->confirmedBiomarkerIdsByBloodTestId = [];
+
         $bloodTest = $document->bloodTest;
         $run = $bloodTest->extractionRuns()->create([
             'engine' => self::ENGINE,
@@ -184,6 +198,10 @@ class RunBloodTestExtraction
             }
 
             BiomarkerResult::query()->updateOrCreate($attributes, $values);
+
+            if ($autoConfirm) {
+                $this->rememberConfirmedBiomarkerValue($bloodTest->id, $biomarker->id);
+            }
 
             $stored++;
         }
@@ -352,9 +370,7 @@ class RunBloodTestExtraction
     private function matchingBiomarker(BloodTestDocument $document, ExtractedBiomarkerCandidate $candidate): ?Biomarker
     {
         $name = $this->normalizedName($candidate->extractedName);
-        $biomarkers = Biomarker::query()
-            ->where('user_id', $document->bloodTest->user_id)
-            ->get();
+        $biomarkers = $this->biomarkersFor($document);
 
         $literalMatches = $biomarkers
             ->filter(function (Biomarker $biomarker) use ($name): bool {
@@ -413,7 +429,7 @@ class RunBloodTestExtraction
         $unit = $this->normalizedUnit($candidate->unit);
         $referenceUnit = $this->normalizedNullableUnit($candidate->referenceUnit) ?? $unit;
 
-        return Biomarker::query()->create([
+        $biomarker = Biomarker::query()->create([
             'user_id' => $document->bloodTest->user_id,
             'name' => $name,
             'default_unit' => $unit,
@@ -422,6 +438,10 @@ class RunBloodTestExtraction
             'reference_unit' => $referenceUnit,
             'active' => true,
         ]);
+
+        $this->rememberBiomarker($biomarker);
+
+        return $biomarker;
     }
 
     private function canCreateTrustedBiomarker(
@@ -450,9 +470,7 @@ class RunBloodTestExtraction
     {
         $name = $this->normalizedName($candidate->extractedName);
 
-        return Biomarker::query()
-            ->where('user_id', $document->bloodTest->user_id)
-            ->get()
+        return $this->biomarkersFor($document)
             ->contains(function (Biomarker $biomarker) use ($name): bool {
                 $catalogName = $this->normalizedName($biomarker->name);
                 $shortName = $biomarker->short_name === null ? null : $this->normalizedName($biomarker->short_name);
@@ -564,9 +582,7 @@ class RunBloodTestExtraction
         Biomarker $matchedBiomarker,
     ): bool {
         $name = $this->normalizedName($candidate->extractedName);
-        $literalMatches = Biomarker::query()
-            ->where('user_id', $document->bloodTest->user_id)
-            ->get()
+        $literalMatches = $this->biomarkersFor($document)
             ->filter(function (Biomarker $biomarker) use ($name): bool {
                 return $this->normalizedName($biomarker->name) === $name
                     || ($biomarker->short_name !== null && $this->normalizedName($biomarker->short_name) === $name);
@@ -574,6 +590,27 @@ class RunBloodTestExtraction
 
         return $literalMatches->count() === 1
             && $literalMatches->first()?->is($matchedBiomarker);
+    }
+
+    /**
+     * @return Collection<int, Biomarker>
+     */
+    private function biomarkersFor(BloodTestDocument $document): Collection
+    {
+        $userId = $document->bloodTest->user_id;
+
+        return $this->biomarkersByUserId[$userId] ??= Biomarker::query()
+            ->where('user_id', $userId)
+            ->get();
+    }
+
+    private function rememberBiomarker(Biomarker $biomarker): void
+    {
+        if (! array_key_exists($biomarker->user_id, $this->biomarkersByUserId)) {
+            return;
+        }
+
+        $this->biomarkersByUserId[$biomarker->user_id]->push($biomarker);
     }
 
     private function normalizedName(string $name): string
@@ -644,10 +681,29 @@ class RunBloodTestExtraction
 
     private function hasConfirmedValue(int $bloodTestId, int $biomarkerId): bool
     {
-        return BiomarkerResult::query()
-            ->where('blood_test_id', $bloodTestId)
-            ->where('biomarker_id', $biomarkerId)
-            ->whereNotNull('confirmed_at')
-            ->exists();
+        if (! array_key_exists($bloodTestId, $this->confirmedBiomarkerIdsByBloodTestId)) {
+            $biomarkerIds = BiomarkerResult::query()
+                ->where('blood_test_id', $bloodTestId)
+                ->whereNotNull('biomarker_id')
+                ->whereNotNull('confirmed_at')
+                ->pluck('biomarker_id')
+                ->all();
+
+            $this->confirmedBiomarkerIdsByBloodTestId[$bloodTestId] = array_fill_keys(
+                array_map('intval', $biomarkerIds),
+                true,
+            );
+        }
+
+        return isset($this->confirmedBiomarkerIdsByBloodTestId[$bloodTestId][$biomarkerId]);
+    }
+
+    private function rememberConfirmedBiomarkerValue(int $bloodTestId, int $biomarkerId): void
+    {
+        if (! array_key_exists($bloodTestId, $this->confirmedBiomarkerIdsByBloodTestId)) {
+            return;
+        }
+
+        $this->confirmedBiomarkerIdsByBloodTestId[$bloodTestId][$biomarkerId] = true;
     }
 }
