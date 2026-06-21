@@ -24,6 +24,71 @@ must be a product outcome, PRD/spec, ADR, issue, or explicit design gap. If a
 task needs a source but none exists, mark the gap instead of inventing the
 missing design or requirement.
 
+## Discovery And Wedge Gate
+
+Before a slice becomes implementation work, name the smallest wedge that proves
+the product idea for the user. The wedge is not the smallest UI and not the
+fastest technical shortcut. It is the smallest observable outcome that makes
+the product more true.
+
+For this app, the durable wedge is:
+
+```text
+one owned blood test can be understood from its original source document,
+confirmed values, context, and honest changes versus previous owned tests
+without diagnosis or advice.
+```
+
+Reject work that does not strengthen this wedge unless it is explicit
+infrastructure, privacy hardening, or validation support. This prevents the app
+from drifting into a generic health dashboard, a pretty browse surface, or an AI
+interpretation product.
+
+## Requirements Are Outcome Contracts
+
+Treat requirements as build-agnostic outcomes and constraints, not as screens.
+A requirement should say what must become true for the user no matter how the UI
+is designed.
+
+Good requirement shape:
+
+- user-owned data and route;
+- observable outcome;
+- hard constraints;
+- measurable acceptance;
+- negative proof for leaks, scope creep, and unsafe copy.
+
+Weak requirement shape:
+
+- "add a card";
+- "make a dashboard";
+- "show insights";
+- "improve UX";
+- "users should love it".
+
+When a requested screen does not map to an outcome, stop and reduce it to the
+outcome before coding. For #14, the outcome is not "add more blocks to the
+detail page"; it is "one blood draw can be understood in one place."
+
+## Build-Ready Spec Bundle
+
+Before orchestration or implementation, the slice needs a compact build-ready
+bundle:
+
+- product outcome;
+- constraints and non-goals;
+- source references;
+- domain terms;
+- likely files;
+- first failing tests;
+- acceptance matrix with positive and negative proof;
+- matching browser route or command;
+- privacy and medical-copy boundaries.
+
+If the bundle is missing design detail for a user-facing flow, tag the work as
+`[NEEDS-DESIGN]`. If it is missing a product or architecture decision, tag it as
+`[NEEDS-DECISION]`. Do not let an agent fill those gaps from taste.
+
 ## Context Budget
 
 Treat context pressure as a quality risk. Keep long work anchored in durable
