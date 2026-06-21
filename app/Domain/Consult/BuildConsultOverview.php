@@ -83,6 +83,10 @@ class BuildConsultOverview
      */
     private function bloodTests(User $user, array $filters): Collection
     {
+        if (empty($filters['blood_test_ids']) && empty($filters['from']) && empty($filters['to'])) {
+            return collect();
+        }
+
         $query = BloodTest::query()
             ->where('user_id', $user->id)
             ->orderBy('test_date');
