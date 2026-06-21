@@ -471,17 +471,97 @@ class RunBloodTestExtraction
         $name = $this->normalizedName($candidate->extractedName);
 
         return $this->biomarkersFor($document)
-            ->contains(function (Biomarker $biomarker) use ($name): bool {
+            ->contains(function (Biomarker $biomarker) use ($candidate, $name): bool {
                 $catalogName = $this->normalizedName($biomarker->name);
                 $shortName = $biomarker->short_name === null ? null : $this->normalizedName($biomarker->short_name);
 
-                return $catalogName === $name
-                    || $shortName === $name
-                    || $this->isCatalogPrefix($name, $catalogName)
-                    || $this->isCatalogPrefix($catalogName, $name)
+                if ($catalogName === $name || $shortName === $name) {
+                    return true;
+                }
+
+                if (
+                    $this->isCatalogPrefix($name, $catalogName)
                     || ($shortName !== null && $this->isCatalogPrefix($name, $shortName))
-                    || ($shortName !== null && $this->isCatalogPrefix($shortName, $name));
+                ) {
+                    return true;
+                }
+
+                if (
+                    $this->isCatalogPrefix($catalogName, $name)
+                    || ($shortName !== null && $this->isCatalogPrefix($shortName, $name))
+                ) {
+                    return ! $this->canCreateTrustedPrefixSibling($candidate, $name, $biomarker);
+                }
+
+                return false;
             });
+    }
+
+    private function canCreateTrustedPrefixSibling(
+        ExtractedBiomarkerCandidate $candidate,
+        string $name,
+        Biomarker $biomarker,
+    ): bool {
+        $unit = $this->normalizedUnit($candidate->unit);
+
+        if ($unit === '') {
+            return false;
+        }
+
+        $catalogUnits = $this->catalogUnits($biomarker);
+
+        if ($catalogUnits === []) {
+            return false;
+        }
+
+        if (! in_array($unit, $catalogUnits, true)) {
+            return true;
+        }
+
+        return $this->isCuratedSameUnitPrefixSibling($name, $biomarker);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function catalogUnits(Biomarker $biomarker): array
+    {
+        $units = [];
+
+        foreach ([$biomarker->default_unit, $biomarker->reference_unit] as $unit) {
+            if ($unit === null) {
+                continue;
+            }
+
+            $unit = $this->normalizedUnit($unit);
+
+            if ($unit !== '') {
+                $units[$unit] = true;
+            }
+        }
+
+        return array_keys($units);
+    }
+
+    private function isCuratedSameUnitPrefixSibling(string $name, Biomarker $biomarker): bool
+    {
+        if ($name !== 'crp') {
+            return false;
+        }
+
+        foreach ([$biomarker->name, $biomarker->short_name] as $catalogName) {
+            if ($catalogName === null) {
+                continue;
+            }
+
+            $catalogName = $this->normalizedName($catalogName);
+
+            if (preg_match('/^crp\s+(hooggevoelig|high[- ]sensitivity|sensitive|cardio|cardiac|ultra[- ]sensitive)/u', $catalogName) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function catalogPrefixLength(string $extractedName, Biomarker $biomarker): int

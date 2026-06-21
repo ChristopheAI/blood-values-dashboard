@@ -423,6 +423,131 @@ it('auto-imports trusted CMA duplicate names when units disambiguate them', func
         ->and($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
+it('auto-imports trusted CMA hemoglobin separately from hemoglobin A1c catalog entries', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create([
+        'name' => 'Hemoglobine A1c (IFCC)*',
+        'default_unit' => 'mmol/mol',
+        'reference_unit' => 'mmol/mol',
+    ]);
+    Biomarker::factory()->for($user)->create([
+        'name' => 'Hemoglobine A1c (NGSP)*',
+        'default_unit' => '%',
+        'reference_unit' => '%',
+    ]);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Hemoglobine',
+            value: '14.2',
+            unit: 'g/dL',
+            referenceMin: '13.0',
+            referenceMax: '17.0',
+            referenceUnit: 'g/dL',
+            confidence: 0.85,
+            sourceSnippet: 'synthetic CMA hemoglobin row',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+    ]);
+
+    $biomarker = Biomarker::query()
+        ->where('user_id', $user->id)
+        ->where('name', 'Hemoglobine')
+        ->firstOrFail();
+    $result = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->firstOrFail();
+
+    expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(3)
+        ->and($result->biomarker_id)->toBe($biomarker->id)
+        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->status)->toBe('normal')
+        ->and((float) $result->extraction_confidence)->toBe(0.85)
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
+it('auto-imports trusted CMA standard CRP separately from high-sensitivity CRP catalog entries', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $highSensitivityCrp = Biomarker::factory()->for($user)->create([
+        'name' => 'CRP hooggevoelig*',
+        'default_unit' => 'mg/L',
+        'reference_unit' => 'mg/L',
+    ]);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'CRP',
+            value: '4.2',
+            unit: 'mg/L',
+            referenceMin: null,
+            referenceMax: null,
+            referenceUnit: 'mg/L',
+            confidence: 0.85,
+            sourceSnippet: 'synthetic CMA CRP row',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+    ]);
+
+    $standardCrp = Biomarker::query()
+        ->where('user_id', $user->id)
+        ->where('name', 'CRP')
+        ->firstOrFail();
+    $result = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->firstOrFail();
+
+    expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(2)
+        ->and($standardCrp->is($highSensitivityCrp))->toBeFalse()
+        ->and($result->biomarker_id)->toBe($standardCrp->id)
+        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->status)->toBe('unknown')
+        ->and((float) $result->extraction_confidence)->toBe(0.85)
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
+it('keeps non-curated same-unit trusted CMA prefix siblings in review', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create([
+        'name' => 'Marker Alpha Extra',
+        'default_unit' => 'mg/L',
+        'reference_unit' => 'mg/L',
+    ]);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.85,
+            sourceSnippet: 'synthetic non-curated prefix row',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->firstOrFail();
+
+    expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(1)
+        ->and($result->biomarker_id)->toBeNull()
+        ->and($result->confirmed_at)->toBeNull()
+        ->and($result->status)->toBe('unknown')
+        ->and((float) $result->extraction_confidence)->toBe(0.84)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('creates extracted draft rows and an extraction run after pdf upload', function () {
     Storage::fake('local');
 
