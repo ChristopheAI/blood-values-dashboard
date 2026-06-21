@@ -6,6 +6,8 @@ decisions and evidence so implementation work does not drift.
 
 ## Entry Points
 
+- `current-operating-intent.md` - first "where are we now?" card for a new
+  Codex run on the active branch.
 - `project-brief.md`, `codex-prd.md`, `v1-spec.md`, `v2-spec.md` - product and
   implementation scope.
 - `product-system-check.md` - product-to-system sanity check.
@@ -41,6 +43,8 @@ decisions and evidence so implementation work does not drift.
   changed.
 - Keep handoff notes concrete: branch, commit, files, commands, browser QA, and
   known risks.
+- Update `current-operating-intent.md` after meaningful branch state changes so
+  a new agent does not start from stale conversation context.
 - Treat Intent Layer work as repo infrastructure. Implement it in local
   `AGENTS.md` files; do not create GitHub product todos unless tracking work is
   explicitly requested.

@@ -24,6 +24,35 @@ must be a product outcome, PRD/spec, ADR, issue, or explicit design gap. If a
 task needs a source but none exists, mark the gap instead of inventing the
 missing design or requirement.
 
+## Official Codex Use-Case Mapping
+
+Source: `https://developers.openai.com/codex/use-cases`
+
+Map official Codex use cases to this repo in the following way:
+
+- Understand large codebases: before a non-trivial edit, trace the request flow,
+  owner boundaries, validation, domain layer, and next files to read. This maps
+  to `AGENTS.md`, child `AGENTS.md`, `docs/architecture.md`, and codegraph or
+  targeted source reads.
+- Keep documentation up-to-date: when code, issues, PR state, or branch reality
+  changes, update only the docs that must change and include verification
+  evidence. This maps to `docs/current-operating-intent.md`, `docs/architecture.md`,
+  slice trackers, and handoff notes.
+- QA your app: for UI/workflow changes, drive the real route with synthetic data
+  and report expected result, actual result, severity, and repro steps for any
+  bug. This maps to issue #17 and the browser QA gate.
+- Follow a goal: use a durable goal only for long-running work with a clear
+  success condition and validation loop. Do not use it to blur unrelated slices
+  together.
+- Review pull requests or local diffs: before handoff, inspect the diff for
+  regressions, missing tests, privacy leaks, confirmed-only leaks, and stale
+  docs.
+
+The repo-specific privacy rule overrides generic Codex use cases: do not use
+AI tools, Exa, Firecrawl, OCR services, screenshots, logs, or external services
+on private PDFs, biomarker values, notes, consult exports, account data, or
+source documents.
+
 ## Discovery And Wedge Gate
 
 Before a slice becomes implementation work, name the smallest wedge that proves

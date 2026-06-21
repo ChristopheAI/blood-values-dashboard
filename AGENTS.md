@@ -138,6 +138,7 @@ Read these first:
 - `docs/research/2026-06-18-blood-values-workflow-value-evidence.md`
 - `docs/research/2026-06-18-engineering-source-radar.md`
 - `docs/testing/pdf-first-intake-test-conversion.md`
+- `docs/current-operating-intent.md`
 - `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
 - `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
 - `laravel-platform-discovery.md`

@@ -54,10 +54,15 @@ management fallback for that exact blood test.
 
 - Branch: `codex/v2-clean-autoconfirm`
 - Baseline commit: `e2e4c4d docs: strengthen agent workflow gates`
-- Latest published commit before sharpening: `7ec3ab2 docs: add issue 14 slice
-  tracker`
+- Completed implementation checkpoint: `019acdf feat: complete canonical blood
+  test detail workspace`
+- Follow-up ordering checkpoint: `c6dff10 fix: order blood tests by collection
+  date`
+- Issue #14: implemented on this branch; keep the GitHub issue open until
+  PR review/merge closes the product todo.
+- PR: #11, open draft, two `validate` CI checks successful on 2026-06-21.
 - Dirty files intentionally in scope:
-  - this tracker until committed and pushed
+  - none for issue #14; this tracker is being reconciled after completion
 - Dirty files intentionally out of scope:
   - `.omo/`
   - `bloed-overzicht.tsx`
@@ -87,22 +92,22 @@ such as draft TSH so the test can prove it stays out of downstream sections.
 
 ## Task Board
 
-- [ ] Add failing feature/Livewire tests for source documents, context notes,
+- [x] Add failing feature/Livewire tests for source documents, context notes,
   and comparable changes on one owned blood-test detail page
   (ref: `docs/codex-prd.md#view-blood-test-detail`, #14).
-- [ ] Use shared confirmed-only longitudinal changes for the target blood test
+- [x] Use shared confirmed-only longitudinal changes for the target blood test
   versus previous owned tests without unit conversion
   (ref: `app/Domain/BloodTests/BuildLongitudinalChanges.php`, #15, #14).
-- [ ] Render source-document links through owner-authorized download routes
+- [x] Render source-document links through owner-authorized download routes
   without exposing storage paths
   (ref: `docs/codex-prd.md#blood-test-document`, #14).
-- [ ] Render context notes linked to the current blood test, keeping private
+- [x] Render context notes linked to the current blood test, keeping private
   free text out of query strings and logs
   (ref: `docs/codex-prd.md#context-note`, #14).
-- [ ] Preserve the existing management layer below the overview: intake
+- [x] Preserve the existing management layer below the overview: intake
   progress, confirmed rows, draft review, edit/delete, and manual fallback
   (ref: `docs/codex-prd.md#review-or-confirm-values`, #14).
-- [ ] Browser-QA the detail route on synthetic QA data and prove drafts/foreign
+- [x] Browser-QA the detail route on synthetic QA data and prove drafts/foreign
   data do not leak into downstream sections
   (ref: `docs/templates/definition-of-done.md#browser-qa`, #14).
 
@@ -133,6 +138,21 @@ such as draft TSH so the test can prove it stays out of downstream sections.
   manual correction controls.
 
 ## Validation Evidence
+
+Issue #14 completion evidence:
+
+- `php artisan test tests/Feature/Livewire/ExtractedDraftReviewTest.php` passed.
+- `php artisan test tests/Feature/BloodTests/BuildLongitudinalChangesTest.php`
+  passed.
+- `php artisan test tests/Feature/DashboardTest.php` passed after the recency
+  ordering follow-up.
+- `php artisan test tests/Feature/BloodTests/BloodTestPdfUploadTest.php` passed
+  after the recency ordering follow-up.
+- `sh scripts/validate.sh` passed locally after `c6dff10`.
+- Browser QA on synthetic data covered `/dashboard`, `/blood-tests`, current
+  `/blood-tests/{id}`, older `/blood-tests/{id}`, and consult CTA flow on
+  `127.0.0.1:8000`.
+- PR #11 CI had two successful `validate` checks on 2026-06-21.
 
 Focused commands:
 
@@ -170,17 +190,20 @@ Browser/manual QA:
 
 ## Privacy And Product Boundaries
 
-- [ ] Confirmed-only downstream preserved.
-- [ ] Owner scope enforced server-side.
-- [ ] No private PDFs, biomarker values, notes, exports, account data, or source
+- [x] Confirmed-only downstream preserved.
+- [x] Owner scope enforced server-side.
+- [x] No private PDFs, biomarker values, notes, exports, account data, or source
   documents sent to external services.
-- [ ] No diagnosis, treatment, advice, urgency, scoring, or recommendation copy.
+- [x] No diagnosis, treatment, advice, urgency, scoring, or recommendation copy.
 
 ## Resume Point
 
-Read this tracker, `AGENTS.md`, `app/Livewire/BloodTests/AGENTS.md`,
-`resources/views/livewire/blood-tests/AGENTS.md`, and issue #14. Then write the
-failing Livewire/detail tests named above before changing `ReviewBloodTest`.
+Issue #14 implementation is complete on this branch. Do not reopen the
+canonical-detail slice unless a fresh failing test or browser QA observation
+proves a regression. The GitHub issue should remain open until PR review/merge.
+The next product work should start from `docs/current-operating-intent.md` and
+issue #16, then reconcile the existing Consult Pack implementation against the
+PRD before changing consult code.
 
 ## Open Questions
 

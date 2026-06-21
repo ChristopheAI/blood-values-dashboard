@@ -1,13 +1,15 @@
-# Architecture map — Persoonlijk Bloedwaarden-Dashboard
+# Architecture map - Persoonlijk Bloedwaarden-Dashboard
 
-A map of how the app is built, grounded in the real code on `main`. It is a map,
-not a spec: the source of truth stays `docs/v1-spec.md`, the ADRs, and the
-per-slice kickoff docs. Update this when a slice changes the shape.
+A map of how the app is built. It is a map, not a spec: the source of truth
+stays `docs/codex-prd.md`, the specs, ADRs, tests, and per-slice kickoff docs.
+Update this when a slice changes the shape.
 
-Status: V1 is complete on `main` — four merged slices (PDF-first intake, consult
-preparation, privacy export + delete-all, reminders). V2 assisted PDF extraction
-is planned (see `docs/codex-v2-assisted-extraction-kickoff.md`), shown below in
-brackets.
+Status: V1 is complete on `main` - four merged slices (PDF-first intake,
+consult preparation, privacy export + delete-all, reminders). On
+`codex/v2-clean-autoconfirm`, V2 clean-by-default extraction, confidence-gated
+auto-confirm, upload-first intake, the canonical blood-test detail workspace,
+and date-based recency ordering are implemented in draft PR #11. `main` may lag
+until that PR is reviewed and merged.
 
 ## 1. The stack, by layer
 
@@ -23,14 +25,15 @@ Request
   │                      ConsultOverview · DownloadDataExport · +more
   │
   ▼  Domain  (rules) ... DetermineBiomarkerStatus · CompareBloodTests ·
-  │                      BuildConsultOverview · BuildDataExport · DeleteAllHealthData
-  │                      [ExtractBiomarkerDrafts — V2]
+  │                      BuildLongitudinalChanges · BuildLatestUploadSummary ·
+  │                      BuildConsultOverview · BuildDataExport · DeleteAllHealthData ·
+  │                      ExtractBiomarkerDrafts · RunBloodTestExtraction
   │
   ▼  Models (Eloquent) . User · BloodTest · BiomarkerResult · Biomarker ·
   │                      BloodTestDocument · PinnedBiomarker · ContextNote ·
   │                      Reminder · BiomarkerCategory
   │
-  ▼  Persistence ....... SQLite (9 tables) · private disk (lab PDFs, generated names)
+  ▼  Persistence ....... SQLite · private disk (lab PDFs, generated names)
 
 Cross-cutting (through every layer):
   auth (Fortify · passkeys · 2FA) · owner-scoping (user_id) ·
@@ -94,12 +97,24 @@ rules, a model plus migration, and its own tests. The exceptions are telling.
 - Data: `Reminder` · `create_reminders` migration
 - Tests: `ReminderTest` (+ updates to the export and dashboard tests)
 
-### 5 · Assisted extraction — V2, planned
-- UI: `ReviewBloodTest` (reused), an upload hook
-- Domain: `ExtractBiomarkerDrafts`
-- Data: `extraction_runs` migration · `biomarker_results` gains
-  `entry_source = 'extracted'` for drafts
-- Tests: the "draft never leaks" contract
+### 5 · V2 clean extraction and upload-first intake - implemented on branch
+- UI: `StoreBloodTestController`, `ReviewBloodTest` (reused), upload-first
+  dashboard/dropzone affordances, streamed intake progress states
+- Domain: `ExtractBiomarkerDrafts`, `ExtractTabularBiomarkerCandidates`,
+  `ExtractCmaLayoutBiomarkerCandidates`, `RunBloodTestExtraction`
+- Data: `extraction_runs`; extracted result metadata on `biomarker_results`;
+  private source documents stay separate from structured values
+- Tests: `AssistedPdfExtractionTest`, `ExtractedDraftReviewTest`,
+  `PdfFirstIntakeSmokeTest`, `PrivacyBoundaryTest`, `PackageBoundaryTest`
+
+### 6 · Canonical blood-test detail workspace - implemented on branch
+- UI: `ReviewBloodTest`, `resources/views/livewire/blood-tests/review-blood-test.blade.php`,
+  shared dashboard overview partials
+- Domain: `BuildLatestUploadSummary`, `BuildLongitudinalChanges`
+- Data: reuses `BloodTest`, `BloodTestDocument`, `BiomarkerResult`,
+  `ContextNote`
+- Tests: `ExtractedDraftReviewTest`, `BuildLongitudinalChangesTest`,
+  `DashboardTest`, `BloodTestPdfUploadTest`
 
 ## 4. Invariants — the non-negotiables that cut across every layer
 
