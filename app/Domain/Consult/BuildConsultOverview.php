@@ -4,6 +4,7 @@ namespace App\Domain\Consult;
 
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Models\BloodTestDocument;
 use App\Models\ContextNote;
 use App\Models\PinnedBiomarker;
 use App\Models\User;
@@ -18,16 +19,21 @@ class BuildConsultOverview
      *     blood_test_ids?: list<int>,
      *     include_pinned?: bool,
      *     include_attention?: bool,
+     *     include_normal?: bool,
      *     include_trends?: bool,
      *     include_context?: bool,
+     *     include_source_documents?: bool,
      *     questions?: string|null
      * }  $filters
      * @return array{
      *     bloodTests: Collection<int, BloodTest>,
      *     pinnedBiomarkers: Collection<int, PinnedBiomarker>,
      *     attentionResults: Collection<int, BiomarkerResult>,
+     *     normalResults: Collection<int, BiomarkerResult>,
      *     trendResults: Collection<int, BiomarkerResult>,
+     *     trendChanges: Collection<int, array{result: BiomarkerResult, previousResult: BiomarkerResult, changeLabel: string}>,
      *     contextNotes: Collection<int, ContextNote>,
+     *     sourceDocuments: Collection<int, BloodTestDocument>,
      *     questions: string|null
      * }
      */
@@ -48,11 +54,20 @@ class BuildConsultOverview
             'attentionResults' => ($filters['include_attention'] ?? false)
                 ? $this->confirmedResults($user, $bloodTestIds, ['low', 'high', 'unknown'])
                 : collect(),
+            'normalResults' => ($filters['include_normal'] ?? false)
+                ? $this->confirmedResults($user, $bloodTestIds, ['normal'])
+                : collect(),
             'trendResults' => ($filters['include_trends'] ?? false)
                 ? $this->confirmedResults($user, $bloodTestIds)
                 : collect(),
+            'trendChanges' => ($filters['include_trends'] ?? false)
+                ? $this->trendChanges($user, $bloodTestIds)
+                : collect(),
             'contextNotes' => ($filters['include_context'] ?? false)
                 ? $this->contextNotes($user, $filters, $bloodTestIds)
+                : collect(),
+            'sourceDocuments' => ($filters['include_source_documents'] ?? false)
+                ? $this->sourceDocuments($user, $bloodTestIds)
                 : collect(),
             'questions' => $filters['questions'] ?? null,
         ];
@@ -112,6 +127,7 @@ class BuildConsultOverview
             ->with(['biomarker', 'bloodTest'])
             ->join('blood_tests', 'biomarker_results.blood_test_id', '=', 'blood_tests.id')
             ->orderBy('blood_tests.test_date')
+            ->orderBy('blood_tests.id')
             ->orderBy('biomarker_results.id')
             ->select('biomarker_results.*');
 
@@ -120,6 +136,78 @@ class BuildConsultOverview
         }
 
         return $query->get();
+    }
+
+    /**
+     * @param  list<int>  $bloodTestIds
+     * @return Collection<int, array{result: BiomarkerResult, previousResult: BiomarkerResult, changeLabel: string}>
+     */
+    private function trendChanges(User $user, array $bloodTestIds): Collection
+    {
+        $changes = [];
+
+        foreach ($this->confirmedResults($user, $bloodTestIds)->groupBy('biomarker_id') as $results) {
+            $previous = null;
+
+            foreach ($results as $result) {
+                if ($previous instanceof BiomarkerResult && $this->canCompare($previous, $result)) {
+                    $changes[] = [
+                        'result' => $result,
+                        'previousResult' => $previous,
+                        'changeLabel' => $this->changeLabel($previous, $result),
+                    ];
+                }
+
+                $previous = $result;
+            }
+        }
+
+        return collect($changes);
+    }
+
+    private function canCompare(BiomarkerResult $previous, BiomarkerResult $result): bool
+    {
+        $previousUnit = trim((string) $previous->unit);
+        $resultUnit = trim((string) $result->unit);
+
+        return $previousUnit !== ''
+            && $previousUnit === $resultUnit
+            && is_numeric($previous->value)
+            && is_numeric($result->value);
+    }
+
+    private function changeLabel(BiomarkerResult $previous, BiomarkerResult $result): string
+    {
+        $change = (float) $result->value - (float) $previous->value;
+        $prefix = $change > 0 ? '+' : '';
+
+        return $prefix.$this->numberLabel($change).' '.$result->unit;
+    }
+
+    private function numberLabel(float $value): string
+    {
+        return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+    }
+
+    /**
+     * @param  list<int>  $bloodTestIds
+     * @return Collection<int, BloodTestDocument>
+     */
+    private function sourceDocuments(User $user, array $bloodTestIds): Collection
+    {
+        if ($bloodTestIds === []) {
+            return collect();
+        }
+
+        return BloodTestDocument::query()
+            ->whereHas('bloodTest', function ($query) use ($user, $bloodTestIds): void {
+                $query
+                    ->where('user_id', $user->id)
+                    ->whereIn('id', $bloodTestIds);
+            })
+            ->with('bloodTest')
+            ->orderBy('id')
+            ->get();
     }
 
     /**

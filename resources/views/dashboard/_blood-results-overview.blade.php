@@ -30,7 +30,9 @@
                 @csrf
                 <input type="hidden" name="blood_test_ids[]" value="{{ $summary['bloodTest']->id }}">
                 <input type="hidden" name="include_attention" value="1">
+                <input type="hidden" name="include_normal" value="1">
                 <input type="hidden" name="include_trends" value="1">
+                <input type="hidden" name="include_source_documents" value="1">
                 <flux:button type="submit" variant="primary" data-test="latest-upload-consult-button">{{ __('Maak consultlijst') }}</flux:button>
             </form>
         </div>

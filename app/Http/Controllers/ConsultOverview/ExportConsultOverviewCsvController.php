@@ -38,6 +38,33 @@ class ExportConsultOverviewCsvController extends Controller
             ];
         }
 
+        foreach ($overview['normalResults'] as $result) {
+            $rows[] = [
+                'normal',
+                $result->bloodTest->test_date?->toDateString() ?? '',
+                $result->biomarker->name,
+                (string) (float) $result->value,
+                $result->unit,
+                $result->status,
+                $result->note ?? '',
+            ];
+        }
+
+        foreach ($overview['trendChanges'] as $change) {
+            $result = $change['result'];
+            $previousResult = $change['previousResult'];
+
+            $rows[] = [
+                'change',
+                $result->bloodTest->test_date?->toDateString() ?? '',
+                $result->biomarker->name,
+                (string) (float) $result->value,
+                $result->unit,
+                $result->status,
+                'previous '.(string) (float) $previousResult->value.' '.$previousResult->unit.'; change '.$change['changeLabel'],
+            ];
+        }
+
         foreach ($overview['trendResults'] as $result) {
             $rows[] = [
                 'trend',
@@ -47,6 +74,18 @@ class ExportConsultOverviewCsvController extends Controller
                 $result->unit,
                 $result->status,
                 $result->note ?? '',
+            ];
+        }
+
+        foreach ($overview['sourceDocuments'] as $document) {
+            $rows[] = [
+                'source_document',
+                $document->bloodTest->test_date?->toDateString() ?? '',
+                $document->original_filename,
+                '',
+                '',
+                '',
+                $document->bloodTest->title ?? '',
             ];
         }
 
@@ -100,8 +139,10 @@ class ExportConsultOverviewCsvController extends Controller
      *     blood_test_ids: list<int>,
      *     include_pinned: bool,
      *     include_attention: bool,
+     *     include_normal: bool,
      *     include_trends: bool,
      *     include_context: bool,
+     *     include_source_documents: bool,
      *     questions: string|null
      * }
      */
@@ -114,9 +155,10 @@ class ExportConsultOverviewCsvController extends Controller
             'blood_test_ids.*' => ['integer'],
             'include_pinned' => ['nullable', 'boolean'],
             'include_attention' => ['nullable', 'boolean'],
+            'include_normal' => ['nullable', 'boolean'],
             'include_trends' => ['nullable', 'boolean'],
             'include_context' => ['nullable', 'boolean'],
-            'questions' => ['nullable', 'string', 'max:5000'],
+            'include_source_documents' => ['nullable', 'boolean'],
         ]);
 
         return [
@@ -125,9 +167,11 @@ class ExportConsultOverviewCsvController extends Controller
             'blood_test_ids' => array_values(array_map('intval', $validated['blood_test_ids'] ?? [])),
             'include_pinned' => $request->boolean('include_pinned'),
             'include_attention' => $request->boolean('include_attention'),
+            'include_normal' => $request->boolean('include_normal'),
             'include_trends' => $request->boolean('include_trends'),
             'include_context' => $request->boolean('include_context'),
-            'questions' => $validated['questions'] ?? null,
+            'include_source_documents' => $request->boolean('include_source_documents'),
+            'questions' => null,
         ];
     }
 
