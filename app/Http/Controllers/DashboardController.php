@@ -16,7 +16,7 @@ class DashboardController extends Controller
         return view('dashboard', [
             'latestUploadSummary' => $buildLatestUploadSummary($user),
             'recentBloodTests' => $user->bloodTests()
-                ->latest('test_date')
+                ->recentFirst()
                 ->limit(5)
                 ->get(),
             'pinnedBiomarkers' => PinnedBiomarker::query()

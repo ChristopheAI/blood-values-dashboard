@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\BloodTestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -69,6 +70,18 @@ class BloodTest extends Model
         return $this->results()
             ->whereNotNull('confirmed_at')
             ->whereHas('biomarker', fn ($query) => $query->where('user_id', $this->user_id));
+    }
+
+    /**
+     * @param  Builder<BloodTest>  $query
+     * @return Builder<BloodTest>
+     */
+    public function scopeRecentFirst(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw('case when test_date is null then 1 else 0 end')
+            ->orderByDesc('test_date')
+            ->orderByDesc('id');
     }
 
     public function recalculateStatusFromResults(): void

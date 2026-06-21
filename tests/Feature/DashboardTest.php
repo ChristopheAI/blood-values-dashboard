@@ -103,6 +103,44 @@ class DashboardTest extends TestCase
         $this->assertStringNotContainsString('Normal marker', $attentionSection);
     }
 
+    public function test_dashboard_upload_summary_uses_the_most_recent_blood_test_date(): void
+    {
+        $user = User::factory()->create();
+        $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+        $current = BloodTest::factory()->for($user)->create([
+            'title' => 'Current dated blood test',
+            'test_date' => '2026-06-15',
+            'status' => 'confirmed',
+            'created_at' => now()->subDay(),
+        ]);
+        $older = BloodTest::factory()->for($user)->create([
+            'title' => 'Older but later created record',
+            'test_date' => '2026-04-15',
+            'status' => 'confirmed',
+            'created_at' => now(),
+        ]);
+
+        BiomarkerResult::factory()->for($current)->for($ferritin)->create([
+            'value' => 36,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
+        BiomarkerResult::factory()->for($older)->for($ferritin)->create([
+            'value' => 48,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now()->subMonth(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Current dated blood test')
+            ->assertSee('Afname 15 juni 2026')
+            ->assertDontSee('Older but later created record · 1 bevestigde waarde');
+    }
+
     public function test_upload_summary_compares_against_previous_blood_test_only(): void
     {
         $user = User::factory()->create();

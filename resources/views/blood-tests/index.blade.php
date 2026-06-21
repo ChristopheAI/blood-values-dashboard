@@ -5,7 +5,7 @@
         <div class="space-y-3">
             <flux:heading size="lg">{{ __('Recent blood tests') }}</flux:heading>
 
-            @forelse (auth()->user()->bloodTests()->latest()->get() as $bloodTest)
+            @forelse (auth()->user()->bloodTests()->recentFirst()->get() as $bloodTest)
                 <a href="{{ route('blood-tests.show', $bloodTest) }}" class="block rounded-lg border border-neutral-200 p-4 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-900" data-test="blood-test-link">
                     <div class="font-medium">{{ $bloodTest->title ?: __('Untitled blood test') }}</div>
                     <div class="text-sm text-neutral-600 dark:text-neutral-400">

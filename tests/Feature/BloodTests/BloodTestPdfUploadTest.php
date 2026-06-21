@@ -86,6 +86,33 @@ it('renders an upload-first empty intake dropzone without metadata or account fi
         ->not->toContain('data-state="pending"');
 });
 
+it('lists blood tests by most recent blood test date first', function () {
+    $user = User::factory()->create();
+    BloodTest::factory()->for($user)->create([
+        'title' => 'Current dated blood test',
+        'test_date' => '2026-06-15',
+        'status' => 'reviewing',
+        'created_at' => now()->subDay(),
+    ]);
+    BloodTest::factory()->for($user)->create([
+        'title' => 'Older but later created record',
+        'test_date' => '2026-04-15',
+        'status' => 'confirmed',
+        'created_at' => now(),
+    ]);
+
+    $content = $this->actingAs($user)
+        ->get(route('blood-tests.index'))
+        ->assertOk()
+        ->getContent();
+
+    expect($content)
+        ->toContain('Current dated blood test')
+        ->toContain('Older but later created record')
+        ->and(strpos($content, 'Current dated blood test'))
+        ->toBeLessThan(strpos($content, 'Older but later created record'));
+});
+
 it('renders the dropzone choose control as a button and keeps the input pdf only', function () {
     $user = User::factory()->create();
 

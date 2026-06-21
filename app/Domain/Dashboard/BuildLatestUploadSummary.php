@@ -39,7 +39,7 @@ class BuildLatestUploadSummary
             ->whereHas('results', fn ($query) => $query
                 ->whereNotNull('confirmed_at')
                 ->whereHas('biomarker', fn ($query) => $query->where('user_id', $user->id)))
-            ->latest()
+            ->recentFirst()
             ->first();
 
         if (! $bloodTest) {
