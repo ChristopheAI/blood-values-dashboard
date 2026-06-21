@@ -45,6 +45,10 @@ test -f docs/adr/0010-use-layout-aware-positional-text-extraction.md
 echo "ok: ADR guardrails detected"
 
 echo
+echo "== Parser-lab tests =="
+python3 -m unittest discover -s tests/python -p 'test_*.py'
+
+echo
 echo "== Frontend build =="
 npm run build
 
