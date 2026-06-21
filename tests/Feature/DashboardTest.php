@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
@@ -100,6 +101,50 @@ class DashboardTest extends TestCase
 
         $this->assertStringContainsString('Low marker', $attentionSection);
         $this->assertStringNotContainsString('Normal marker', $attentionSection);
+    }
+
+    public function test_upload_summary_compares_against_previous_blood_test_only(): void
+    {
+        $user = User::factory()->create();
+        $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+        $previous = BloodTest::factory()->for($user)->create([
+            'title' => 'Previous blood test',
+            'test_date' => '2026-03-01',
+        ]);
+        $selected = BloodTest::factory()->for($user)->create([
+            'title' => 'Selected older blood test',
+            'test_date' => '2026-04-08',
+        ]);
+        $future = BloodTest::factory()->for($user)->create([
+            'title' => 'Future blood test',
+            'test_date' => '2026-06-01',
+        ]);
+
+        BiomarkerResult::factory()->for($previous)->for($ferritin)->create([
+            'value' => 35,
+            'unit' => 'ug/L',
+            'confirmed_at' => now()->subMonths(2),
+        ]);
+        BiomarkerResult::factory()->for($selected)->for($ferritin)->create([
+            'value' => 42,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now()->subMonth(),
+        ]);
+        BiomarkerResult::factory()->for($future)->for($ferritin)->create([
+            'value' => 12,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
+
+        $summary = app(BuildLatestUploadSummary::class)->forBloodTest($user, $selected);
+
+        $this->assertNotNull($summary);
+
+        $ferritinRow = $summary['rows']->firstWhere('name', 'Ferritine');
+
+        $this->assertSame('+7 ug/L', $ferritinRow['trendLabel']);
     }
 
     public function test_dashboard_shows_a_confirmed_latest_upload_digest(): void

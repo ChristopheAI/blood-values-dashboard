@@ -80,7 +80,7 @@ class BuildLatestUploadSummary
         $rows = BiomarkerResult::query()
             ->confirmedForUser($user->id)
             ->where('blood_test_id', $bloodTest->id)
-            ->with('biomarker')
+            ->with(['biomarker', 'bloodTest'])
             ->orderByRaw("case status when 'high' then 0 when 'low' then 1 when 'unknown' then 2 else 3 end")
             ->orderBy('id')
             ->get()
@@ -157,13 +157,45 @@ class BuildLatestUploadSummary
 
     private function previousConfirmedResult(int $userId, BiomarkerResult $result): ?BiomarkerResult
     {
+        $currentBloodTest = $result->bloodTest;
+
+        if (! $currentBloodTest instanceof BloodTest) {
+            return null;
+        }
+
+        $currentBloodTestId = (int) $currentBloodTest->id;
+        $currentDate = $currentBloodTest->test_date?->toDateString();
+
         return BiomarkerResult::query()
             ->confirmedForUser($userId)
             ->where('biomarker_results.biomarker_id', $result->biomarker_id)
             ->where('biomarker_results.blood_test_id', '!=', $result->blood_test_id)
             ->join('blood_tests as previous_blood_tests', 'previous_blood_tests.id', '=', 'biomarker_results.blood_test_id')
+            ->where(function ($query) use ($currentBloodTestId, $currentDate): void {
+                if ($currentDate !== null) {
+                    $query
+                        ->where('previous_blood_tests.test_date', '<', $currentDate)
+                        ->orWhere(function ($query) use ($currentBloodTestId, $currentDate): void {
+                            $query
+                                ->where('previous_blood_tests.test_date', $currentDate)
+                                ->where('previous_blood_tests.id', '<', $currentBloodTestId);
+                        });
+
+                    return;
+                }
+
+                $query
+                    ->whereNotNull('previous_blood_tests.test_date')
+                    ->orWhere(function ($query) use ($currentBloodTestId): void {
+                        $query
+                            ->whereNull('previous_blood_tests.test_date')
+                            ->where('previous_blood_tests.id', '<', $currentBloodTestId);
+                    });
+            })
             ->select('biomarker_results.*')
+            ->orderByRaw('case when previous_blood_tests.test_date is null then 1 else 0 end')
             ->orderByDesc('previous_blood_tests.test_date')
+            ->orderByDesc('previous_blood_tests.id')
             ->orderByDesc('biomarker_results.confirmed_at')
             ->orderByDesc('biomarker_results.id')
             ->first();

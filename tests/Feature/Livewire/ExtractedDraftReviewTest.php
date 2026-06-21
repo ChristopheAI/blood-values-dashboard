@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\ContextNoteCategory;
 use App\Livewire\BloodTests\ReviewBloodTest;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
+use App\Models\ContextNote;
 use App\Models\ExtractionRun;
 use App\Models\User;
 use Livewire\Livewire;
@@ -541,6 +543,154 @@ it('shows a compact trend summary for confirmed values on the result screen', fu
         ->assertSee('data-test="confirmed-value-trend" data-state="compared"', false)
         ->assertSee('+2 ug/L')
         ->assertSee('previous 40 ug/L');
+});
+
+it('shows source documents for the selected owned blood test without storage paths', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    $otherBloodTest = BloodTest::factory()->for($otherUser)->create(['status' => 'confirmed']);
+
+    BloodTestDocument::factory()->for($bloodTest)->create([
+        'original_filename' => 'selected-lab-result.pdf',
+        'storage_path' => 'blood-test-documents/private-selected-storage-name.pdf',
+    ]);
+    BloodTestDocument::factory()->for($otherBloodTest)->create([
+        'original_filename' => 'foreign-lab-result.pdf',
+        'storage_path' => 'blood-test-documents/foreign-storage-name.pdf',
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('data-test="source-document-row"', false)
+        ->assertSee('selected-lab-result.pdf')
+        ->assertSee(route('blood-test-documents.download', $bloodTest->documents()->first()), false)
+        ->assertDontSee('private-selected-storage-name.pdf')
+        ->assertDontSee('foreign-lab-result.pdf')
+        ->assertDontSee('foreign-storage-name.pdf');
+});
+
+it('shows context notes for the selected blood test only', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    $otherOwnedBloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+
+    ContextNote::factory()->for($user)->for($bloodTest)->create([
+        'note_date' => '2026-06-02',
+        'category' => ContextNoteCategory::Other,
+        'body' => 'Selected blood-test context note',
+    ]);
+    ContextNote::factory()->for($user)->for($otherOwnedBloodTest)->create([
+        'body' => 'Other owned blood-test note',
+    ]);
+    ContextNote::factory()->for($otherUser)->create([
+        'blood_test_id' => $bloodTest->id,
+        'body' => 'Foreign corrupted context note',
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('data-test="blood-test-context-note-row"', false)
+        ->assertSee('Selected blood-test context note')
+        ->assertSee('2026-06-02')
+        ->assertSee('Other')
+        ->assertDontSee('Other owned blood-test note')
+        ->assertDontSee('Foreign corrupted context note');
+});
+
+it('shows confirmed only comparable changes for the selected blood test', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $tsh = Biomarker::factory()->for($user)->create(['name' => 'TSH']);
+    $currentBloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => null,
+        'status' => 'reviewing',
+    ]);
+    $previousBloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => '2026-05-01',
+        'status' => 'confirmed',
+    ]);
+
+    BiomarkerResult::factory()->for($previousBloodTest)->for($ferritin)->create([
+        'value' => 40,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now()->subMonth(),
+    ]);
+    BiomarkerResult::factory()->for($currentBloodTest)->for($ferritin)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($previousBloodTest)->for($tsh)->create([
+        'value' => 9.9,
+        'unit' => 'mIU/L',
+        'status' => 'unknown',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Draft TSH',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $currentBloodTest])
+        ->assertSee('data-test="confirmed-value-trend" data-state="compared"', false)
+        ->assertSee('+2 ug/L')
+        ->assertSee('previous 40 ug/L')
+        ->assertDontSee('9.9 mIU/L')
+        ->assertDontSee('Draft TSH');
+});
+
+it('keeps the management layer available below the patient friendly overview', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $vitaminD = Biomarker::factory()->for($user)->create(['name' => 'Vitamin D']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($vitaminD)->create([
+        'value' => 61,
+        'unit' => 'nmol/L',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Vitamin D',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('data-test="blood-results-overview"', false)
+        ->assertSee('data-test="intake-progress"', false)
+        ->assertSee('data-test="confirmed-value-row"', false)
+        ->assertSee('data-test="review-strip"', false)
+        ->assertSee('data-test="extracted-draft-row"', false)
+        ->assertSee('data-test="confirm-biomarker-form"', false)
+        ->assertSee('Edit')
+        ->assertSee('Delete')
+        ->assertSee('Use draft')
+        ->assertSee('Confirm value');
 });
 
 it('renders the patient friendly overview for an older owned blood test', function () {

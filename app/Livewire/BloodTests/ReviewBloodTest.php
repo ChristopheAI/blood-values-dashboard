@@ -3,6 +3,8 @@
 namespace App\Livewire\BloodTests;
 
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
+use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\BloodTests\LongitudinalChange;
 use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
@@ -237,14 +239,14 @@ class ReviewBloodTest extends Component
                 ->where('user_id', Auth::id())
                 ->orderBy('name')
                 ->get(),
-            'trendSummaries' => $this->trendSummaries($bloodTest),
+            'trendSummaries' => $this->trendSummaries($bloodTest, app(BuildLongitudinalChanges::class)),
         ]);
     }
 
     /**
      * @return array<int, array{state: string, label: string, detail: string|null}>
      */
-    private function trendSummaries(BloodTest $bloodTest): array
+    private function trendSummaries(BloodTest $bloodTest, BuildLongitudinalChanges $buildLongitudinalChanges): array
     {
         $confirmedResults = $bloodTest->results
             ->whereNotNull('confirmed_at')
@@ -254,35 +256,29 @@ class ReviewBloodTest extends Component
             return [];
         }
 
-        $previousResults = BiomarkerResult::query()
-            ->confirmedForUser($bloodTest->user_id)
-            ->whereIn('biomarker_id', $confirmedResults->pluck('biomarker_id')->filter()->unique()->values()->all())
-            ->where('blood_test_id', '!=', $bloodTest->id)
-            ->with('bloodTest')
-            ->get()
-            ->filter(fn (BiomarkerResult $result): bool => $this->isPreviousBloodTest($result->bloodTest, $bloodTest))
-            ->groupBy(fn (BiomarkerResult $result): int => (int) $result->biomarker_id);
+        $changesByResultId = $buildLongitudinalChanges
+            ->across(
+                Auth::user(),
+                BloodTest::query()
+                    ->where('user_id', $bloodTest->user_id)
+                    ->get(),
+            )
+            ->filter(fn (LongitudinalChange $change): bool => $change->result?->blood_test_id === $bloodTest->id)
+            ->keyBy(fn (LongitudinalChange $change): int => (int) $change->result?->id);
 
-        $summaries = [];
-
-        foreach ($confirmedResults as $result) {
-            $previous = $previousResults
-                ->get((int) $result->biomarker_id, collect())
-                ->sortByDesc(fn (BiomarkerResult $previousResult): string => $this->bloodTestSortKey($previousResult->bloodTest))
-                ->first();
-
-            $summaries[(int) $result->id] = $this->trendSummary($result, $previous instanceof BiomarkerResult ? $previous : null);
-        }
-
-        return $summaries;
+        return $confirmedResults
+            ->mapWithKeys(fn (BiomarkerResult $result): array => [
+                (int) $result->id => $this->trendSummaryFromChange($changesByResultId->get((int) $result->id)),
+            ])
+            ->all();
     }
 
     /**
      * @return array{state: string, label: string, detail: string|null}
      */
-    private function trendSummary(BiomarkerResult $current, ?BiomarkerResult $previous): array
+    private function trendSummaryFromChange(?LongitudinalChange $change): array
     {
-        if (! $previous instanceof BiomarkerResult) {
+        if (! $change instanceof LongitudinalChange || ! $change->previousResult instanceof BiomarkerResult) {
             return [
                 'state' => 'first',
                 'label' => 'First tracked value',
@@ -290,9 +286,9 @@ class ReviewBloodTest extends Component
             ];
         }
 
-        $previousValue = $this->formatDecimal($previous->value).' '.$previous->unit;
+        $previousValue = trim($change->previousValue.' '.$change->previousUnit);
 
-        if ($previous->unit !== $current->unit) {
+        if (! $change->comparable) {
             return [
                 'state' => 'not-comparable',
                 'label' => 'Not comparable',
@@ -300,38 +296,11 @@ class ReviewBloodTest extends Component
             ];
         }
 
-        $difference = (float) $current->value - (float) $previous->value;
-
         return [
             'state' => 'compared',
-            'label' => $difference === 0.0 ? 'No change' : $this->formatDelta($difference).' '.$current->unit,
+            'label' => $change->direction === 'unchanged' ? 'No change' : (string) $change->changeLabel,
             'detail' => 'previous '.$previousValue,
         ];
-    }
-
-    private function isPreviousBloodTest(BloodTest $candidate, BloodTest $current): bool
-    {
-        $candidateDate = $candidate->test_date?->toDateString() ?? '';
-        $currentDate = $current->test_date?->toDateString() ?? '';
-
-        if ($candidateDate !== '' && $currentDate !== '' && $candidateDate !== $currentDate) {
-            return $candidateDate < $currentDate;
-        }
-
-        return $candidate->id < $current->id;
-    }
-
-    private function bloodTestSortKey(BloodTest $bloodTest): string
-    {
-        return ($bloodTest->test_date?->toDateString() ?? '0000-00-00')
-            .'-'.str_pad((string) $bloodTest->id, 10, '0', STR_PAD_LEFT);
-    }
-
-    private function formatDelta(float $difference): string
-    {
-        $formatted = $this->formatDecimal($difference);
-
-        return $difference > 0 ? '+'.$formatted : $formatted;
     }
 
     private function ownedBloodTest(int $bloodTestId): BloodTest

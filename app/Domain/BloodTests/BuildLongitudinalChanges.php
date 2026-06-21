@@ -107,16 +107,21 @@ class BuildLongitudinalChanges
             return collect();
         }
 
+        $bloodTestPositionById = array_flip($bloodTestIds);
+
         return BiomarkerResult::query()
             ->confirmedForUser($user->id)
             ->whereIn('biomarker_results.blood_test_id', array_values(array_unique($bloodTestIds)))
             ->with(['biomarker', 'bloodTest'])
-            ->join('blood_tests', 'biomarker_results.blood_test_id', '=', 'blood_tests.id')
-            ->orderBy('blood_tests.test_date')
-            ->orderBy('blood_tests.id')
             ->orderBy('biomarker_results.id')
-            ->select('biomarker_results.*')
-            ->get();
+            ->get()
+            ->sortBy(function (BiomarkerResult $result) use ($bloodTestPositionById): string {
+                $bloodTestPosition = $bloodTestPositionById[(int) $result->blood_test_id] ?? PHP_INT_MAX;
+
+                return str_pad((string) $bloodTestPosition, 12, '0', STR_PAD_LEFT)
+                    .'-'.str_pad((string) $result->id, 12, '0', STR_PAD_LEFT);
+            })
+            ->values();
     }
 
     private function row(?BiomarkerResult $previous, ?BiomarkerResult $current): LongitudinalChange

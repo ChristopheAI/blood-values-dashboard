@@ -44,6 +44,34 @@ it('builds same-unit numeric changes across owned confirmed blood tests', functi
         ->and($change->reason)->toBeNull();
 });
 
+it('orders undated blood tests after dated blood tests when building across changes', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $currentBloodTest = BloodTest::factory()->for($user)->create(['test_date' => null]);
+    $previousBloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-05-01']);
+
+    $previousResult = BiomarkerResult::factory()->for($previousBloodTest)->for($ferritin)->create([
+        'value' => 40,
+        'unit' => 'ug/L',
+        'confirmed_at' => now()->subMonth(),
+    ]);
+    $currentResult = BiomarkerResult::factory()->for($currentBloodTest)->for($ferritin)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'confirmed_at' => now(),
+    ]);
+
+    $changes = app(BuildLongitudinalChanges::class)->across($user, collect([$currentBloodTest, $previousBloodTest]));
+
+    expect($changes)->toHaveCount(1);
+
+    $change = $changes->first();
+
+    expect($change->previousResult->is($previousResult))->toBeTrue()
+        ->and($change->result->is($currentResult))->toBeTrue()
+        ->and($change->changeLabel)->toBe('+2 ug/L');
+});
+
 it('marks unsafe pairwise comparisons with explicit reasons', function () {
     $user = User::factory()->create();
     $vitaminD = Biomarker::factory()->for($user)->create(['name' => 'Vitamin D']);
