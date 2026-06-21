@@ -2,6 +2,8 @@
 
 namespace App\Domain\Consult;
 
+use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\BloodTests\LongitudinalChange;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
@@ -12,6 +14,8 @@ use Illuminate\Support\Collection;
 
 class BuildConsultOverview
 {
+    public function __construct(private readonly BuildLongitudinalChanges $buildLongitudinalChanges) {}
+
     /**
      * @param  array{
      *     from?: string|null,
@@ -61,7 +65,7 @@ class BuildConsultOverview
                 ? $this->confirmedResults($user, $bloodTestIds)
                 : collect(),
             'trendChanges' => ($filters['include_trends'] ?? false)
-                ? $this->trendChanges($user, $bloodTestIds)
+                ? $this->trendChanges($user, $bloodTests)
                 : collect(),
             'contextNotes' => ($filters['include_context'] ?? false)
                 ? $this->contextNotes($user, $filters, $bloodTestIds)
@@ -139,54 +143,20 @@ class BuildConsultOverview
     }
 
     /**
-     * @param  list<int>  $bloodTestIds
+     * @param  Collection<int, BloodTest>  $bloodTests
      * @return Collection<int, array{result: BiomarkerResult, previousResult: BiomarkerResult, changeLabel: string}>
      */
-    private function trendChanges(User $user, array $bloodTestIds): Collection
+    private function trendChanges(User $user, Collection $bloodTests): Collection
     {
-        $changes = [];
-
-        foreach ($this->confirmedResults($user, $bloodTestIds)->groupBy('biomarker_id') as $results) {
-            $previous = null;
-
-            foreach ($results as $result) {
-                if ($previous instanceof BiomarkerResult && $this->canCompare($previous, $result)) {
-                    $changes[] = [
-                        'result' => $result,
-                        'previousResult' => $previous,
-                        'changeLabel' => $this->changeLabel($previous, $result),
-                    ];
-                }
-
-                $previous = $result;
-            }
-        }
-
-        return collect($changes);
-    }
-
-    private function canCompare(BiomarkerResult $previous, BiomarkerResult $result): bool
-    {
-        $previousUnit = trim((string) $previous->unit);
-        $resultUnit = trim((string) $result->unit);
-
-        return $previousUnit !== ''
-            && $previousUnit === $resultUnit
-            && is_numeric($previous->value)
-            && is_numeric($result->value);
-    }
-
-    private function changeLabel(BiomarkerResult $previous, BiomarkerResult $result): string
-    {
-        $change = (float) $result->value - (float) $previous->value;
-        $prefix = $change > 0 ? '+' : '';
-
-        return $prefix.$this->numberLabel($change).' '.$result->unit;
-    }
-
-    private function numberLabel(float $value): string
-    {
-        return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+        return $this->buildLongitudinalChanges
+            ->across($user, $bloodTests)
+            ->filter(fn (LongitudinalChange $change): bool => $change->comparable)
+            ->map(fn (LongitudinalChange $change): array => [
+                'result' => $change->result,
+                'previousResult' => $change->previousResult,
+                'changeLabel' => $change->changeLabel,
+            ])
+            ->values();
     }
 
     /**
