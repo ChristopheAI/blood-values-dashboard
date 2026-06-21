@@ -1,0 +1,94 @@
+name: Developer Slice
+description: Track one buildable product or engineering slice for Codex.
+title: "[Slice]: "
+labels:
+  - codex
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use one issue per active slice. Do not include private lab PDFs, real biomarker values, symptoms, medication notes, consult exports, or account data.
+  - type: input
+    id: product_goal
+    attributes:
+      label: Product goal
+      description: One sentence describing what user outcome this slice unlocks.
+      placeholder: "As the owner, I can..."
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is in scope for this slice?
+      placeholder: |
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: Name adjacent work that Codex must not drift into.
+      placeholder: |
+        - Runtime AI/OCR/external processing
+        - Medical advice or diagnosis copy
+    validations:
+      required: true
+  - type: textarea
+    id: likely_files
+    attributes:
+      label: Likely files or areas
+      description: Point Codex at the most relevant directories/files and AGENTS nodes.
+      placeholder: |
+        - app/Domain/...
+        - app/Livewire/...
+        - resources/views/...
+        - tests/Feature/...
+    validations:
+      required: true
+  - type: checkboxes
+    id: hard_boundaries
+    attributes:
+      label: Hard boundaries
+      options:
+        - label: Confirmed-only downstream remains enforced.
+          required: true
+        - label: Owner scoping is enforced server-side.
+          required: true
+        - label: No private data goes to AI, Exa, Firecrawl, OCR, logs, screenshots, or external services.
+          required: true
+        - label: No medical claims, diagnosis, treatment, urgency, health scoring, or recommendation copy.
+          required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Observable outcomes, including edge cases.
+      placeholder: |
+        - Given...
+        - When...
+        - Then...
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation commands and browser QA
+      description: Exact commands plus real routes/screens to inspect.
+      placeholder: |
+        - php artisan test ...
+        - sh scripts/validate.sh
+        - Browser QA: /dashboard, /blood-tests/{id}
+    validations:
+      required: true
+  - type: textarea
+    id: handoff
+    attributes:
+      label: Handoff notes
+      description: Branch, baseline commit, existing uncommitted files, and known risks.
+      placeholder: |
+        Branch:
+        Baseline commit:
+        Do not touch:
+        Known risks:

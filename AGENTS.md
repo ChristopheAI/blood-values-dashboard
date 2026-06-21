@@ -43,6 +43,41 @@ medical-advice features to this slice.
 - Do not merge this branch. The owner reviews the code and live-verifies a fresh
   upload first.
 
+## Intent Layer
+
+Before modifying files in a subdirectory, read the nearest child `AGENTS.md`
+first. There must be only one root context file: this `AGENTS.md`. Do not add a
+root `CLAUDE.md`.
+
+- `app/Domain/AGENTS.md` - domain/application rules for extraction, status,
+  compare, dashboard, consult, export, and privacy actions.
+- `app/Http/AGENTS.md` - controller, route, download, export, and mutation
+  boundaries.
+- `app/Livewire/AGENTS.md` - Livewire component rules for untrusted public
+  state and review interactions.
+- `app/Models/AGENTS.md` - Eloquent relationship, scope, and ownership
+  contracts.
+- `resources/views/AGENTS.md` - Blade/Livewire presentation rules, medical-copy
+  boundary, and privacy-safe UI behavior.
+- `tests/AGENTS.md` - Pest/Dusk test conventions and confirmed-only/privacy
+  regression expectations.
+- `docs/AGENTS.md` - project control-plane rules for briefs, specs, ADRs,
+  research, evidence, and handoff docs.
+- `database/AGENTS.md` - schema, migration, factory, and privacy-sensitive data
+  shape contracts.
+
+Global invariants stay here and apply everywhere:
+
+- `confirmed_at` is the downstream trust gate.
+- Owner scoping must be enforced server-side, not only in UI.
+- Private PDFs, biomarker values, notes, exports, and account data never go to
+  AI tools, Exa, Firecrawl, OCR services, logs, screenshots, or external
+  processing.
+- Source documents and structured values remain separate.
+- Use `unknown` when ranges, units, or comparisons are not trustworthy.
+- The app describes personal tracking data; it does not diagnose, advise,
+  prescribe, score health, or encourage extra testing.
+
 ## Commands
 
 Use exact commands. Prefer focused checks while developing, then the full
@@ -81,6 +116,8 @@ Read these first:
 
 - `README.md`
 - `docs/project-brief.md`
+- `docs/codex-prd.md`
+- `docs/agent-efficiency-playbook.md`
 - `docs/v1-spec.md`
 - `docs/product-system-check.md`
 - `docs/evidence/source-index.md`

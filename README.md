@@ -19,6 +19,8 @@ provider integrations, wearable sync, or medical-advice features to this slice.
 
 - `AGENTS.md`
 - `docs/project-brief.md`
+- `docs/codex-prd.md`
+- `docs/agent-efficiency-playbook.md`
 - `docs/v1-spec.md`
 - `docs/product-system-check.md`
 - `docs/evidence/source-index.md`
@@ -61,6 +63,17 @@ sh scripts/validate.sh
 
 This currently proves scaffold integrity, runs the Laravel test/quality suite,
 builds frontend assets, and checks whitespace.
+
+## QA Scenario
+
+Seed a stable synthetic browser-QA dataset:
+
+```bash
+php artisan app:seed-blood-test-demo
+```
+
+Login with `qa@example.com` / `password`. See
+`docs/testing/qa-seed-scenario.md`.
 
 ## Product Boundary
 
