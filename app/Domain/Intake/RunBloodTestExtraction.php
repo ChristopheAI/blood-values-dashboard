@@ -98,6 +98,7 @@ class RunBloodTestExtraction
     {
         $bloodTest = $document->bloodTest;
         $duplicateMatchedBiomarkerIds = $this->duplicateMatchedBiomarkerIds($document, $candidates);
+        $duplicateTrustedAutoImportNames = $this->duplicateTrustedAutoImportNames($candidates);
         $stored = 0;
 
         foreach ($candidates as $candidate) {
@@ -107,14 +108,27 @@ class RunBloodTestExtraction
                 continue;
             }
 
-            $biomarker = $this->matchingBiomarker($document, $candidate);
-
-            if ($biomarker instanceof Biomarker && $this->hasConfirmedValue($bloodTest->id, $biomarker->id)) {
+            if ($this->shouldDiscardNonActionableTrustedCmaCandidate($candidate)) {
                 continue;
             }
 
-            if ($biomarker instanceof Biomarker && isset($duplicateMatchedBiomarkerIds[$biomarker->id])) {
+            $matchedBiomarker = $this->matchingBiomarker($document, $candidate);
+            $biomarker = $matchedBiomarker;
+
+            if ($matchedBiomarker instanceof Biomarker && $this->hasConfirmedValue($bloodTest->id, $matchedBiomarker->id)) {
+                continue;
+            }
+
+            if ($matchedBiomarker instanceof Biomarker && isset($duplicateMatchedBiomarkerIds[$matchedBiomarker->id])) {
                 $biomarker = null;
+            }
+
+            if (! $matchedBiomarker instanceof Biomarker) {
+                $biomarker = $this->trustedAutoImportBiomarker(
+                    $document,
+                    $candidate,
+                    $duplicateTrustedAutoImportNames,
+                );
             }
 
             $confidence = $this->effectiveConfidence($document, $candidate, $biomarker);
@@ -209,6 +223,51 @@ class RunBloodTestExtraction
         return $duplicates;
     }
 
+    /**
+     * @param  list<ExtractedBiomarkerCandidate>  $candidates
+     * @return array<string, true>
+     */
+    private function duplicateTrustedAutoImportNames(array $candidates): array
+    {
+        $nameCounts = [];
+
+        foreach ($candidates as $candidate) {
+            if (! $this->isTrustedCmaSource($candidate)) {
+                continue;
+            }
+
+            if (! is_numeric($this->normalizedNumber($candidate->value))) {
+                continue;
+            }
+
+            $name = $this->normalizedName($candidate->extractedName);
+
+            if ($name === '') {
+                continue;
+            }
+
+            $nameCounts[$name] = ($nameCounts[$name] ?? 0) + 1;
+        }
+
+        $duplicates = [];
+
+        foreach ($nameCounts as $name => $count) {
+            if ($count > 1) {
+                $duplicates[$name] = true;
+            }
+        }
+
+        return $duplicates;
+    }
+
+    private function shouldDiscardNonActionableTrustedCmaCandidate(ExtractedBiomarkerCandidate $candidate): bool
+    {
+        return $this->isTrustedCmaSource($candidate)
+            && $this->normalizedUnit($candidate->unit) === ''
+            && $candidate->referenceMin === null
+            && $candidate->referenceMax === null;
+    }
+
     private function sourceSnippet(ExtractedBiomarkerCandidate $candidate): string
     {
         $snippet = preg_replace('/\s+/u', ' ', $candidate->sourceSnippet) ?? $candidate->sourceSnippet;
@@ -256,6 +315,81 @@ class RunBloodTestExtraction
         }
 
         return count($strongestMatches) === 1 ? $strongestMatches[0] : null;
+    }
+
+    /**
+     * @param  array<string, true>  $duplicateTrustedAutoImportNames
+     */
+    private function trustedAutoImportBiomarker(
+        BloodTestDocument $document,
+        ExtractedBiomarkerCandidate $candidate,
+        array $duplicateTrustedAutoImportNames,
+    ): ?Biomarker {
+        $name = $this->canonicalExtractedName($candidate->extractedName);
+        $normalizedName = $this->normalizedName($name);
+
+        if (isset($duplicateTrustedAutoImportNames[$normalizedName])) {
+            return null;
+        }
+
+        if (! $this->canCreateTrustedBiomarker($document, $candidate, $name)) {
+            return null;
+        }
+
+        $unit = $this->normalizedUnit($candidate->unit);
+        $referenceUnit = $this->normalizedNullableUnit($candidate->referenceUnit) ?? $unit;
+
+        return Biomarker::query()->create([
+            'user_id' => $document->bloodTest->user_id,
+            'name' => $name,
+            'default_unit' => $unit,
+            'reference_min' => $this->normalizedNullableNumber($candidate->referenceMin),
+            'reference_max' => $this->normalizedNullableNumber($candidate->referenceMax),
+            'reference_unit' => $referenceUnit,
+            'active' => true,
+        ]);
+    }
+
+    private function canCreateTrustedBiomarker(
+        BloodTestDocument $document,
+        ExtractedBiomarkerCandidate $candidate,
+        string $name,
+    ): bool {
+        return $this->isTrustedCmaSource($candidate)
+            && $candidate->confidence >= self::AUTO_CONFIRM_CONFIDENCE_THRESHOLD
+            && $name !== ''
+            && $this->containsLetter($name)
+            && is_numeric($this->normalizedNumber($candidate->value))
+            && $this->normalizedUnit($candidate->unit) !== ''
+            && $this->hasParseableReferenceEvidence($candidate)
+            && $this->hasCompatibleReferenceUnit($candidate)
+            && ! $this->hasPotentialCatalogMatch($document, $candidate);
+    }
+
+    private function isTrustedCmaSource(ExtractedBiomarkerCandidate $candidate): bool
+    {
+        return $candidate->source === ExtractedBiomarkerCandidate::SOURCE_CMA_LAYOUT
+            || $candidate->source === ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR;
+    }
+
+    private function hasPotentialCatalogMatch(BloodTestDocument $document, ExtractedBiomarkerCandidate $candidate): bool
+    {
+        $name = $this->normalizedName($candidate->extractedName);
+
+        return Biomarker::query()
+            ->where('user_id', $document->bloodTest->user_id)
+            ->get()
+            ->contains(function (Biomarker $biomarker) use ($name): bool {
+                $catalogName = $this->normalizedName($biomarker->name);
+                $shortName = $biomarker->short_name === null ? null : $this->normalizedName($biomarker->short_name);
+
+                return $catalogName === $name
+                    || $shortName === $name
+                    || $this->isCatalogPrefix($name, $catalogName)
+                    || $this->isCatalogPrefix($catalogName, $name)
+                    || ($shortName !== null && $this->isCatalogPrefix($name, $shortName))
+                    || ($shortName !== null && $this->isCatalogPrefix($shortName, $name));
+            });
     }
 
     private function catalogPrefixLength(string $extractedName, Biomarker $biomarker): int
@@ -319,8 +453,17 @@ class RunBloodTestExtraction
             && $this->hasUnambiguousLiteralCatalogMatch($document, $candidate, $biomarker)
             && is_numeric($this->normalizedNumber($candidate->value))
             && $this->normalizedUnit($candidate->unit) !== ''
-            && $this->hasParseableReferenceBounds($candidate)
+            && $this->hasParseableReferenceEvidence($candidate)
             && $this->hasCompatibleReferenceUnit($candidate);
+    }
+
+    private function hasParseableReferenceEvidence(ExtractedBiomarkerCandidate $candidate): bool
+    {
+        if ($candidate->referenceMin === null && $candidate->referenceMax === null) {
+            return $this->isTrustedCmaSource($candidate);
+        }
+
+        return $this->hasParseableReferenceBounds($candidate);
     }
 
     private function hasParseableReferenceBounds(ExtractedBiomarkerCandidate $candidate): bool
@@ -364,6 +507,18 @@ class RunBloodTestExtraction
         $name = preg_replace('/\s+/u', ' ', trim($name)) ?? $name;
 
         return Str::lower(trim($name));
+    }
+
+    private function canonicalExtractedName(string $name): string
+    {
+        $name = preg_replace('/\s+/u', ' ', trim($name)) ?? $name;
+
+        return trim($name);
+    }
+
+    private function containsLetter(string $text): bool
+    {
+        return preg_match('/\p{L}/u', $text) === 1;
     }
 
     private function status(string $unit, ?string $referenceUnit, string $value, ?string $referenceMin, ?string $referenceMax): BiomarkerStatus

@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Intake\ExtractedBiomarkerCandidate;
 use App\Domain\Intake\ExtractTabularBiomarkerCandidates;
 use App\Domain\Intake\PositionedTextFragment;
 
@@ -33,7 +34,8 @@ it('extracts candidates from positioned tabular fragments', function () {
         ->and($candidates[0]->referenceMin)->toBe('10')
         ->and($candidates[0]->referenceMax)->toBe('20')
         ->and($candidates[0]->referenceUnit)->toBe('mg/L')
-        ->and($candidates[0]->confidence)->toBe(0.85);
+        ->and($candidates[0]->confidence)->toBe(0.85)
+        ->and($candidates[0]->source)->toBe(ExtractedBiomarkerCandidate::SOURCE_TABULAR);
 
     expect($candidates[1]->extractedName)->toBe('Marker Beta')
         ->and($candidates[1]->value)->toBe('5')
@@ -173,10 +175,11 @@ it('infers the value column when a lab header omits the explicit value label', f
         ->and($candidates[0]->extractedName)->toBe('Marker Alpha')
         ->and($candidates[0]->value)->toBe('12.4')
         ->and($candidates[0]->unit)->toBe('mg/L')
-        ->and($candidates[0]->confidence)->toBe(0.85);
+        ->and($candidates[0]->confidence)->toBe(0.85)
+        ->and($candidates[0]->source)->toBe(ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR);
 });
 
-it('keeps inferred value column candidates low confidence when the reference is missing', function () {
+it('keeps trusted CMA inferred value rows high confidence when the reference is missing', function () {
     $extract = new ExtractTabularBiomarkerCandidates;
 
     $candidates = $extract([
@@ -192,7 +195,47 @@ it('keeps inferred value column candidates low confidence when the reference is 
     expect($candidates)->toHaveCount(1)
         ->and($candidates[0]->referenceMin)->toBeNull()
         ->and($candidates[0]->referenceMax)->toBeNull()
-        ->and($candidates[0]->confidence)->toBeLessThan(0.85);
+        ->and($candidates[0]->confidence)->toBe(0.85)
+        ->and($candidates[0]->source)->toBe(ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR);
+});
+
+it('does not extract CMA timestamp rows as biomarkers', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analyse', 40, 700),
+        new PositionedTextFragment('Eenheid', 300, 700),
+        new PositionedTextFragment('Referentie', 390, 700),
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('12,4', 210, 680),
+        new PositionedTextFragment('mg/L', 300, 680),
+        new PositionedTextFragment('10 - 20', 390, 680),
+        new PositionedTextFragment('29/04/2026 08:32', 40, 660),
+        new PositionedTextFragment('1', 210, 660),
+    ]);
+
+    expect($candidates)->toHaveCount(1);
+    expect($candidates[0]->extractedName)->toBe('Marker Alpha');
+});
+
+it('ignores trailing CMA comparison markers after range references', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analyse', 40, 700),
+        new PositionedTextFragment('Eenheid', 300, 700),
+        new PositionedTextFragment('Referentie', 390, 700),
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('12,4', 210, 680),
+        new PositionedTextFragment('mg/L', 300, 680),
+        new PositionedTextFragment('10 - 20 <', 390, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->referenceMin)->toBe('10')
+        ->and($candidates[0]->referenceMax)->toBe('20')
+        ->and($candidates[0]->referenceUnit)->toBe('mg/L')
+        ->and($candidates[0]->confidence)->toBe(0.85);
 });
 
 it('keeps missing-unit tabular rows as low confidence candidates', function () {

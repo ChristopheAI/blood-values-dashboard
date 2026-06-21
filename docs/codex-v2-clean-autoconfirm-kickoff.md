@@ -17,7 +17,8 @@ As of the local validation pass on 2026-06-19, the branch contains:
 - page-aware row clustering and same-layout page continuation rules;
 - `AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85`;
 - unambiguous catalog anchoring only; ambiguous aliases/prefixes remain drafts;
-- missing-unit rows kept as low-confidence drafts;
+- trusted CMA rows without reference bounds auto-confirm with `unknown` status;
+- trusted CMA fragments without unit and without reference are discarded as non-actionable;
 - no overwrite of existing confirmed values;
 - upload-first intake with file-selection auto-submit and result landing;
 - confirmed-only downstream invariants for status/history/compare/consult/export.
@@ -57,13 +58,15 @@ PDFs or log values.
    this layer handles the rest).
    - Catalog anchor: if a catalog biomarker name is a case-insensitive prefix of the
      extracted name, use the catalog canonical name and set `biomarker_id`. Never
-     auto-create catalog entries.
+     auto-create catalog entries except for trusted CMA layout rows that pass the
+     deterministic auto-import gates.
    - Per-format row/column tuning for any residual same-page noise (e.g. cut the name
      cell at a large x-gap; drop prose fragments beyond the name cluster). Add a
      synthetic fixture per real format; tune until the name is clean.
-2. Confidence model: a clean, catalog-matched row with a parseable value/unit/range is
-   high; truncated, unmatched, or missing-unit is low. Make the threshold one named
-   constant.
+2. Confidence model: a clean, catalog-matched row or trusted CMA layout auto-import row
+   with a parseable value/unit is high; missing reference keeps status `unknown`,
+   while truncated, generic unmatched, duplicate, catalog-conflicted, or missing-unit
+   rows are low. Make the threshold one named constant.
 3. Confidence-gated auto-confirm: in the existing `storeDrafts` path, set `confirmed_at`
    on rows at/above the threshold; leave below-threshold rows as drafts. Never overwrite
    an existing confirmed value. The blood test becomes `confirmed` only when no drafts
@@ -88,7 +91,8 @@ PDFs or log values.
   `biomarker_id` set.
 - Prose-noise fixture: the name extracts clean (no sentence tail).
 - High-confidence row → auto-confirmed (`confirmed_at` set) on upload.
-- Low-confidence / unmatched / missing-unit row → stays a draft (`confirmed_at` null).
+- Low-confidence / unmatched / incomplete-but-actionable row → stays a draft
+  (`confirmed_at` null); trusted CMA no-unit/no-reference fragments are discarded.
 - Auto-confirm never overwrites an existing confirmed value; owner-scoped.
 - Invariant: only confirmed values feed status/history/compare/consult/export (now
   including auto-confirmed); below-threshold drafts stay out until confirmed.
@@ -136,10 +140,11 @@ confirmed-only downstream invariants. Do not rebuild those slices unless a fresh
 test proves a regression. Do not log or commit real PDF content/values.
 
 Continue on codex/v2-clean-autoconfirm, tests-first:
-1. Clean names: catalog-prefix anchor -> canonical name + biomarker_id (never auto-create
-   catalog); per-format tuning to drop prose from the name cell, with a synthetic
-   prose-noise fixture.
-2. A named confidence threshold; high = clean+catalog-matched+parseable, low = otherwise.
+1. Clean names: catalog-prefix anchor -> canonical name + biomarker_id; trusted CMA
+   layout rows may auto-create owner-scoped catalog entries after deterministic gates;
+   per-format tuning to drop prose from the name cell, with a synthetic prose-noise fixture.
+2. A named confidence threshold; high = clean+catalog-matched or trusted-CMA-import +
+   parseable, low = otherwise.
 3. Confidence-gated auto-confirm in storeDrafts: confirmed_at set at/above threshold,
    draft below; never overwrite existing confirmed; blood test -> confirmed only if no
    drafts remain.

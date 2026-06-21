@@ -97,6 +97,7 @@ class ExtractBiomarkerDrafts
                 referenceUnit: trim($match['reference_unit'] ?? $match['unit']),
                 confidence: $confidence,
                 sourceSnippet: trim($match[0]),
+                source: ExtractedBiomarkerCandidate::SOURCE_INLINE,
             );
         }
 

@@ -175,14 +175,190 @@ it('uses CMA layout text fallback when compact extraction is ambiguous', functio
         ->and($candidates[0]->unit)->toBe('umol/L')
         ->and($candidates[0]->referenceMin)->toBe('5.0')
         ->and($candidates[0]->referenceMax)->toBe('15.0')
-        ->and($candidates[0]->confidence)->toBe(0.84);
+        ->and($candidates[0]->confidence)->toBe(0.85);
 
     expect($candidates[1]->extractedName)->toBe('Marker Beta C')
         ->and($candidates[1]->value)->toBe('0.81')
         ->and($candidates[1]->unit)->toBe('mg/L')
         ->and($candidates[1]->referenceMin)->toBe('0.68')
         ->and($candidates[1]->referenceMax)->toBe('1.22')
-        ->and($candidates[1]->confidence)->toBe(0.84);
+        ->and($candidates[1]->confidence)->toBe(0.85);
+});
+
+it('auto-confirms exact catalog matches from CMA layout ranges and one-sided references', function () {
+    Storage::fake('local');
+
+    $layoutText = assistedCmaLayoutText([
+        assistedCmaLayoutRow('Marker Alpha°', '10,1', 'umol/L', '5,0 - 15,0'),
+        assistedCmaLayoutRow('Marker Gamma', '110', 'mL/min/1,73m2', '>=90'),
+    ]);
+
+    app()->instance(ExtractPdfLayoutText::class, new class($layoutText) extends ExtractPdfLayoutText
+    {
+        public function __construct(private readonly string $layoutText) {}
+
+        public function __invoke(string $pdfPath): ?string
+        {
+            return $this->layoutText;
+        }
+    });
+
+    $user = User::factory()->create();
+    $markerAlpha = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $markerGamma = Biomarker::factory()->for($user)->create(['name' => 'Marker Gamma']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'uploaded']);
+    $pdfPath = syntheticCommaRangeUnitFirstInlinePdfPath();
+    $storagePath = 'blood-test-documents/synthetic-cma-auto-confirm.pdf';
+
+    try {
+        Storage::disk('local')->put($storagePath, file_get_contents($pdfPath));
+    } finally {
+        @unlink($pdfPath);
+    }
+
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => $storagePath,
+        'mime_type' => 'application/pdf',
+        'file_size' => Storage::disk('local')->size($storagePath),
+    ]);
+
+    $run = app(RunBloodTestExtraction::class)($document);
+
+    $alphaResult = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $markerAlpha->id)
+        ->firstOrFail();
+    $gammaResult = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $markerGamma->id)
+        ->firstOrFail();
+
+    expect($run->status)->toBe('done')
+        ->and($run->candidate_count)->toBe(2)
+        ->and($alphaResult->confirmed_at)->not->toBeNull()
+        ->and($alphaResult->status)->toBe('normal')
+        ->and((float) $alphaResult->extraction_confidence)->toBe(0.85)
+        ->and($gammaResult->confirmed_at)->not->toBeNull()
+        ->and($gammaResult->status)->toBe('normal')
+        ->and((float) $gammaResult->extraction_confidence)->toBe(0.85)
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
+it('auto-imports and auto-confirms trusted CMA layout candidates when the catalog is empty', function () {
+    Storage::fake('local');
+
+    $layoutText = assistedCmaLayoutText([
+        assistedCmaLayoutRow('Marker Alpha°', '10,1', 'umol/L', '5,0 - 15,0'),
+        assistedCmaLayoutRow('Marker Gamma', '110', 'mL/min/1,73m2', '>=90'),
+    ]);
+
+    app()->instance(ExtractPdfLayoutText::class, new class($layoutText) extends ExtractPdfLayoutText
+    {
+        public function __construct(private readonly string $layoutText) {}
+
+        public function __invoke(string $pdfPath): ?string
+        {
+            return $this->layoutText;
+        }
+    });
+
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'uploaded']);
+    $pdfPath = syntheticCommaRangeUnitFirstInlinePdfPath();
+    $storagePath = 'blood-test-documents/synthetic-cma-empty-catalog.pdf';
+
+    try {
+        Storage::disk('local')->put($storagePath, file_get_contents($pdfPath));
+    } finally {
+        @unlink($pdfPath);
+    }
+
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => $storagePath,
+        'mime_type' => 'application/pdf',
+        'file_size' => Storage::disk('local')->size($storagePath),
+    ]);
+
+    $run = app(RunBloodTestExtraction::class)($document);
+
+    $biomarkers = Biomarker::query()
+        ->where('user_id', $user->id)
+        ->orderBy('name')
+        ->get();
+    $results = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->orderBy('extracted_name')
+        ->get();
+
+    expect($run->status)->toBe('done')
+        ->and($run->candidate_count)->toBe(2)
+        ->and($biomarkers)->toHaveCount(2)
+        ->and($biomarkers->pluck('name')->all())->toBe(['Marker Alpha', 'Marker Gamma'])
+        ->and($biomarkers->pluck('default_unit')->all())->toBe(['umol/L', 'mL/min/1,73m2'])
+        ->and($results)->toHaveCount(2)
+        ->and($results->pluck('biomarker_id')->filter()->count())->toBe(2)
+        ->and($results->pluck('confirmed_at')->filter()->count())->toBe(2)
+        ->and($results->pluck('status')->all())->toBe(['normal', 'normal'])
+        ->and($results->pluck('extraction_confidence')->map(fn (string $confidence): float => (float) $confidence)->all())
+        ->toBe([0.85, 0.85])
+        ->and(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->whereNull('confirmed_at')->count())->toBe(0)
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
+it('keeps duplicate trusted CMA layout names in review when the catalog is empty', function () {
+    Storage::fake('local');
+
+    $layoutText = assistedCmaLayoutText([
+        assistedCmaLayoutRow('Repeated Marker°', '10,1', 'umol/L', '5,0 - 15,0'),
+        assistedCmaLayoutRow('Repeated Marker°', '11,2', 'umol/L', '5,0 - 15,0'),
+    ]);
+
+    app()->instance(ExtractPdfLayoutText::class, new class($layoutText) extends ExtractPdfLayoutText
+    {
+        public function __construct(private readonly string $layoutText) {}
+
+        public function __invoke(string $pdfPath): ?string
+        {
+            return $this->layoutText;
+        }
+    });
+
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'uploaded']);
+    $pdfPath = syntheticCommaRangeUnitFirstInlinePdfPath();
+    $storagePath = 'blood-test-documents/synthetic-cma-duplicate-empty-catalog.pdf';
+
+    try {
+        Storage::disk('local')->put($storagePath, file_get_contents($pdfPath));
+    } finally {
+        @unlink($pdfPath);
+    }
+
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => $storagePath,
+        'mime_type' => 'application/pdf',
+        'file_size' => Storage::disk('local')->size($storagePath),
+    ]);
+
+    $run = app(RunBloodTestExtraction::class)($document);
+
+    $drafts = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->orderBy('id')
+        ->get();
+
+    expect($run->status)->toBe('done')
+        ->and($run->candidate_count)->toBe(2)
+        ->and(Biomarker::query()->where('user_id', $user->id)->count())->toBe(0)
+        ->and($drafts)->toHaveCount(2)
+        ->and($drafts->pluck('biomarker_id')->all())->toBe([null, null])
+        ->and($drafts->pluck('confirmed_at')->all())->toBe([null, null])
+        ->and($drafts->pluck('extraction_confidence')->map(fn (string $confidence): float => (float) $confidence)->all())
+        ->toBe([0.84, 0.84])
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
 it('creates extracted draft rows and an extraction run after pdf upload', function () {
@@ -350,6 +526,132 @@ it('auto-confirms clean inferred-value tabular rows when the biomarker is alread
         ->and($result->entry_source)->toBe('extracted')
         ->and((float) $result->extraction_confidence)->toBe(0.85)
         ->and(BiomarkerResult::query()->whereNull('confirmed_at')->count())->toBe(0);
+});
+
+it('auto-imports clean CMA-style inferred-value tabular rows when the catalog is empty', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $path = syntheticInferredValueTabularPdfPath();
+    $file = new UploadedFile(
+        $path,
+        'cma-inferred-value-tabular.pdf',
+        'application/pdf',
+        null,
+        true,
+    );
+
+    try {
+        $this->actingAs($user)
+            ->post(route('blood-tests.store'), [
+                'document' => $file,
+                'test_date' => '2026-06-19',
+                'lab_name' => 'Synthetic CMA Lab',
+                'title' => 'CMA inferred value fixture',
+            ])
+            ->assertRedirect();
+    } finally {
+        @unlink($path);
+    }
+
+    $bloodTest = BloodTest::query()->firstOrFail();
+    $biomarker = Biomarker::query()
+        ->where('user_id', $user->id)
+        ->where('name', 'Marker Alpha')
+        ->firstOrFail();
+    $result = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $biomarker->id)
+        ->firstOrFail();
+
+    expect($biomarker->default_unit)->toBe('mg/L')
+        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->entry_source)->toBe('extracted')
+        ->and($result->status)->toBe('normal')
+        ->and((float) $result->extraction_confidence)->toBe(0.85)
+        ->and(BiomarkerResult::query()->whereNull('confirmed_at')->count())->toBe(0)
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
+it('auto-imports trusted CMA values without references as confirmed unknown-status results', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Without Reference',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: null,
+            referenceMax: null,
+            referenceUnit: 'mg/L',
+            confidence: 0.85,
+            sourceSnippet: 'synthetic CMA row without reference',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+    ]);
+
+    $biomarker = Biomarker::query()
+        ->where('user_id', $user->id)
+        ->where('name', 'Marker Without Reference')
+        ->firstOrFail();
+    $result = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $biomarker->id)
+        ->firstOrFail();
+
+    expect($biomarker->default_unit)->toBe('mg/L')
+        ->and($biomarker->reference_min)->toBeNull()
+        ->and($biomarker->reference_max)->toBeNull()
+        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->status)->toBe('unknown')
+        ->and((float) $result->extraction_confidence)->toBe(0.85)
+        ->and(BiomarkerResult::query()->whereNull('confirmed_at')->count())->toBe(0)
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
+it('drops trusted CMA candidates without a unit or reference instead of creating review friction', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Confirmed',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: '10',
+            referenceMax: '20',
+            referenceUnit: 'mg/L',
+            confidence: 0.85,
+            sourceSnippet: 'synthetic trusted CMA row',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Missing Unit',
+            value: '7.1',
+            unit: '',
+            referenceMin: null,
+            referenceMax: null,
+            referenceUnit: null,
+            confidence: 0.60,
+            sourceSnippet: 'synthetic non-actionable CMA row',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+    ]);
+
+    $results = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->get();
+
+    expect($results)->toHaveCount(1)
+        ->and($results->first()->confirmed_at)->not->toBeNull()
+        ->and(Biomarker::query()->where('user_id', $user->id)->count())->toBe(1)
+        ->and(BiomarkerResult::query()->whereNull('confirmed_at')->count())->toBe(0)
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
 it('anchors a noisy extracted name to the owners catalog without creating a biomarker', function () {

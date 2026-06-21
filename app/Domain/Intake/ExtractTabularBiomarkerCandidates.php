@@ -50,7 +50,7 @@ class ExtractTabularBiomarkerCandidates
 
             foreach ($candidateRows as $row) {
                 $cells = $this->cells($row, $activeColumnLayout['columns']);
-                $candidate = $this->candidate($cells);
+                $candidate = $this->candidate($cells, $activeColumnLayout['source']);
 
                 if ($candidate === null) {
                     continue;
@@ -170,7 +170,7 @@ class ExtractTabularBiomarkerCandidates
 
     /**
      * @param  list<PositionedTextFragment>  $headerRow
-     * @return array{columns: array{name: array{left: float, x: float, right: float}, value: array{left: float, x: float, right: float}, unit: array{left: float, x: float, right: float}, reference: array{left: float, x: float, right: float}}}|null
+     * @return array{source: string, columns: array{name: array{left: float, x: float, right: float}, value: array{left: float, x: float, right: float}, unit: array{left: float, x: float, right: float}, reference: array{left: float, x: float, right: float}}}|null
      */
     private function columns(array $headerRow): ?array
     {
@@ -195,6 +195,9 @@ class ExtractTabularBiomarkerCandidates
         $rightBoundary = $columns['reference'] + (($columns['reference'] - $columns['unit']) * 1.5);
 
         return [
+            'source' => $this->isCmaInferredValueHeader($headerRow)
+                ? ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR
+                : ExtractedBiomarkerCandidate::SOURCE_TABULAR,
             'columns' => [
                 'name' => [
                     'left' => $columns['name'] - ($columns['value'] - $columns['name']),
@@ -218,6 +221,26 @@ class ExtractTabularBiomarkerCandidates
                 ],
             ],
         ];
+    }
+
+    /**
+     * @param  list<PositionedTextFragment>  $headerRow
+     */
+    private function isCmaInferredValueHeader(array $headerRow): bool
+    {
+        $labels = array_map(
+            fn (PositionedTextFragment $fragment): string => strtolower(trim($fragment->text)),
+            $headerRow,
+        );
+        $keys = array_map(
+            fn (PositionedTextFragment $fragment): string => $this->headerKey($fragment->text),
+            $headerRow,
+        );
+
+        return in_array('analyse', $labels, true)
+            && in_array('eenheid', $labels, true)
+            && in_array('referentie', $labels, true)
+            && ! in_array('value', $keys, true);
     }
 
     private function midpoint(float $left, float $right): float
@@ -326,7 +349,7 @@ class ExtractTabularBiomarkerCandidates
     /**
      * @param  array{name: string, value: string, unit: string, reference: string}  $cells
      */
-    private function candidate(array $cells): ?ExtractedBiomarkerCandidate
+    private function candidate(array $cells, string $source): ?ExtractedBiomarkerCandidate
     {
         if ($cells['name'] === '') {
             return null;
@@ -344,6 +367,10 @@ class ExtractTabularBiomarkerCandidates
         $name = $this->sanitizeName($cells['name']);
         $nameWasTruncated = $name !== $cells['name'];
 
+        if (! $this->containsLetter($name)) {
+            return null;
+        }
+
         $hasReference = $reference['min'] !== null || $reference['max'] !== null;
 
         $confidence = match (true) {
@@ -351,6 +378,10 @@ class ExtractTabularBiomarkerCandidates
             $valueIsOneSided => 0.75,
             default => 0.85,
         };
+
+        if ($source === ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR && ! $hasReference && $cells['unit'] !== '') {
+            $confidence = 0.85;
+        }
 
         if ($nameWasTruncated) {
             $confidence = min($confidence, 0.6);
@@ -369,6 +400,7 @@ class ExtractTabularBiomarkerCandidates
             referenceUnit: $reference['unit'] ?? $cells['unit'],
             confidence: $confidence,
             sourceSnippet: $this->sourceSnippet($cells),
+            source: $source,
         );
     }
 
@@ -446,9 +478,14 @@ class ExtractTabularBiomarkerCandidates
             return null;
         }
 
-        $unit = trim($this->cleanText($unit), " \t\n\r\0\x0B()[]{}.,;:");
+        $unit = trim($this->cleanText($unit), " \t\n\r\0\x0B()[]{}.,;:<>=≤≥");
 
         return $unit === '' ? null : $unit;
+    }
+
+    private function containsLetter(string $text): bool
+    {
+        return preg_match('/\p{L}/u', $text) === 1;
     }
 
     private function sanitizeName(string $name): string

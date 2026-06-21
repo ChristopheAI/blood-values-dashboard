@@ -39,13 +39,20 @@ Reduce extraction friction to near-zero while keeping a safety net:
    - Anchor the extracted name on the user's biomarker catalog: if a catalog
      biomarker name is a prefix of (or confidently matches) the extracted text, use
      the catalog's canonical name and set `biomarker_id`. Deterministic, local, no AI.
+   - Trusted CMA layout/tabular rows may create the missing catalog biomarker during intake
+     when the catalog is empty or incomplete, but only after the same deterministic
+     value/unit gates pass and no duplicate name or catalog conflict exists. Missing
+     reference bounds are allowed only for trusted CMA values and produce `unknown`
+     status, never a guessed normal/high/low status.
    - Per-format tuning of row/column geometry against merged prose (see the finetune
      loop), so a known layout extracts clean.
 2. Confidence-gated auto-confirm.
    - Extracted rows at or above a conservative confidence threshold are auto-confirmed
      (`confirmed_at` set) on upload — they become tracked data with zero user action.
-   - Rows below the threshold (uncertain parse, unmatched name, missing unit/range)
-     stay as drafts for an optional glance.
+   - Rows below the threshold, non-CMA unmatched names, duplicate CMA names, catalog
+     conflicts, uncertain parses, or incomplete-but-actionable rows stay as drafts for
+     an optional glance. Trusted CMA fragments with no unit and no reference are
+     discarded as non-actionable instead of shown as review friction.
    - Every auto-confirmed value stays fully editable and deletable, keeps its link to
      the source PDF, and is labelled as auto-filled from the PDF.
 3. Finetune loop. Each real lab format that extracts imperfectly is reproduced as a
@@ -72,8 +79,10 @@ the backstop.
 ## Stop Conditions
 
 - Do not auto-confirm anything below the tuned confidence threshold.
-- Do not auto-create catalog entries from extracted names; catalog anchoring only
-  matches existing entries.
+- Do not auto-create catalog entries from generic extracted names. The only exception
+  is trusted CMA auto-import after deterministic source, duplicate, catalog conflict,
+  value, and unit checks pass. If reference bounds are missing, status must remain
+  `unknown`.
 - No OCR, AI/LLM, external service, network call, or new package.
 - Determinism and synthetic-only testing; never commit a real PDF or log values.
 - If a clean, confident result cannot be produced deterministically for a layout, the
@@ -176,10 +185,18 @@ the backstop.
   high-confidence rows.
 - A named confidence threshold, the catalog anchor, and per-format tuning are added to
   the extraction path; all unit-tested on synthetic fixtures.
+- `ExtractedBiomarkerCandidate` carries a local source label so CMA-only trust policy
+  does not leak to generic inline or tabular extraction.
+- Trusted CMA rows may auto-create owner-scoped biomarkers with default unit and any
+  available reference metadata, then auto-confirm the result in the same local
+  transaction. Rows without reference bounds are confirmed with `unknown` status.
 - Catalog anchoring must be unambiguous. Ambiguous exact aliases or equal-length prefix
   matches stay as drafts instead of becoming auto-confirmed values.
-- Missing-unit rows are kept as low-confidence drafts. They are useful review evidence,
-  but they cannot pass the auto-confirm gate.
+- Duplicate CMA names in the same extraction stay as drafts instead of being collapsed
+  into one created biomarker.
+- Missing-unit rows cannot pass the auto-confirm gate. Trusted CMA fragments that also
+  lack reference bounds are discarded as non-actionable; other incomplete rows may
+  remain low-confidence drafts when they still carry useful review evidence.
 - The review screen shows auto-confirmed values (labelled, editable) plus any remaining
   low-confidence drafts.
 - Reviewed draft confirmation normalizes wrapper/trailing punctuation around units

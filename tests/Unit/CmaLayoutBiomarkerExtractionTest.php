@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Intake\ExtractCmaLayoutBiomarkerCandidates;
+use App\Domain\Intake\ExtractedBiomarkerCandidate;
 
 it('extracts CMA layout rows by fixed columns', function () {
     $extract = new ExtractCmaLayoutBiomarkerCandidates;
@@ -21,7 +22,8 @@ it('extracts CMA layout rows by fixed columns', function () {
         ->and($candidates[0]->referenceMin)->toBe('5.0')
         ->and($candidates[0]->referenceMax)->toBe('15.0')
         ->and($candidates[0]->referenceUnit)->toBe('umol/L')
-        ->and($candidates[0]->confidence)->toBe(0.84);
+        ->and($candidates[0]->confidence)->toBe(0.85)
+        ->and($candidates[0]->source)->toBe(ExtractedBiomarkerCandidate::SOURCE_CMA_LAYOUT);
 
     expect($candidates[1]->extractedName)->toBe('Marker Beta C')
         ->and($candidates[1]->value)->toBe('0.81')
@@ -33,13 +35,13 @@ it('extracts CMA layout rows by fixed columns', function () {
         ->and($candidates[2]->value)->toBe('110')
         ->and($candidates[2]->referenceMin)->toBe('90')
         ->and($candidates[2]->referenceMax)->toBeNull()
-        ->and($candidates[2]->confidence)->toBe(0.82);
+        ->and($candidates[2]->confidence)->toBe(0.85);
 
     expect($candidates[3]->extractedName)->toBe('Marker Delta')
         ->and($candidates[3]->value)->toBe('162')
         ->and($candidates[3]->referenceMin)->toBeNull()
         ->and($candidates[3]->referenceMax)->toBe('100')
-        ->and($candidates[3]->confidence)->toBe(0.82);
+        ->and($candidates[3]->confidence)->toBe(0.85);
 });
 
 it('returns no CMA layout rows without the CMA column header', function () {

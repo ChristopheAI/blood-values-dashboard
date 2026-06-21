@@ -4,9 +4,9 @@ namespace App\Domain\Intake;
 
 class ExtractCmaLayoutBiomarkerCandidates
 {
-    private const CONFIDENCE_WITH_RANGE = 0.84;
+    private const CONFIDENCE_WITH_RANGE = 0.85;
 
-    private const CONFIDENCE_WITH_ONE_SIDED_REFERENCE = 0.82;
+    private const CONFIDENCE_WITH_ONE_SIDED_REFERENCE = 0.85;
 
     /**
      * @return list<ExtractedBiomarkerCandidate>
@@ -141,6 +141,7 @@ class ExtractCmaLayoutBiomarkerCandidates
             referenceUnit: $reference->unit ?? $unit,
             confidence: $confidence,
             sourceSnippet: $this->sourceSnippet($name, $value, $unit, $reference),
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_LAYOUT,
         );
     }
 
