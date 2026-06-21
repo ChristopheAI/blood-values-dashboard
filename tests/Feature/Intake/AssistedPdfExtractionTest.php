@@ -361,6 +361,67 @@ it('keeps duplicate trusted CMA layout names in review when the catalog is empty
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
+it('auto-imports trusted CMA duplicate names when units disambiguate them', function () {
+    Storage::fake('local');
+
+    $layoutText = assistedCmaLayoutText([
+        assistedCmaLayoutRow('Repeated Marker°', '35', '%', '20 - 40'),
+        assistedCmaLayoutRow('Repeated Marker°', '2,1', 'K/uL', '1,0 - 3,0'),
+    ]);
+
+    app()->instance(ExtractPdfLayoutText::class, new class($layoutText) extends ExtractPdfLayoutText
+    {
+        public function __construct(private readonly string $layoutText) {}
+
+        public function __invoke(string $pdfPath): ?string
+        {
+            return $this->layoutText;
+        }
+    });
+
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'uploaded']);
+    $pdfPath = syntheticCommaRangeUnitFirstInlinePdfPath();
+    $storagePath = 'blood-test-documents/synthetic-cma-duplicate-unit-disambiguated.pdf';
+
+    try {
+        Storage::disk('local')->put($storagePath, file_get_contents($pdfPath));
+    } finally {
+        @unlink($pdfPath);
+    }
+
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => $storagePath,
+        'mime_type' => 'application/pdf',
+        'file_size' => Storage::disk('local')->size($storagePath),
+    ]);
+
+    $run = app(RunBloodTestExtraction::class)($document);
+
+    $biomarkers = Biomarker::query()
+        ->where('user_id', $user->id)
+        ->orderBy('name')
+        ->get();
+    $results = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->orderBy('extracted_name')
+        ->get();
+
+    expect($run->status)->toBe('done')
+        ->and($run->candidate_count)->toBe(2)
+        ->and($biomarkers)->toHaveCount(2)
+        ->and($biomarkers->pluck('name')->all())->toBe(['Repeated Marker (%)', 'Repeated Marker (K/uL)'])
+        ->and($biomarkers->pluck('default_unit')->all())->toBe(['%', 'K/uL'])
+        ->and($results)->toHaveCount(2)
+        ->and($results->pluck('biomarker_id')->filter()->count())->toBe(2)
+        ->and($results->pluck('confirmed_at')->filter()->count())->toBe(2)
+        ->and($results->pluck('extraction_confidence')->map(fn (string $confidence): float => (float) $confidence)->all())
+        ->toBe([0.85, 0.85])
+        ->and(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->whereNull('confirmed_at')->count())->toBe(0)
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
 it('creates extracted draft rows and an extraction run after pdf upload', function () {
     Storage::fake('local');
 

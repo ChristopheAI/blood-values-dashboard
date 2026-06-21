@@ -19,6 +19,8 @@ As of the local validation pass on 2026-06-19, the branch contains:
 - unambiguous catalog anchoring only; ambiguous aliases/prefixes remain drafts;
 - trusted CMA rows without reference bounds auto-confirm with `unknown` status;
 - trusted CMA fragments without unit and without reference are discarded as non-actionable;
+- trusted CMA duplicate names with distinct units are disambiguated by unit before
+  auto-import, while same-unit duplicates remain review drafts;
 - no overwrite of existing confirmed values;
 - upload-first intake with file-selection auto-submit and result landing;
 - confirmed-only downstream invariants for status/history/compare/consult/export.
@@ -93,6 +95,8 @@ PDFs or log values.
 - High-confidence row → auto-confirmed (`confirmed_at` set) on upload.
 - Low-confidence / unmatched / incomplete-but-actionable row → stays a draft
   (`confirmed_at` null); trusted CMA no-unit/no-reference fragments are discarded.
+- Trusted CMA duplicate names with distinct units → unit-suffixed local biomarkers and
+  auto-confirmed rows; same-unit duplicates → drafts.
 - Auto-confirm never overwrites an existing confirmed value; owner-scoped.
 - Invariant: only confirmed values feed status/history/compare/consult/export (now
   including auto-confirmed); below-threshold drafts stay out until confirmed.

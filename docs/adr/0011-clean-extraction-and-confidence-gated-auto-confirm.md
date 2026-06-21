@@ -44,6 +44,10 @@ Reduce extraction friction to near-zero while keeping a safety net:
      value/unit gates pass and no duplicate name or catalog conflict exists. Missing
      reference bounds are allowed only for trusted CMA values and produce `unknown`
      status, never a guessed normal/high/low status.
+   - Trusted CMA duplicate names may be auto-imported only when their units uniquely
+     disambiguate the duplicate rows. In that case the local biomarker name receives a
+     unit suffix, e.g. `Marker (%)`, before matching/import. Same-unit duplicates still
+     stay in review.
    - Per-format tuning of row/column geometry against merged prose (see the finetune
      loop), so a known layout extracts clean.
 2. Confidence-gated auto-confirm.
@@ -142,6 +146,12 @@ the backstop.
     punctuation around value and reference units is stripped before storage and status
     calculation, matching the auto-confirm path for common PDF formatting.
 
+- Source: synthetic CMA duplicate-unit regression (2026-06-21)
+  - Claim type: fact
+  - Summary: Trusted CMA duplicate names with distinct units are deterministically
+    disambiguated by appending the unit before auto-import, while same-unit duplicates
+    remain review drafts.
+
 - Source: competitive UX review (sanitized, 2026-06-19)
   - Claim type: fact
   - Summary: Commercial upload-first demo flows lead with the PDF upload as the first
@@ -194,6 +204,9 @@ the backstop.
   matches stay as drafts instead of becoming auto-confirmed values.
 - Duplicate CMA names in the same extraction stay as drafts instead of being collapsed
   into one created biomarker.
+- Duplicate trusted CMA names with distinct units are renamed with a unit suffix before
+  matching/import, allowing unit-distinct pairs to become separate confirmed biomarkers.
+  Same-unit duplicates still stay as drafts.
 - Missing-unit rows cannot pass the auto-confirm gate. Trusted CMA fragments that also
   lack reference bounds are discarded as non-actionable; other incomplete rows may
   remain low-confidence drafts when they still carry useful review evidence.

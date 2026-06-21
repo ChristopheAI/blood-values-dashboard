@@ -96,6 +96,7 @@ class RunBloodTestExtraction
      */
     private function storeDrafts(BloodTestDocument $document, array $candidates): int
     {
+        $candidates = $this->disambiguateTrustedCmaDuplicateNamesByUnit($candidates);
         $bloodTest = $document->bloodTest;
         $duplicateMatchedBiomarkerIds = $this->duplicateMatchedBiomarkerIds($document, $candidates);
         $duplicateTrustedAutoImportNames = $this->duplicateTrustedAutoImportNames($candidates);
@@ -188,6 +189,79 @@ class RunBloodTestExtraction
         }
 
         return $stored;
+    }
+
+    /**
+     * @param  list<ExtractedBiomarkerCandidate>  $candidates
+     * @return list<ExtractedBiomarkerCandidate>
+     */
+    private function disambiguateTrustedCmaDuplicateNamesByUnit(array $candidates): array
+    {
+        $duplicateIndexesByName = [];
+
+        foreach ($candidates as $index => $candidate) {
+            if (! $this->isTrustedCmaSource($candidate)) {
+                continue;
+            }
+
+            if (! is_numeric($this->normalizedNumber($candidate->value))) {
+                continue;
+            }
+
+            $name = $this->normalizedName($candidate->extractedName);
+
+            if ($name === '') {
+                continue;
+            }
+
+            $duplicateIndexesByName[$name][] = $index;
+        }
+
+        foreach ($duplicateIndexesByName as $indexes) {
+            if (count($indexes) < 2) {
+                continue;
+            }
+
+            $units = [];
+
+            foreach ($indexes as $index) {
+                $unit = $this->normalizedUnit($candidates[$index]->unit);
+
+                if ($unit === '' || isset($units[$unit])) {
+                    continue 2;
+                }
+
+                $units[$unit] = true;
+            }
+
+            foreach ($indexes as $index) {
+                $candidate = $candidates[$index];
+                $unit = $this->normalizedUnit($candidate->unit);
+                $name = $this->unitDisambiguatedName($candidate->extractedName, $unit);
+
+                $candidates[$index] = new ExtractedBiomarkerCandidate(
+                    extractedName: $name,
+                    value: $candidate->value,
+                    unit: $candidate->unit,
+                    referenceMin: $candidate->referenceMin,
+                    referenceMax: $candidate->referenceMax,
+                    referenceUnit: $candidate->referenceUnit,
+                    confidence: $candidate->confidence,
+                    sourceSnippet: $candidate->sourceSnippet,
+                    source: $candidate->source,
+                );
+            }
+        }
+
+        return array_values($candidates);
+    }
+
+    private function unitDisambiguatedName(string $name, string $unit): string
+    {
+        $name = $this->canonicalExtractedName($name);
+        $suffix = ' ('.$unit.')';
+
+        return str_ends_with($name, $suffix) ? $name : $name.$suffix;
     }
 
     /**
