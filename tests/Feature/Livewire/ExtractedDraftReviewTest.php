@@ -543,6 +543,84 @@ it('shows a compact trend summary for confirmed values on the result screen', fu
         ->assertSee('previous 40 ug/L');
 });
 
+it('renders the patient friendly overview for an older owned blood test', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+    $crp = Biomarker::factory()->for($user)->create(['name' => 'CRP']);
+    $hemoglobin = Biomarker::factory()->for($user)->create(['name' => 'Hemoglobine']);
+    $previous = BloodTest::factory()->for($user)->create([
+        'title' => 'Vorige meting voor trend',
+        'test_date' => '2026-03-01',
+        'status' => 'confirmed',
+        'created_at' => now()->subMonths(3),
+    ]);
+    $olderBloodTest = BloodTest::factory()->for($user)->create([
+        'title' => 'Bloedafname april',
+        'test_date' => '2026-04-08',
+        'status' => 'confirmed',
+        'created_at' => now()->subMonths(2),
+    ]);
+    $newerBloodTest = BloodTest::factory()->for($user)->create([
+        'title' => 'Nieuwere bloedtest',
+        'test_date' => '2026-06-01',
+        'status' => 'confirmed',
+        'created_at' => now(),
+    ]);
+
+    BiomarkerResult::factory()->for($previous)->for($ferritin)->create([
+        'value' => 35,
+        'unit' => 'ug/L',
+        'confirmed_at' => now()->subMonths(3),
+    ]);
+    BiomarkerResult::factory()->for($olderBloodTest)->for($ferritin)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'reference_min' => '30',
+        'reference_max' => '150',
+        'reference_unit' => 'ug/L',
+        'status' => 'normal',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now()->subMonths(2),
+    ]);
+    BiomarkerResult::factory()->for($olderBloodTest)->for($crp)->create([
+        'value' => 4.2,
+        'unit' => 'mg/L',
+        'status' => 'unknown',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now()->subMonths(2),
+    ]);
+    BiomarkerResult::factory()->for($olderBloodTest)->for($hemoglobin)->create([
+        'value' => 18.1,
+        'unit' => 'g/dL',
+        'reference_min' => '13',
+        'reference_max' => '17',
+        'reference_unit' => 'g/dL',
+        'status' => 'high',
+        'entry_source' => 'extracted',
+        'confirmed_at' => now()->subMonths(2),
+    ]);
+    BiomarkerResult::factory()->for($newerBloodTest)->for($ferritin)->create([
+        'value' => 12,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $olderBloodTest])
+        ->assertSee('data-test="blood-results-overview"', false)
+        ->assertSee('Je bloedresultaten')
+        ->assertSee('Afname 8 april 2026')
+        ->assertSee('Bloedafname april')
+        ->assertSee('1/3 waarde is normaal')
+        ->assertSee('2 waarden vragen aandacht')
+        ->assertSee('data-test="featured-attention-card"', false)
+        ->assertSee('data-test="compact-normal-row"', false)
+        ->assertSee('data-test="compact-review-row"', false)
+        ->assertSee('+7 ug/L')
+        ->assertDontSee('Nieuwere bloedtest');
+});
+
 it('marks the values stage done when confirmed values already exist', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);

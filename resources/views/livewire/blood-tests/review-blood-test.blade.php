@@ -42,14 +42,18 @@
 @endphp
 
 <section class="mx-auto flex w-full max-w-5xl flex-col gap-8" data-test="blood-test-result">
-    <header class="flex flex-col gap-2">
-        <flux:heading size="xl">{{ $bloodTest->title ?: __('Resultaat') }}</flux:heading>
-        <flux:text>
-            {{ $bloodTest->test_date?->toDateString() ?? __('No date yet') }}
-            · {{ $bloodTest->lab_name ?: __('Unknown lab') }}
-            · {{ $bloodTest->status }}
-        </flux:text>
-    </header>
+    @if ($bloodTestOverview)
+        @include('dashboard._blood-results-overview', ['summary' => $bloodTestOverview])
+    @else
+        <header class="flex flex-col gap-2">
+            <flux:heading size="xl">{{ $bloodTest->title ?: __('Resultaat') }}</flux:heading>
+            <flux:text>
+                {{ $bloodTest->test_date?->toDateString() ?? __('No date yet') }}
+                · {{ $bloodTest->lab_name ?: __('Unknown lab') }}
+                · {{ $bloodTest->status }}
+            </flux:text>
+        </header>
+    @endif
 
     <section class="rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="intake-progress">
         <div class="grid gap-3 text-sm sm:grid-cols-4">

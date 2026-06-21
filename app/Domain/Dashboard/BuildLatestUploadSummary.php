@@ -46,6 +46,37 @@ class BuildLatestUploadSummary
             return null;
         }
 
+        return $this->forBloodTest($user, $bloodTest);
+    }
+
+    /**
+     * @return array{
+     *     bloodTest: BloodTest,
+     *     confirmedCount: int,
+     *     confirmedLabel: string,
+     *     normalCount: int,
+     *     normalSummaryLabel: string,
+     *     newCount: int,
+     *     changedCount: int,
+     *     attentionCount: int,
+     *     attentionSummaryLabel: string,
+     *     attentionHeading: string,
+     *     normalHeading: string,
+     *     collectedLabel: string,
+     *     rows: Collection<int, mixed>,
+     *     attentionRows: Collection<int, mixed>,
+     *     featuredAttentionRows: Collection<int, mixed>,
+     *     reviewRows: Collection<int, mixed>,
+     *     normalRows: Collection<int, mixed>,
+     *     rangeRows: Collection<int, mixed>
+     * }|null
+     */
+    public function forBloodTest(User $user, BloodTest $bloodTest): ?array
+    {
+        if ($bloodTest->user_id !== $user->id) {
+            return null;
+        }
+
         $rows = BiomarkerResult::query()
             ->confirmedForUser($user->id)
             ->where('blood_test_id', $bloodTest->id)

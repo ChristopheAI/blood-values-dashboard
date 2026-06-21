@@ -3,6 +3,7 @@
 namespace App\Livewire\BloodTests;
 
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
+use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
@@ -231,6 +232,7 @@ class ReviewBloodTest extends Component
 
         return view('livewire.blood-tests.review-blood-test', [
             'bloodTest' => $bloodTest,
+            'bloodTestOverview' => app(BuildLatestUploadSummary::class)->forBloodTest(Auth::user(), $bloodTest),
             'biomarkers' => Biomarker::query()
                 ->where('user_id', Auth::id())
                 ->orderBy('name')
