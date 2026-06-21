@@ -97,6 +97,15 @@ All spacing follows Tailwind’s 4px-based scale.
 - **Accessibility**: controls are real buttons; labels distinguish measured value from reference range.
 - **Motion**: none.
 
+### Blood Results Overview
+
+- **Structure**: one summary panel, one attention group, one compact normal-values panel. Normal values render as rows, not full cards.
+- **Featured attention**: confirmed `low`/`high` values may use an amber-tinted featured card with a single getallenlijn and a one-sentence takeaway.
+- **Compact rows**: confirmed `normal` and `unknown` rows use tabular values, a short takeaway, and a mini reference line when available.
+- **Color**: keep one calm green good-area and one restrained amber attention treatment; avoid extra categories or bright blocks.
+- **Accessibility**: status text must be visible in words, not only color; range lines are context, not the only status signal.
+- **Motion**: none.
+
 ### Form Panel
 
 - **Structure**: Flux heading/text, select, inputs, textarea, primary action.

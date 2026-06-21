@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BiomarkerResult;
+use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\PinnedBiomarker;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(BuildLatestUploadSummary $buildLatestUploadSummary): View
     {
         $user = Auth::user();
 
         return view('dashboard', [
+            'latestUploadSummary' => $buildLatestUploadSummary($user),
             'recentBloodTests' => $user->bloodTests()
                 ->latest('test_date')
                 ->limit(5)
@@ -28,13 +29,6 @@ class DashboardController extends Controller
                 ->orderBy('due_date')
                 ->orderBy('id')
                 ->first(),
-            'attentionResults' => BiomarkerResult::query()
-                ->confirmedForUser($user->id)
-                ->whereIn('status', ['low', 'high', 'unknown'])
-                ->with(['biomarker', 'bloodTest'])
-                ->latest('confirmed_at')
-                ->limit(10)
-                ->get(),
         ]);
     }
 }
