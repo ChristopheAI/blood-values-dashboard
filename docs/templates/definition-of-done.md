@@ -6,6 +6,11 @@ and add slice-specific checks where needed.
 ## Product Boundary
 
 - [ ] The slice supports the PRD product sentence.
+- [ ] The slice is tied to a GitHub issue or explicit source-of-truth gap.
+- [ ] Every user-facing/domain task cites a resolvable PRD/spec/ADR/design,
+  data-model, or issue reference, unless it is pure infrastructure.
+- [ ] Any missing design or product decision is tagged `[NEEDS-DESIGN]` or
+  `[NEEDS-DECISION]` instead of being invented during implementation.
 - [ ] The slice does not add medical diagnosis, treatment advice, health
   scoring, urgency ranking, supplement/diet/training recommendations, or extra
   testing encouragement.
@@ -33,11 +38,16 @@ and add slice-specific checks where needed.
 
 ## Browser QA
 
-- [ ] Real route inspected.
+- [ ] The matching surface was driven in this turn: browser route, export,
+  console command, issue form, or other user-visible/developer-visible surface.
+- [ ] Real route inspected when the slice changes UI or workflow behavior.
 - [ ] Correct account/user used.
-- [ ] Expected confirmed count observed.
-- [ ] Expected draft/review count observed.
-- [ ] Source document visibility checked.
+- [ ] Synthetic QA data or a privacy-safe fixture was used unless the owner
+  explicitly requested a real private-data check.
+- [ ] Expected confirmed count or confirmed-only output observed.
+- [ ] Expected draft/review exclusion observed where downstream data is touched.
+- [ ] Source document visibility or owner-authorized access checked where
+  documents are touched.
 - [ ] Mobile or responsive surface checked when layout changed.
 
 ## Validation
@@ -54,3 +64,5 @@ and add slice-specific checks where needed.
 - [ ] Unrelated `.omo/`, scratch files, generated files, or other slices remain
   unstaged.
 - [ ] Commit message uses terse Conventional Commit style.
+- [ ] Handoff names remaining dirty files and whether they are intentionally
+  unrelated.

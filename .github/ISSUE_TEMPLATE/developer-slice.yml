@@ -36,6 +36,30 @@ body:
     validations:
       required: true
   - type: textarea
+    id: source_of_truth
+    attributes:
+      label: Source of truth
+      description: Link every upstream artifact this slice derives from. Use repo-relative paths, issue numbers, PRD/spec/ADR sections, UX/design refs, or data-model refs. If a needed source is missing, mark it as a gap.
+      placeholder: |
+        - Product sentence: docs/codex-prd.md#...
+        - Spec/ADR: docs/v1-spec.md#..., docs/adr/00xx-...
+        - Related issue: #...
+        - [NEEDS-DESIGN] ...
+        - [NEEDS-DECISION] ...
+    validations:
+      required: true
+  - type: textarea
+    id: task_contract
+    attributes:
+      label: Source-linked task contract
+      description: Break the work into small tasks. Each user-facing/domain task should cite its source. Infra-only tasks may be self-contained.
+      placeholder: |
+        - [ ] Add domain builder for ... (ref: docs/codex-prd.md#...)
+        - [ ] Add feature test for ... (ref: #...)
+        - [ ] [NEEDS-DESIGN] ...
+    validations:
+      required: true
+  - type: textarea
     id: likely_files
     attributes:
       label: Likely files or areas
@@ -60,6 +84,8 @@ body:
           required: true
         - label: No medical claims, diagnosis, treatment, urgency, health scoring, or recommendation copy.
           required: true
+        - label: Source references are resolvable, or gaps are explicitly marked as [NEEDS-DESIGN] / [NEEDS-DECISION].
+          required: true
   - type: textarea
     id: acceptance
     attributes:
@@ -69,6 +95,19 @@ body:
         - Given...
         - When...
         - Then...
+    validations:
+      required: true
+  - type: textarea
+    id: manual_qa_gate
+    attributes:
+      label: Manual QA gate
+      description: Name the real app surface Codex must drive before claiming done.
+      placeholder: |
+        - Matching surface: browser / route / export / console command / GitHub issue form
+        - Route or command:
+        - Account/data scenario:
+        - Observable proof:
+        - Must not appear/leak:
     validations:
       required: true
   - type: textarea
