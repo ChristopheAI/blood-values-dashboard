@@ -13,12 +13,67 @@ It is not a diagnosis machine and must not provide medical advice.
 
 ## Current Phase
 
-First PDF-first intake implementation slice.
+V2 clean-by-default CMA intake with confidence-gated auto-confirm.
 
-The Laravel Livewire starter scaffold exists on the implementation branch. Keep
-new work inside the reviewed V1 boundary unless a spec, ADR, and task plan
-explicitly expand it. Do not add runtime AI interpretation, unreviewed OCR,
-provider integrations, wearable sync, or medical-advice features to this slice.
+The Laravel Livewire starter scaffold exists. The current implementation work is
+focused on local, deterministic PDF-first intake: clean CMA extraction,
+confidence-gated auto-confirm, compact review for the uncertain few, and
+confirmed-only downstream behavior.
+
+Keep new work inside the reviewed PDF-first/V2 boundary unless a spec, ADR, and
+task plan explicitly expand it. Do not add runtime AI interpretation, unreviewed
+OCR, provider integrations, wearable sync, external processing, or
+medical-advice features to this slice.
+
+## Current Active Rules
+
+- Local only: no OCR, AI/LLM, external service, network processing, or new
+  package for private lab intake without a new ADR/privacy review.
+- Private lab PDFs, biomarker values, symptoms, medication notes, consult
+  exports, and account data must never be sent to Exa, Firecrawl, AI tools, or
+  any external service.
+- Trusted CMA layout/tabular extraction may auto-confirm deterministic
+  high-confidence rows according to ADR-0011.
+- Below-threshold rows, catalog conflicts, ambiguous matches, same-unit
+  duplicates, missing-unit rows, and uncertain parses stay as drafts.
+- Trusted CMA duplicate names may be disambiguated by unit only when every
+  duplicate row has a distinct non-empty unit; otherwise keep them in review.
+- Confirmed-only downstream remains: status, history, compare, consult, export,
+  and trends may use confirmed values only.
+- Do not merge this branch. The owner reviews the code and live-verifies a fresh
+  upload first.
+
+## Commands
+
+Use exact commands. Prefer focused checks while developing, then the full
+validator before handoff.
+
+```bash
+composer install
+npm install
+npm run build
+php artisan test
+sh scripts/validate.sh
+```
+
+Focused examples:
+
+```bash
+php artisan test tests/Feature/Intake/AssistedPdfExtractionTest.php
+php artisan test tests/Unit/TabularBiomarkerExtractionTest.php
+php artisan test --filter='auto-imports trusted CMA duplicate names when units disambiguate them'
+```
+
+For UI/intake changes, validation is not enough. Also use the browser with the
+local app:
+
+```text
+open /blood-tests -> upload a fresh PDF -> inspect the result page
+```
+
+Check the observable result: confirmed row count, draft/review row count,
+progress stages, source document visibility, and absence of unrelated manual
+entry friction.
 
 ## Source Of Truth
 
@@ -37,6 +92,10 @@ Read these first:
 - `docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md`
 - `docs/adr/0007-use-staged-laravel-quality-ladder.md`
 - `docs/adr/0008-future-ai-agents-must-be-proposal-only.md`
+- `docs/adr/0009-use-local-best-effort-pdf-extraction.md`
+- `docs/adr/0010-use-layout-aware-positional-text-extraction.md`
+- `docs/adr/0011-clean-extraction-and-confidence-gated-auto-confirm.md`
+- `docs/codex-v2-clean-autoconfirm-kickoff.md`
 - `docs/research/laravel-stack-decision.md`
 - `docs/research/ai-architect-program-transfer.md`
 - `docs/research/2026-06-18-blood-values-workflow-value-evidence.md`
@@ -80,6 +139,9 @@ Before implementation:
   privacy review, and explicit approval allow runtime use.
 - when implementation resumes, follow the staged Laravel quality ladder in
   ADR-0007 instead of treating a locally running app as complete.
+- when PDF extraction changes, follow the CMA finetune loop:
+  sanitized synthetic fixture -> failing test -> smallest parser/trust fix ->
+  focused tests -> full validator -> fresh live upload.
 - keep runtime AI agents out of V1; any later AI agent must be proposal-only,
   human-approved, owner-scoped, idempotent, auditable, and covered by a new
   spec/privacy review.
@@ -99,11 +161,33 @@ At this implementation stage, the command validates scaffold integrity, runs the
 Laravel test/quality suite, builds frontend assets, and checks whitespace. Add
 browser checks when a task changes the user-facing workflow.
 
+Browser/live QA gate for intake changes:
+
+- use a fresh upload, not an already-processed blood test record;
+- verify the result page, not only the database;
+- compare confirmed and draft counts against the expected parser behavior;
+- confirm that drafts remain out of downstream status/history/compare/consult
+  surfaces until explicitly confirmed;
+- do not claim PR readiness from green tests alone.
+
+## Git And PR Rules
+
+- Stage only the files you changed; do not use `git add .`.
+- Keep parser fixes, UI fixes, and docs-only changes atomic unless they are one
+  inseparable behavior.
+- Use terse Conventional Commit style already present on this branch, e.g.
+  `fix: ...` or `test: ...`.
+- Push to the feature branch when asked, but do not merge.
+- Keep the PR draft until code review and owner live verification have both
+  passed.
+- If real-upload behavior contradicts tests, treat the live behavior as the
+  next bug report and write a synthetic regression before changing parser code.
+
 ## Product Rules
 
 - The original lab-result PDF is the V1 intake source.
-- Structured biomarker values become usable dashboard data only after user
-  review or confirmation.
+- Structured biomarker values become usable dashboard data only after explicit
+  confirmation or ADR-0011 confidence-gated deterministic auto-confirm.
 - Manual entry and correction remain required fallbacks for values that cannot
   be extracted or trusted.
 - Original lab documents and structured values must remain separate.
@@ -130,6 +214,8 @@ browser checks when a task changes the user-facing workflow.
   sanitized metadata, not trusted paths.
 - Keep `docs/testing/pdf-first-intake-test-conversion.md` aligned with the real
   Pest/Livewire tests that prove the PDF-intake behavior.
+- Keep `docs/codex-v2-clean-autoconfirm-kickoff.md` aligned with the actual V2
+  branch state when CMA extraction, auto-confirm, or intake UX behavior changes.
 
 ## Truth-First Working Rules
 
