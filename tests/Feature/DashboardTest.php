@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\BloodTests\LongitudinalChange;
 use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
@@ -9,6 +11,7 @@ use App\Models\BloodTest;
 use App\Models\Reminder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -183,6 +186,62 @@ class DashboardTest extends TestCase
         $ferritinRow = $summary['rows']->firstWhere('name', 'Ferritine');
 
         $this->assertSame('+7 ug/L', $ferritinRow['trendLabel']);
+    }
+
+    public function test_upload_summary_uses_shared_longitudinal_changes_builder_for_trends(): void
+    {
+        $user = User::factory()->create();
+        $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+        $previous = BloodTest::factory()->for($user)->create(['test_date' => '2026-03-01']);
+        $selected = BloodTest::factory()->for($user)->create(['test_date' => '2026-04-08']);
+        $previousResult = BiomarkerResult::factory()->for($previous)->for($ferritin)->create([
+            'value' => 40,
+            'unit' => 'ug/L',
+            'confirmed_at' => now()->subMonth(),
+        ]);
+        $currentResult = BiomarkerResult::factory()->for($selected)->for($ferritin)->create([
+            'value' => 47,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->app->instance(BuildLongitudinalChanges::class, new class($previousResult, $currentResult) extends BuildLongitudinalChanges
+        {
+            public function __construct(
+                private readonly BiomarkerResult $previousResult,
+                private readonly BiomarkerResult $currentResult,
+            ) {}
+
+            public function across(User $user, Collection $bloodTests): Collection
+            {
+                return collect([
+                    new LongitudinalChange(
+                        biomarker: 'Ferritine',
+                        result: $this->currentResult,
+                        previousResult: $this->previousResult,
+                        previousValue: '40',
+                        currentValue: '47',
+                        previousUnit: 'ug/L',
+                        currentUnit: 'ug/L',
+                        status: 'normal',
+                        delta: '+99',
+                        changeLabel: '+99 ug/L',
+                        comparable: true,
+                        reason: null,
+                        direction: 'higher',
+                    ),
+                ]);
+            }
+        });
+
+        $summary = app(BuildLatestUploadSummary::class)->forBloodTest($user, $selected);
+
+        $this->assertNotNull($summary);
+
+        $ferritinRow = $summary['rows']->firstWhere('name', 'Ferritine');
+
+        $this->assertSame('+99 ug/L', $ferritinRow['trendLabel']);
     }
 
     public function test_dashboard_shows_a_confirmed_latest_upload_digest(): void

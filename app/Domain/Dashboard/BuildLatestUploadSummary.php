@@ -2,6 +2,8 @@
 
 namespace App\Domain\Dashboard;
 
+use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\BloodTests\LongitudinalChange;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\User;
@@ -10,6 +12,8 @@ use Illuminate\Support\Collection;
 
 class BuildLatestUploadSummary
 {
+    public function __construct(private readonly BuildLongitudinalChanges $buildLongitudinalChanges) {}
+
     /**
      * @return array{
      *     bloodTest: BloodTest,
@@ -77,6 +81,25 @@ class BuildLatestUploadSummary
             return null;
         }
 
+        $changesByResultId = $this->buildLongitudinalChanges
+            ->across(
+                $user,
+                BloodTest::query()
+                    ->where('user_id', $user->id)
+                    ->get(),
+            )
+            ->mapWithKeys(function (LongitudinalChange $change) use ($bloodTest): array {
+                if (! $change->result instanceof BiomarkerResult) {
+                    return [];
+                }
+
+                if ((int) $change->result->blood_test_id !== (int) $bloodTest->id) {
+                    return [];
+                }
+
+                return [(int) $change->result->id => $change];
+            });
+
         $rows = BiomarkerResult::query()
             ->confirmedForUser($user->id)
             ->where('blood_test_id', $bloodTest->id)
@@ -84,7 +107,10 @@ class BuildLatestUploadSummary
             ->orderByRaw("case status when 'high' then 0 when 'low' then 1 when 'unknown' then 2 else 3 end")
             ->orderBy('id')
             ->get()
-            ->map(fn (BiomarkerResult $result) => $this->summarizeResult($user->id, $result));
+            ->map(fn (BiomarkerResult $result) => $this->summarizeResult(
+                $result,
+                $changesByResultId->get((int) $result->id),
+            ));
 
         if ($rows->isEmpty()) {
             return null;
@@ -135,10 +161,9 @@ class BuildLatestUploadSummary
     /**
      * @return array<string, mixed>
      */
-    private function summarizeResult(int $userId, BiomarkerResult $result): array
+    private function summarizeResult(BiomarkerResult $result, ?LongitudinalChange $change): array
     {
-        $previous = $this->previousConfirmedResult($userId, $result);
-        $trend = $this->buildTrend($result, $previous);
+        $trend = $this->buildTrend($change);
         $valueLabel = $this->formatNumber((float) $result->value).' '.$result->unit;
 
         return [
@@ -155,77 +180,37 @@ class BuildLatestUploadSummary
         ];
     }
 
-    private function previousConfirmedResult(int $userId, BiomarkerResult $result): ?BiomarkerResult
-    {
-        $currentBloodTest = $result->bloodTest;
-
-        if (! $currentBloodTest instanceof BloodTest) {
-            return null;
-        }
-
-        $currentBloodTestId = (int) $currentBloodTest->id;
-        $currentDate = $currentBloodTest->test_date?->toDateString();
-
-        return BiomarkerResult::query()
-            ->confirmedForUser($userId)
-            ->where('biomarker_results.biomarker_id', $result->biomarker_id)
-            ->where('biomarker_results.blood_test_id', '!=', $result->blood_test_id)
-            ->join('blood_tests as previous_blood_tests', 'previous_blood_tests.id', '=', 'biomarker_results.blood_test_id')
-            ->where(function ($query) use ($currentBloodTestId, $currentDate): void {
-                if ($currentDate !== null) {
-                    $query
-                        ->where('previous_blood_tests.test_date', '<', $currentDate)
-                        ->orWhere(function ($query) use ($currentBloodTestId, $currentDate): void {
-                            $query
-                                ->where('previous_blood_tests.test_date', $currentDate)
-                                ->where('previous_blood_tests.id', '<', $currentBloodTestId);
-                        });
-
-                    return;
-                }
-
-                $query
-                    ->whereNotNull('previous_blood_tests.test_date')
-                    ->orWhere(function ($query) use ($currentBloodTestId): void {
-                        $query
-                            ->whereNull('previous_blood_tests.test_date')
-                            ->where('previous_blood_tests.id', '<', $currentBloodTestId);
-                    });
-            })
-            ->select('biomarker_results.*')
-            ->orderByRaw('case when previous_blood_tests.test_date is null then 1 else 0 end')
-            ->orderByDesc('previous_blood_tests.test_date')
-            ->orderByDesc('previous_blood_tests.id')
-            ->orderByDesc('biomarker_results.confirmed_at')
-            ->orderByDesc('biomarker_results.id')
-            ->first();
-    }
-
     /**
      * @return array{kind: string, label: string}
      */
-    private function buildTrend(BiomarkerResult $result, ?BiomarkerResult $previous): array
+    private function buildTrend(?LongitudinalChange $change): array
     {
-        if (! $previous) {
+        if (! $change instanceof LongitudinalChange || ! $change->previousResult instanceof BiomarkerResult) {
             return ['kind' => 'new', 'label' => 'Eerste meting'];
         }
 
-        if ($previous->unit !== $result->unit) {
-            return ['kind' => 'not_comparable', 'label' => 'Eenheid gewijzigd'];
+        if (! $change->comparable) {
+            return ['kind' => 'not_comparable', 'label' => $this->notComparableTrendLabel($change->reason)];
         }
 
-        $delta = (float) $result->value - (float) $previous->value;
-
-        if (abs($delta) < 0.00001) {
+        if ($change->direction === 'unchanged') {
             return ['kind' => 'unchanged', 'label' => 'Geen verandering'];
         }
 
-        $prefix = $delta > 0 ? '+' : '';
-
         return [
             'kind' => 'changed',
-            'label' => $prefix.$this->formatNumber($delta).' '.$result->unit,
+            'label' => (string) $change->changeLabel,
         ];
+    }
+
+    private function notComparableTrendLabel(?string $reason): string
+    {
+        return match ($reason) {
+            'missing_unit' => 'Eenheid ontbreekt',
+            'unit_mismatch' => 'Eenheid gewijzigd',
+            'non_numeric' => 'Niet numeriek vergelijkbaar',
+            default => 'Niet vergelijkbaar',
+        };
     }
 
     /**
