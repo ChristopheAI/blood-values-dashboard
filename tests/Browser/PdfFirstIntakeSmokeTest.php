@@ -524,12 +524,16 @@ function deleteAllHealthData(Browser $browser): void
         ->waitForText('Your personal tracking records were deleted.')
         ->visit('/dashboard')
         ->waitFor('[data-test="lab-pdf-dropzone"]')
+        ->assertPresent('[data-test="dashboard-next-step"]')
+        ->assertSee('Eerste lab-PDF toevoegen')
+        ->assertPresent('[data-test="dashboard-blood-test-timeline"]')
         ->assertSee('Sleep je lab-PDF hierheen')
         ->assertPresent('[data-test="lab-pdf-input"]')
         ->assertPresent('[data-test="choose-pdf-button"]')
-        ->assertMissing('[data-test="dashboard-pinned-biomarkers"]')
-        ->assertMissing('[data-test="dashboard-next-reminder"]')
-        ->assertMissing('[data-test="dashboard-attention-results"]');
+        ->assertMissing('[data-test="dashboard-latest-confirmed-values"]')
+        ->assertDontSee('Ferritin')
+        ->assertDontSee('42 ug/L')
+        ->assertDontSee('48 ug/L');
 
     assertNoForbiddenMedicalCopyAppears($browser);
 }

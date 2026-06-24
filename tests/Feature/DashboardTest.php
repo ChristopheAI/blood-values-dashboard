@@ -8,6 +8,7 @@ use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Models\BloodTestDocument;
 use App\Models\Reminder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,6 +41,8 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
+            ->assertSee('data-test="dashboard-next-step"', false)
+            ->assertSee('Eerste lab-PDF toevoegen')
             ->assertSee('Sleep je lab-PDF hierheen')
             ->assertSee('Alleen PDF')
             ->assertSee('data-test="lab-pdf-dropzone"', false)
@@ -54,6 +57,94 @@ class DashboardTest extends TestCase
             ->assertDontSee('data-test="blood-test-title-input"', false)
             ->assertDontSee('name="email"', false)
             ->assertDontSee('name="account"', false);
+    }
+
+    public function test_dashboard_prompts_review_when_owned_extracted_drafts_remain(): void
+    {
+        $user = User::factory()->create();
+        $bloodTest = BloodTest::factory()->for($user)->create([
+            'title' => 'June blood test',
+            'test_date' => '2026-06-15',
+            'status' => 'reviewing',
+        ]);
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+
+        BiomarkerResult::factory()->for($bloodTest)->for($marker)->create([
+            'value' => 42,
+            'unit' => 'ug/L',
+            'entry_source' => 'extracted',
+            'confirmed_at' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-next-step"', false)
+            ->assertSee('Waarden nakijken')
+            ->assertSee('1 waarde wacht op review')
+            ->assertSee('June blood test');
+    }
+
+    public function test_dashboard_timeline_lists_only_owned_blood_tests(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        BloodTest::factory()->for($user)->create(['title' => 'Owned timeline test']);
+        BloodTest::factory()->for($otherUser)->create(['title' => 'Foreign timeline test']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-blood-test-timeline"', false)
+            ->assertSee('Owned timeline test')
+            ->assertDontSee('Foreign timeline test');
+    }
+
+    public function test_dashboard_timeline_counts_drafts_without_showing_draft_values(): void
+    {
+        $user = User::factory()->create();
+        $bloodTest = BloodTest::factory()->for($user)->create(['title' => 'Review test']);
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Draft marker']);
+
+        BiomarkerResult::factory()->for($bloodTest)->for($marker)->create([
+            'value' => 999,
+            'unit' => 'mg/L',
+            'entry_source' => 'extracted',
+            'confirmed_at' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('1 review')
+            ->assertDontSee('Draft marker')
+            ->assertDontSee('999');
+    }
+
+    public function test_dashboard_timeline_shows_confirmed_and_source_document_counts(): void
+    {
+        $user = User::factory()->create();
+        $bloodTest = BloodTest::factory()->for($user)->create([
+            'title' => 'Documented blood test',
+            'test_date' => '2026-06-15',
+        ]);
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Confirmed marker']);
+
+        BloodTestDocument::factory()->for($bloodTest)->create();
+        BiomarkerResult::factory()->for($bloodTest)->for($marker)->create([
+            'value' => 12,
+            'unit' => 'mg/L',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Documented blood test')
+            ->assertSee('15 juni 2026')
+            ->assertSee('1 bevestigd')
+            ->assertSee('1 bronbestand');
     }
 
     public function test_dashboard_shows_only_owned_confirmed_values_needing_attention(): void
