@@ -189,12 +189,43 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('data-test="dashboard-workstand-summary"', false)
-            ->assertSee('2 bloedtesten')
-            ->assertSee('5 bevestigde waarden')
-            ->assertSee('1 reviewpunt')
-            ->assertSee('2 bronbestanden')
+            ->assertSee('data-test="dashboard-dossier-status-line"', false)
+            ->assertSee('Dossierstatus')
+            ->assertSee('2 bloedtesten · 5 bevestigde waarden · 1 reviewpunt · 2 bronbestanden')
+            ->assertDontSee('Werkstand')
             ->assertDontSee('Foreign test');
+    }
+
+    public function test_dashboard_renders_latest_blood_test_as_the_primary_dossier_panel(): void
+    {
+        $user = User::factory()->create();
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+        $latest = BloodTest::factory()->for($user)->create([
+            'title' => 'Laatste controle',
+            'test_date' => '2026-06-12',
+        ]);
+
+        BloodTestDocument::factory()->for($latest)->create();
+        BiomarkerResult::factory()->for($latest)->for($marker)->create([
+            'value' => 42,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-latest-blood-test"', false)
+            ->assertSee('Laatste bloedtest')
+            ->assertSee('Laatste controle')
+            ->assertSee('Afname 12 juni 2026')
+            ->assertSee('1 bevestigd')
+            ->assertSee('1 bronbestand')
+            ->assertSee('Alleen bevestigde waarden verschijnen hieronder.')
+            ->assertDontSee('Health Status')
+            ->assertDontSee('risico')
+            ->assertDontSee('advies');
     }
 
     public function test_dashboard_shows_only_owned_confirmed_values_needing_attention(): void

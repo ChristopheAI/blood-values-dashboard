@@ -1,25 +1,24 @@
 <x-layouts::app :title="__('Dashboard')">
-    <section class="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <section class="mx-auto flex w-full max-w-6xl flex-col gap-6">
         @include('dashboard._next-step', ['nextStep' => $dashboardOverview['nextStep']])
 
         @if ($recentBloodTests->isEmpty())
             @include('blood-tests._upload-dropzone')
         @endif
 
-        @include('dashboard._workstand-summary', ['workstand' => $dashboardOverview['workstand']])
+        @include('dashboard._workstand-summary', ['statusLabel' => $dashboardOverview['dossierStatusLabel']])
 
-        @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])
+        @if (! $recentBloodTests->isEmpty())
+            <div class="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(20rem,0.95fr)] lg:items-start">
+                @include('dashboard._latest-blood-test', [
+                    'bloodTests' => $dashboardOverview['bloodTests'],
+                    'latestUploadSummary' => $latestUploadSummary,
+                ])
 
-        @if ($latestUploadSummary)
-            <section class="space-y-4" data-test="dashboard-latest-confirmed-values">
-                <flux:heading size="lg">{{ __('Laatste bevestigde waarden') }}</flux:heading>
-                @include('dashboard._latest-values-preview', ['summary' => $latestUploadSummary])
-            </section>
-        @elseif (! $recentBloodTests->isEmpty())
-            <section class="rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="dashboard-no-confirmed-values">
-                <flux:heading size="lg">{{ __('Nog geen bevestigde waarden') }}</flux:heading>
-                <flux:text>{{ __('Open een bloedtest om waarden te bevestigen voordat ze in dashboard, trends of consult verschijnen.') }}</flux:text>
-            </section>
+                @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])
+            </div>
+        @else
+            @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])
         @endif
 
         <div class="grid gap-4 md:grid-cols-3" data-test="dashboard-supporting-links">

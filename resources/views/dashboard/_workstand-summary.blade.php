@@ -1,13 +1,6 @@
-<section class="space-y-4" data-test="dashboard-workstand-summary">
-    <flux:heading size="lg">{{ __('Werkstand') }}</flux:heading>
-
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        @foreach ($workstand as $item)
-            <div class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
-                <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400">{{ $item['label'] }}</div>
-                <div class="mt-2 text-lg font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $item['summary'] }}</div>
-                <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{{ $item['help'] }}</p>
-            </div>
-        @endforeach
+<section class="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900" data-test="dashboard-workstand-summary">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between" data-test="dashboard-dossier-status-line">
+        <div class="text-sm font-medium text-neutral-900 dark:text-white">{{ __('Dossierstatus') }}</div>
+        <div class="text-sm text-neutral-600 dark:text-neutral-300">{{ $statusLabel }}</div>
     </div>
 </section>

@@ -19,7 +19,8 @@ class BuildDashboardOverview
      *     reviewDraftCount: int,
      *     confirmedValueCount: int,
      *     bloodTestCount: int,
-     *     sourceDocumentCount: int
+     *     sourceDocumentCount: int,
+     *     dossierStatusLabel: string
      * }
      */
     public function __invoke(User $user): array
@@ -96,6 +97,10 @@ class BuildDashboardOverview
             'confirmedValueCount' => $confirmedValueCount,
             'bloodTestCount' => $bloodTestCount,
             'sourceDocumentCount' => $sourceDocumentCount,
+            'dossierStatusLabel' => $this->countLabel($bloodTestCount, 'bloedtest', 'bloedtesten')
+                .' · '.$this->countLabel($confirmedValueCount, 'bevestigde waarde', 'bevestigde waarden')
+                .' · '.$this->countLabel($reviewDraftCount, 'reviewpunt', 'reviewpunten')
+                .' · '.$this->countLabel($sourceDocumentCount, 'bronbestand', 'bronbestanden'),
         ];
     }
 
