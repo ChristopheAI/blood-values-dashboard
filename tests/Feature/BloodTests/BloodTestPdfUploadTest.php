@@ -61,10 +61,10 @@ it('renders an upload-first empty intake dropzone without metadata or account fi
     $response
         ->assertOk()
         ->assertSee('Sleep je lab-PDF hierheen')
-        ->assertSee('PDF only')
+        ->assertSee('Alleen PDF')
         ->assertSee('data-test="upload-trust-notice"', false)
-        ->assertSee('Parsed locally from the PDF text layer. No external processing.')
-        ->assertSee('Values affect status and trends only after you confirm them.')
+        ->assertSee('Lokaal gelezen uit de tekstlaag van de PDF. Geen externe verwerking.')
+        ->assertSee('Waarden tellen pas mee voor status en trends nadat ze bevestigd zijn.')
         ->assertSee('data-test="lab-pdf-dropzone"', false)
         ->assertSee('data-test="intake-progress"', false)
         ->assertDontSee('data-test="upload-pdf-button"', false)

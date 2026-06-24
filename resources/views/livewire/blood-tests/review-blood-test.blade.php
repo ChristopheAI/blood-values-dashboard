@@ -48,8 +48,8 @@
         <header class="flex flex-col gap-2">
             <flux:heading size="xl">{{ $bloodTest->title ?: __('Resultaat') }}</flux:heading>
             <flux:text>
-                {{ $bloodTest->test_date?->toDateString() ?? __('No date yet') }}
-                · {{ $bloodTest->lab_name ?: __('Unknown lab') }}
+                {{ $bloodTest->test_date?->toDateString() ?? __('Nog geen datum') }}
+                · {{ $bloodTest->lab_name ?: __('Onbekend labo') }}
                 · {{ $bloodTest->status }}
             </flux:text>
         </header>
@@ -67,12 +67,12 @@
     <section class="space-y-4">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <flux:heading size="lg">{{ __('Confirmed values') }}</flux:heading>
-                <flux:text>{{ trans_choice(':count value ready for status and trends|:count values ready for status and trends', $confirmedCount, ['count' => $confirmedCount]) }}</flux:text>
+                <flux:heading size="lg">{{ __('Bevestigde waarden') }}</flux:heading>
+                <flux:text>{{ trans_choice(':count waarde klaar voor status en trends|:count waarden klaar voor status en trends', $confirmedCount, ['count' => $confirmedCount]) }}</flux:text>
             </div>
 
             @if ($draftCount > 0)
-                <span class="text-sm font-medium text-amber-700 dark:text-amber-300">{{ trans_choice(':count row needs review|:count rows need review', $draftCount, ['count' => $draftCount]) }}</span>
+                <span class="text-sm font-medium text-amber-700 dark:text-amber-300">{{ trans_choice(':count rij vraagt review|:count rijen vragen review', $draftCount, ['count' => $draftCount]) }}</span>
             @endif
         </div>
 
@@ -81,10 +81,10 @@
                 <thead class="bg-neutral-50 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
                     <tr>
                         <th class="p-3">{{ __('Biomarker') }}</th>
-                        <th class="p-3">{{ __('Value') }}</th>
+                        <th class="p-3">{{ __('Waarde') }}</th>
                         <th class="p-3">{{ __('Status') }}</th>
                         <th class="p-3 text-right">{{ __('Trend') }}</th>
-                        <th class="p-3 text-right">{{ __('Actions') }}</th>
+                        <th class="p-3 text-right">{{ __('Acties') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,7 +92,7 @@
                         @php
                             $trendSummary = $trendSummaries[$result->id] ?? [
                                 'state' => 'first',
-                                'label' => __('First tracked value'),
+                                'label' => __('Eerste gevolgde waarde'),
                                 'detail' => null,
                             ];
                         @endphp
@@ -105,7 +105,7 @@
                                     <span>{{ $result->status }}</span>
                                     @if ($result->entry_source === 'extracted')
                                         <span class="text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400">
-                                            {{ $hasSourceDocuments ? __('auto-filled from PDF') : __('auto-filled from PDF (source deleted)') }}
+                                            {{ $hasSourceDocuments ? __('automatisch ingevuld uit PDF') : __('automatisch ingevuld uit PDF (bron verwijderd)') }}
                                         </span>
                                     @endif
                                 </div>
@@ -118,23 +118,23 @@
                                         <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $trendSummary['detail'] }}</span>
                                     @endif
 
-                                    <a href="{{ route('biomarkers.show', $result->biomarker) }}" class="text-sm font-medium text-blue-700 underline dark:text-blue-300" data-test="open-trend-button">{{ __('Open trend') }}</a>
+                                    <a href="{{ route('biomarkers.show', $result->biomarker) }}" class="text-sm font-medium text-blue-700 underline dark:text-blue-300" data-test="open-trend-button">{{ __('Trend openen') }}</a>
                                 </div>
                             </td>
                             <td class="p-3">
                                 <div class="flex justify-end gap-2">
                                     <flux:button type="button" size="sm" wire:click="editConfirmedResult({{ $result->id }})" data-test="edit-confirmed-value-button">
-                                        {{ __('Edit') }}
+                                        {{ __('Bewerken') }}
                                     </flux:button>
                                     <flux:button type="button" variant="danger" size="sm" wire:click="deleteConfirmedResult({{ $result->id }})" data-test="delete-confirmed-value-button">
-                                        {{ __('Delete') }}
+                                        {{ __('Verwijderen') }}
                                     </flux:button>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('No confirmed values yet.') }}</td>
+                            <td colspan="5" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('Nog geen bevestigde waarden.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -144,7 +144,7 @@
 
     <div class="grid gap-6 {{ $reviewGridColumnsClass }}">
         <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700">
-            <flux:heading size="lg">{{ __('Source document') }}</flux:heading>
+            <flux:heading size="lg">{{ __('Bronbestand') }}</flux:heading>
 
             @forelse ($bloodTest->documents as $document)
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-test="source-document-row">
@@ -157,23 +157,23 @@
                         @method('DELETE')
 
                         <flux:button type="submit" variant="danger" size="sm" data-test="delete-document-button">
-                            {{ __('Delete document') }}
+                            {{ __('Document verwijderen') }}
                         </flux:button>
                     </form>
                 </div>
             @empty
-                <flux:text>{{ __('No source document is attached.') }}</flux:text>
+                <flux:text>{{ __('Geen bronbestand gekoppeld.') }}</flux:text>
             @endforelse
         </section>
 
         @if ($showReviewStrip)
             <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="review-strip">
-            <flux:heading size="lg">{{ __('Review strip') }}</flux:heading>
+            <flux:heading size="lg">{{ __('Nog te reviewen') }}</flux:heading>
 
             @if ($latestExtractionRun?->status === 'failed')
-                <flux:text data-test="extraction-status">{{ __('Extraction failed. Manual entry is still available.') }}</flux:text>
+                <flux:text data-test="extraction-status">{{ __('Extractie mislukt. Manuele invoer blijft beschikbaar.') }}</flux:text>
             @elseif ($extractionFoundNoDrafts)
-                <flux:text data-test="extraction-status">{{ __("We couldn't read values from this PDF automatically. Manual entry is still available.") }}</flux:text>
+                <flux:text data-test="extraction-status">{{ __('We konden geen waarden automatisch uit deze PDF lezen. Manuele invoer blijft beschikbaar.') }}</flux:text>
             @endif
 
             <div class="space-y-3">
@@ -199,46 +199,46 @@
                         <div class="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] sm:items-start">
                             <div>
                                 <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Biomarker') }}</div>
-                                <div class="font-medium">{{ $draft->biomarker?->name ?? $draft->extracted_name ?? __('Unknown marker') }}</div>
+                                <div class="font-medium">{{ $draft->biomarker?->name ?? $draft->extracted_name ?? __('Onbekende marker') }}</div>
                             </div>
 
                             <div data-test="draft-value">
-                                <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Value') }}</div>
+                                <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Waarde') }}</div>
                                 <div class="font-medium text-neutral-900 dark:text-white">{{ (float) $draft->value }} {{ $draft->unit }}</div>
                             </div>
 
                             <div data-test="draft-reference">
-                                <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Reference') }}</div>
-                                <div class="text-neutral-700 dark:text-neutral-300">{{ $referenceRange ?? __('Unknown') }}</div>
+                                <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Referentie') }}</div>
+                                <div class="text-neutral-700 dark:text-neutral-300">{{ $referenceRange ?? __('Onbekend') }}</div>
                             </div>
 
                             <div data-test="draft-review-state">
-                                <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Review state') }}</div>
-                                <div class="text-neutral-700 dark:text-neutral-300">{{ __('Needs confirmation') }}</div>
+                                <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Reviewstatus') }}</div>
+                                <div class="text-neutral-700 dark:text-neutral-300">{{ __('Bevestiging nodig') }}</div>
                             </div>
 
                             <div class="flex flex-wrap gap-2 sm:justify-end">
                                 <flux:button type="button" size="sm" wire:click="useDraft({{ $draft->id }})" data-test="use-draft-button">
-                                    {{ __('Use draft') }}
+                                    {{ __('Draft gebruiken') }}
                                 </flux:button>
                                 <flux:button type="button" variant="danger" size="sm" wire:click="deleteDraft({{ $draft->id }})" data-test="delete-draft-button">
-                                    {{ __('Delete draft') }}
+                                    {{ __('Draft verwijderen') }}
                                 </flux:button>
                             </div>
                         </div>
 
                         <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                            {{ __('Extracted - please confirm') }}
+                            {{ __('Geextraheerd - bevestig eerst') }}
                             @if ($draft->extraction_confidence !== null && (float) $draft->extraction_confidence < \App\Domain\Intake\RunBloodTestExtraction::AUTO_CONFIRM_CONFIDENCE_THRESHOLD)
-                                · {{ __('Low confidence') }}
+                                · {{ __('Lage betrouwbaarheid') }}
                             @endif
                         </div>
                     </article>
                 @empty
                     @if ($latestExtractionRun === null)
-                        <flux:text>{{ __('No extracted drafts yet.') }}</flux:text>
+                        <flux:text>{{ __('Nog geen geextraheerde drafts.') }}</flux:text>
                     @elseif ($latestExtractionRun->status === 'done' && (int) $latestExtractionRun->candidate_count > 0)
-                        <flux:text>{{ __('No extracted drafts found.') }}</flux:text>
+                        <flux:text>{{ __('Geen geextraheerde drafts gevonden.') }}</flux:text>
                     @endif
                 @endforelse
             </div>
@@ -248,56 +248,57 @@
         @if (! $showManualForm)
             <div class="flex justify-end">
                 <flux:button type="button" wire:click="showManualEntry" data-test="show-manual-entry-button">
-                    {{ __('Add value manually') }}
+                    {{ __('Waarde manueel toevoegen') }}
                 </flux:button>
             </div>
         @else
-            <form wire:submit="confirmResult" class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="confirm-biomarker-form">
+            <form method="POST" wire:submit="confirmResult" class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="confirm-biomarker-form">
+            @csrf
             <div class="space-y-2">
-                <flux:heading size="lg">{{ $hasDraftResults ? __('Review extracted values') : __('Add your values') }}</flux:heading>
+                <flux:heading size="lg">{{ $hasDraftResults ? __('Geextraheerde waarden reviewen') : __('Waarden toevoegen') }}</flux:heading>
                 <flux:text>
                     @if ($hasDraftResults && $confirmedCount > 0)
-                        {{ __('Some values are already active for status and trends. Review only the remaining extracted rows.') }}
+                        {{ __('Sommige waarden tellen al mee voor status en trends. Review alleen de resterende geextraheerde rijen.') }}
                     @elseif ($hasDraftResults && ! $hasSourceDocuments)
-                        {{ __('Review the extracted rows; the source PDF is no longer attached. Nothing counts until you confirm a row.') }}
+                        {{ __('Review de geextraheerde rijen; de bron-PDF is niet meer gekoppeld. Niets telt mee totdat je een rij bevestigt.') }}
                     @elseif ($hasDraftResults)
-                        {{ __('Read from your PDF; nothing counts until you confirm each one.') }}
+                        {{ __('Gelezen uit je PDF; niets telt mee totdat je elke waarde bevestigt.') }}
                     @elseif ($extractionFoundNoDrafts && $hasSourceDocuments)
-                        {{ __("We couldn't read values from this PDF automatically. Add them next to the document below.") }}
+                        {{ __('We konden geen waarden automatisch uit deze PDF lezen. Voeg ze toe naast het document hieronder.') }}
                     @elseif ($extractionFoundNoDrafts)
-                        {{ __("We couldn't read values from this PDF automatically. Add values manually when you are ready.") }}
+                        {{ __('We konden geen waarden automatisch uit deze PDF lezen. Voeg waarden manueel toe wanneer je klaar bent.') }}
                     @elseif (! $hasSourceDocuments)
-                        {{ __('Add values manually when you are ready.') }}
+                        {{ __('Voeg waarden manueel toe wanneer je klaar bent.') }}
                     @else
-                        {{ __('Add values from the source document when you are ready.') }}
+                        {{ __('Voeg waarden uit het bronbestand toe wanneer je klaar bent.') }}
                     @endif
                 </flux:text>
             </div>
 
-            <flux:select wire:model="resultForm.biomarker_id" :label="__('Existing biomarker')" data-test="existing-biomarker-select">
-                <option value="">{{ __('Create new') }}</option>
+            <flux:select wire:model="resultForm.biomarker_id" :label="__('Bestaande biomarker')" data-test="existing-biomarker-select">
+                <option value="">{{ __('Nieuwe aanmaken') }}</option>
                 @foreach ($biomarkers as $biomarker)
                     <option value="{{ $biomarker->id }}">{{ $biomarker->name }}</option>
                 @endforeach
             </flux:select>
 
-            <flux:input wire:model="resultForm.name" :label="__('Biomarker name')" data-test="biomarker-name-input" />
-            <flux:input wire:model="resultForm.value" :label="__('Value')" inputmode="decimal" data-test="biomarker-value-input" />
-            <flux:input wire:model="resultForm.unit" :label="__('Unit')" data-test="biomarker-unit-input" />
+            <flux:input wire:model="resultForm.name" :label="__('Naam biomarker')" data-test="biomarker-name-input" />
+            <flux:input wire:model="resultForm.value" :label="__('Waarde')" inputmode="decimal" data-test="biomarker-value-input" />
+            <flux:input wire:model="resultForm.unit" :label="__('Eenheid')" data-test="biomarker-unit-input" />
 
             <div class="grid gap-4 md:grid-cols-3">
-                <flux:input wire:model="resultForm.reference_min" :label="__('Range min')" inputmode="decimal" data-test="reference-min-input" />
-                <flux:input wire:model="resultForm.reference_max" :label="__('Range max')" inputmode="decimal" data-test="reference-max-input" />
-                <flux:input wire:model="resultForm.reference_unit" :label="__('Range unit')" data-test="reference-unit-input" />
+                <flux:input wire:model="resultForm.reference_min" :label="__('Referentie min')" inputmode="decimal" data-test="reference-min-input" />
+                <flux:input wire:model="resultForm.reference_max" :label="__('Referentie max')" inputmode="decimal" data-test="reference-max-input" />
+                <flux:input wire:model="resultForm.reference_unit" :label="__('Referentie-eenheid')" data-test="reference-unit-input" />
             </div>
 
-            <flux:textarea wire:model="resultForm.note" :label="__('Note')" data-test="result-note-input" />
+            <flux:textarea wire:model="resultForm.note" :label="__('Notitie')" data-test="result-note-input" />
             <div class="flex flex-wrap gap-3">
-                <flux:button type="submit" variant="primary" data-test="confirm-value-button">{{ $hasDraftResults ? __('Confirm value') : __('Add value') }}</flux:button>
+                <flux:button type="submit" variant="primary" data-test="confirm-value-button">{{ $hasDraftResults ? __('Waarde bevestigen') : __('Waarde toevoegen') }}</flux:button>
 
                 @if (! $hasDraftResults && $confirmedCount > 0)
                     <flux:button type="button" wire:click="cancelManualEntry" data-test="cancel-manual-entry-button">
-                        {{ __('Cancel') }}
+                        {{ __('Annuleren') }}
                     </flux:button>
                 @endif
             </div>
@@ -307,8 +308,8 @@
 
     <section class="space-y-4" data-test="blood-test-context-notes">
         <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <flux:heading size="lg">{{ __('Context notes') }}</flux:heading>
-            <flux:button :href="route('context-notes.index')" variant="outline">{{ __('Add context note') }}</flux:button>
+            <flux:heading size="lg">{{ __('Contextnotities') }}</flux:heading>
+            <flux:button :href="route('context-notes.index')" variant="outline">{{ __('Contextnotitie toevoegen') }}</flux:button>
         </div>
 
         <div class="space-y-3">
@@ -319,7 +320,7 @@
                 </article>
             @empty
                 <div class="rounded-lg border border-dashed border-neutral-300 p-6 text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
-                    {{ __('No context notes linked to this blood test yet.') }}
+                    {{ __('Nog geen contextnotities gekoppeld aan deze bloedtest.') }}
                 </div>
             @endforelse
         </div>

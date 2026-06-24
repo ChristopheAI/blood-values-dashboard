@@ -118,7 +118,7 @@ it('does not show a trend change when comparable units are missing', function ()
             'include_trends' => '1',
         ])
         ->assertOk()
-        ->assertSee('No comparable confirmed changes in this selection.')
+        ->assertSee('Geen vergelijkbare bevestigde wijzigingen in deze selectie.')
         ->assertDontSee('+13');
 });
 

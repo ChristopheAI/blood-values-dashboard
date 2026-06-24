@@ -30,9 +30,9 @@ it('does not widen an empty consult selection to all owned blood tests', functio
             'include_source_documents' => '1',
         ])
         ->assertOk()
-        ->assertSee('No blood tests selected for this overview.')
-        ->assertSee('No matching confirmed values.')
-        ->assertSee('No source documents attached to this selection.')
+        ->assertSee('Geen bloedtesten geselecteerd voor dit overzicht.')
+        ->assertSee('Geen passende bevestigde waarden.')
+        ->assertSee('Geen bronbestanden gekoppeld aan deze selectie.')
         ->assertDontSee('Ferritin')
         ->assertDontSee('18 ug/L')
         ->assertDontSee('june-private-lab.pdf');

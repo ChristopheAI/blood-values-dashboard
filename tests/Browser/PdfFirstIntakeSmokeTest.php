@@ -133,10 +133,10 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertDataAttribute('[data-test="intake-progress-stage-status"]', 'state', 'done')
             ->assertPresent('[data-test="intake-progress-stage-trend"]')
             ->assertDataAttribute('[data-test="intake-progress-stage-trend"]', 'state', 'done')
-            ->assertSee('Confirmed values')
+            ->assertSee('Bevestigde waarden')
             ->assertSee('Ferritin')
             ->assertSee('42 ug/L')
-            ->assertSee('auto-filled from PDF')
+            ->assertSee('automatisch ingevuld uit PDF')
             ->assertSee('normal')
             ->assertPresent('[data-test="confirmed-value-trend"][data-state="compared"]')
             ->assertSee('+2 ug/L')
@@ -145,7 +145,7 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertPresent('[data-test="extracted-draft-row"][data-state="draft"][data-confidence="low"]')
             ->assertSee('CRP')
             ->assertSee('Vitamin D')
-            ->assertDontSee('No confirmed values yet.');
+            ->assertDontSee('Nog geen bevestigde waarden.');
 
         assertNoForbiddenMedicalCopyAppears($browser);
     });
@@ -230,7 +230,7 @@ test('synthetic qa scenario proves the full multi blood test follow up flow', fu
             ->assertSee('CRP')
             ->assertSee('7.8 mg/L')
             ->assertSee('TSH')
-            ->assertSee('Needs confirmation')
+            ->assertSee('Bevestiging nodig')
             ->assertPresent('[data-test="extracted-draft-row"][data-state="draft"][data-confidence="low"]');
 
         assertNoForbiddenMedicalCopyAppears($browser);
@@ -251,7 +251,7 @@ test('synthetic qa scenario proves the full multi blood test follow up flow', fu
         resetDuskDownloads();
 
         $browser->visit(route('consult-overview.index', [], false))
-            ->waitForText('Consult overview')
+            ->waitForText('Consultlijst')
             ->check("input[name='blood_test_ids[]'][value='{$olderBloodTest->id}']")
             ->check("input[name='blood_test_ids[]'][value='{$currentBloodTest->id}']")
             ->check('[data-test="include-pinned-checkbox"]')
@@ -300,7 +300,7 @@ test('synthetic qa scenario proves the full multi blood test follow up flow', fu
 
         $browser->resize(390, 844)
             ->visit(route('consult-overview.index', [], false))
-            ->waitForText('Consult overview')
+            ->waitForText('Consultlijst')
             ->assertPresent('[data-test="consult-overview-form"]')
             ->assertDontSee('Foreign Owner Blood Test')
             ->resize(1280, 900)
@@ -370,10 +370,10 @@ function confirmExtractedDraft(Browser $browser, string $name, string $value, st
 
 function assertAutoFilledConfirmedValue(Browser $browser, string $name, string $value, string $unit): void
 {
-    $browser->waitForText('Confirmed values')
+    $browser->waitForText('Bevestigde waarden')
         ->assertSee($name)
         ->assertSee("{$value} {$unit}")
-        ->assertSee('auto-filled from PDF')
+        ->assertSee('automatisch ingevuld uit PDF')
         ->assertSee('normal');
 
     assertNoForbiddenMedicalCopyAppears($browser);
@@ -418,7 +418,7 @@ function pinBiomarker(Browser $browser, int $biomarkerId): void
 function addContextNote(Browser $browser, int $bloodTestId): void
 {
     $browser->visit('/context-notes')
-        ->waitForText('Context notes')
+        ->waitForText('Contextnotities')
         ->value('input[name="note_date"]', '2026-06-01')
         ->select('category', 'sleep')
         ->select('blood_test_id', (string) $bloodTestId)
@@ -439,7 +439,7 @@ function addReminder(Browser $browser): void
         ->click('[data-test="save-reminder-button"]')
         ->waitForText('Plan next blood test')
         ->visit('/dashboard')
-        ->waitForText('Next reminder')
+        ->waitForText('Volgende herinnering')
         ->assertSee('Plan next blood test')
         ->assertSee('2026-07-15');
 
@@ -449,7 +449,7 @@ function addReminder(Browser $browser): void
 function buildConsultOverview(Browser $browser): void
 {
     $browser->visit(route('consult-overview.index', [], false))
-        ->waitForText('Consult overview')
+        ->waitForText('Consultlijst')
         ->value('input[name="from"]', '2026-05-01')
         ->value('input[name="to"]', '2026-06-01')
         ->check('[data-test="include-pinned-checkbox"]')
@@ -457,9 +457,9 @@ function buildConsultOverview(Browser $browser): void
         ->check('[data-test="include-context-checkbox"]')
         ->type('questions', 'What changed between these tests?')
         ->click('[data-test="build-consult-overview-button"]')
-        ->waitForText('Self-entered personal tracking data')
-        ->assertSee('Self-entered personal tracking data')
-        ->assertSee('not medical advice')
+        ->waitForText('Persoonlijke trackinggegevens uit bevestigde waarden')
+        ->assertSee('Persoonlijke trackinggegevens uit bevestigde waarden')
+        ->assertSee('Bespreek dit overzicht met je arts')
         ->assertSee('Ferritin')
         ->assertSee('Follow around consults')
         ->assertSee('Slept poorly before the June test.')

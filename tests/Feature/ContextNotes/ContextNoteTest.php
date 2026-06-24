@@ -100,7 +100,7 @@ it('shows context notes near their blood test', function () {
     $this->actingAs($user)
         ->get(route('blood-tests.show', $bloodTest))
         ->assertOk()
-        ->assertSee('Context notes')
+        ->assertSee('Contextnotities')
         ->assertSee('Headache was present that morning.')
         ->assertDontSee('This belongs elsewhere.');
 });

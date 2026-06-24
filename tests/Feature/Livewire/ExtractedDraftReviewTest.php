@@ -31,7 +31,7 @@ it('shows extracted drafts and lets the owner confirm a draft through the review
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('Extracted - please confirm')
+        ->assertSee('Geextraheerd - bevestig eerst')
         ->assertSee('Ferritin')
         ->call('useDraft', $draft->id)
         ->assertSet('draftResultId', $draft->id)
@@ -195,9 +195,9 @@ it('frames the review form as extracted value review when drafts exist', functio
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('Review extracted values')
-        ->assertSee('Read from your PDF')
-        ->assertDontSee('Add your values');
+        ->assertSee('Geextraheerde waarden reviewen')
+        ->assertSee('Gelezen uit je PDF')
+        ->assertDontSee('Waarden toevoegen');
 });
 
 it('does not tell the owner to read from a deleted PDF when drafts remain', function () {
@@ -213,9 +213,9 @@ it('does not tell the owner to read from a deleted PDF when drafts remain', func
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('No source document is attached.')
-        ->assertSee('Review the extracted rows; the source PDF is no longer attached. Nothing counts until you confirm a row.')
-        ->assertDontSee('Read from your PDF');
+        ->assertSee('Geen bronbestand gekoppeld.')
+        ->assertSee('Review de geextraheerde rijen; de bron-PDF is niet meer gekoppeld. Niets telt mee totdat je een rij bevestigt.')
+        ->assertDontSee('Gelezen uit je PDF');
 });
 
 it('does not tell the owner nothing counts when auto-confirmed values are already active', function () {
@@ -236,10 +236,10 @@ it('does not tell the owner nothing counts when auto-confirmed values are alread
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('Confirmed values')
-        ->assertSee('Review extracted values')
-        ->assertSee('Some values are already active for status and trends.')
-        ->assertDontSee('nothing counts until you confirm each one');
+        ->assertSee('Bevestigde waarden')
+        ->assertSee('Geextraheerde waarden reviewen')
+        ->assertSee('Sommige waarden tellen al mee voor status en trends.')
+        ->assertDontSee('niets telt mee totdat je elke waarde bevestigt');
 });
 
 it('marks below auto-confirm threshold drafts as low confidence in the review strip', function () {
@@ -256,7 +256,7 @@ it('marks below auto-confirm threshold drafts as low confidence in the review st
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertSee('data-test="extracted-draft-row" data-state="draft" data-confidence="low"', false)
-        ->assertSee('Low confidence');
+        ->assertSee('Lage betrouwbaarheid');
 });
 
 it('separates extracted draft value and reference fields in the review strip', function () {
@@ -281,12 +281,12 @@ it('separates extracted draft value and reference fields in the review strip', f
         ->assertSee('data-test="draft-value"', false)
         ->assertSee('data-test="draft-reference"', false)
         ->assertSee('data-test="draft-review-state"', false)
-        ->assertSee('Value')
+        ->assertSee('Waarde')
         ->assertSee('162 mg/dL')
-        ->assertSee('Reference')
+        ->assertSee('Referentie')
         ->assertSee('<= 100 mg/dL')
-        ->assertSee('Review state')
-        ->assertSee('Needs confirmation')
+        ->assertSee('Reviewstatus')
+        ->assertSee('Bevestiging nodig')
         ->assertDontSee('162 mg/dL · <= 100 mg/dL');
 });
 
@@ -302,7 +302,7 @@ it('hides the review strip when extraction has no drafts left', function () {
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertDontSee('data-test="review-strip"', false)
-        ->assertDontSee('No extracted drafts found.')
+        ->assertDontSee('Geen geextraheerde drafts gevonden.')
         ->assertDontSee('No below-threshold rows need review.');
 });
 
@@ -327,13 +327,13 @@ it('collapses manual entry when extracted values are already confirmed', functio
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('Confirmed values')
+        ->assertSee('Bevestigde waarden')
         ->assertDontSee('data-test="confirm-biomarker-form"', false)
         ->assertSee('data-test="show-manual-entry-button"', false)
-        ->assertDontSee('Add your values')
+        ->assertDontSee('Waarden toevoegen')
         ->call('showManualEntry')
         ->assertSee('data-test="confirm-biomarker-form"', false)
-        ->assertSee('Add your values');
+        ->assertSee('Waarden toevoegen');
 });
 
 it('shows one-sided draft reference ranges in the review strip', function () {
@@ -380,10 +380,10 @@ it('frames the review form as manual entry when extraction found no drafts', fun
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('Add your values')
-        ->assertSee('No source document is attached.')
-        ->assertSee("We couldn't read values from this PDF automatically. Add values manually when you are ready.")
-        ->assertDontSee('Add them next to the document below.')
+        ->assertSee('Waarden toevoegen')
+        ->assertSee('Geen bronbestand gekoppeld.')
+        ->assertSee('We konden geen waarden automatisch uit deze PDF lezen. Voeg waarden manueel toe wanneer je klaar bent.')
+        ->assertDontSee('Voeg ze toe naast het document hieronder.')
         ->assertDontSee('No below-threshold rows need review.')
         ->assertDontSee('Confirm a biomarker value');
 });
@@ -404,10 +404,10 @@ it('shows a manual-entry fallback when extraction failed', function () {
         ->assertSee('data-test="intake-progress-stage-values" data-state="pending"', false)
         ->assertSee('data-test="intake-progress-stage-status" data-state="pending"', false)
         ->assertSee('data-test="intake-progress-stage-trend" data-state="pending"', false)
-        ->assertSee('Extraction failed. Manual entry is still available.')
+        ->assertSee('Extractie mislukt. Manuele invoer blijft beschikbaar.')
         ->assertDontSee('No below-threshold rows need review.')
-        ->assertSee('Add your values')
-        ->assertSee('Add values from the source document when you are ready.');
+        ->assertSee('Waarden toevoegen')
+        ->assertSee('Voeg waarden uit het bronbestand toe wanneer je klaar bent.');
 });
 
 it('does not point manual entry copy to a missing source document', function () {
@@ -416,9 +416,9 @@ it('does not point manual entry copy to a missing source document', function () 
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('No source document is attached.')
-        ->assertSee('Add values manually when you are ready.')
-        ->assertDontSee('Add values from the source document when you are ready.');
+        ->assertSee('Geen bronbestand gekoppeld.')
+        ->assertSee('Voeg waarden manueel toe wanneer je klaar bent.')
+        ->assertDontSee('Voeg waarden uit het bronbestand toe wanneer je klaar bent.');
 });
 
 it('shows auto-confirmed extracted values as auto-filled and lets the owner edit or delete them', function () {
@@ -442,10 +442,10 @@ it('shows auto-confirmed extracted values as auto-filled and lets the owner edit
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('Confirmed values')
-        ->assertSee('auto-filled from PDF')
-        ->assertDontSee('source deleted')
-        ->assertDontSee('Extracted - please confirm')
+        ->assertSee('Bevestigde waarden')
+        ->assertSee('automatisch ingevuld uit PDF')
+        ->assertDontSee('bron verwijderd')
+        ->assertDontSee('Geextraheerd - bevestig eerst')
         ->call('editConfirmedResult', $result->id)
         ->assertSet('resultForm.biomarker_id', $biomarker->id)
         ->assertSet('resultForm.value', '42')
@@ -480,7 +480,7 @@ it('keeps auto-filled PDF trace when the owner edits an auto-confirmed value', f
         ->set('resultForm.value', '43')
         ->call('confirmResult')
         ->assertHasNoErrors()
-        ->assertSee('auto-filled from PDF');
+        ->assertSee('automatisch ingevuld uit PDF');
 
     $result->refresh();
 
@@ -508,8 +508,8 @@ it('marks auto-filled values when the source PDF is gone', function () {
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('No source document is attached.')
-        ->assertSee('auto-filled from PDF (source deleted)');
+        ->assertSee('Geen bronbestand gekoppeld.')
+        ->assertSee('automatisch ingevuld uit PDF (bron verwijderd)');
 });
 
 it('shows a compact trend summary for confirmed values on the result screen', function () {
@@ -687,10 +687,10 @@ it('keeps the management layer available below the patient friendly overview', f
         ->assertSee('data-test="review-strip"', false)
         ->assertSee('data-test="extracted-draft-row"', false)
         ->assertSee('data-test="confirm-biomarker-form"', false)
-        ->assertSee('Edit')
-        ->assertSee('Delete')
-        ->assertSee('Use draft')
-        ->assertSee('Confirm value');
+        ->assertSee('Bewerken')
+        ->assertSee('Verwijderen')
+        ->assertSee('Draft gebruiken')
+        ->assertSee('Waarde bevestigen');
 });
 
 it('renders the patient friendly overview for an older owned blood test', function () {

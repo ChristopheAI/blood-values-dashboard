@@ -38,7 +38,7 @@
         </div>
 
         <div class="mt-5 border-t border-neutral-200 pt-4 text-sm text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-            <span class="font-medium text-neutral-900 dark:text-white">{{ $summary['bloodTest']->title ?: __('Untitled blood test') }}</span>
+            <span class="font-medium text-neutral-900 dark:text-white">{{ $summary['bloodTest']->title ?: __('Bloedtest zonder titel') }}</span>
             <span class="text-neutral-500 dark:text-neutral-400">· {{ $summary['confirmedLabel'] }}</span>
         </div>
     </section>

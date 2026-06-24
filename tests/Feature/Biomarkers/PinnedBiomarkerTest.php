@@ -86,7 +86,7 @@ it('surfaces pinned biomarkers on the dashboard', function () {
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Pinned biomarkers')
+        ->assertSee('Gevolgde biomarkers')
         ->assertSee('Ferritin')
         ->assertDontSee('Vitamin D')
         ->assertDontSee('CRP');

@@ -7,7 +7,7 @@
                 <div class="grid gap-6 lg:grid-cols-2">
                     @if ($pinnedBiomarkers->isNotEmpty())
                         <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="dashboard-pinned-biomarkers">
-                            <flux:heading size="lg">{{ __('Pinned biomarkers') }}</flux:heading>
+                            <flux:heading size="lg">{{ __('Gevolgde biomarkers') }}</flux:heading>
 
                             <div class="space-y-3">
                                 @foreach ($pinnedBiomarkers as $pin)
@@ -21,7 +21,7 @@
 
                     @if ($nextReminder)
                         <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="dashboard-next-reminder">
-                            <flux:heading size="lg">{{ __('Next reminder') }}</flux:heading>
+                            <flux:heading size="lg">{{ __('Volgende herinnering') }}</flux:heading>
 
                             <div class="space-y-2 text-sm">
                                 <div class="font-medium">{{ $nextReminder->title }}</div>
@@ -41,25 +41,25 @@
             @else
                 <header class="flex flex-col gap-2">
                     <flux:heading size="xl">{{ __('Dashboard') }}</flux:heading>
-                    <flux:text>{{ __('Upload or confirm values to build your blood-results overview.') }}</flux:text>
+                    <flux:text>{{ __('Upload een lab-PDF of bevestig waarden om je bloedwaardenoverzicht op te bouwen.') }}</flux:text>
                 </header>
             @endif
 
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4" data-test="dashboard-supporting-links">
                 <section class="space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" data-test="dashboard-recent-blood-tests">
-                    <flux:heading size="lg">{{ __('Recent blood tests') }}</flux:heading>
+                    <flux:heading size="lg">{{ __('Recente bloedtesten') }}</flux:heading>
 
                     <div class="space-y-3">
                         @foreach ($recentBloodTests as $bloodTest)
                             <a href="{{ route('blood-tests.show', $bloodTest) }}" class="block text-sm font-medium text-blue-700 underline dark:text-blue-300">
-                                {{ $bloodTest->title ?: __('Untitled blood test') }}
+                                {{ $bloodTest->title ?: __('Bloedtest zonder titel') }}
                             </a>
                         @endforeach
                     </div>
                 </section>
 
                 <section class="space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" data-test="dashboard-pinned-biomarkers">
-                    <flux:heading size="lg">{{ __('Pinned biomarkers') }}</flux:heading>
+                    <flux:heading size="lg">{{ __('Gevolgde biomarkers') }}</flux:heading>
 
                     <div class="space-y-3">
                         @forelse ($pinnedBiomarkers as $pin)
@@ -67,13 +67,13 @@
                                 {{ $pin->biomarker->name }}
                             </a>
                         @empty
-                            <flux:text>{{ __('No pinned biomarkers yet.') }}</flux:text>
+                            <flux:text>{{ __('Nog geen gevolgde biomarkers.') }}</flux:text>
                         @endforelse
                     </div>
                 </section>
 
                 <section class="space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" data-test="dashboard-next-reminder">
-                    <flux:heading size="lg">{{ __('Next reminder') }}</flux:heading>
+                    <flux:heading size="lg">{{ __('Volgende herinnering') }}</flux:heading>
 
                     @if ($nextReminder)
                         <div class="space-y-2 text-sm">
@@ -85,18 +85,18 @@
                             @endif
                         </div>
                     @else
-                        <flux:text>{{ __('No reminders yet.') }}</flux:text>
+                        <flux:text>{{ __('Nog geen herinneringen.') }}</flux:text>
                     @endif
                 </section>
 
                 <section class="space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" data-test="dashboard-quick-actions">
-                    <flux:heading size="lg">{{ __('Quick actions') }}</flux:heading>
+                    <flux:heading size="lg">{{ __('Snelle acties') }}</flux:heading>
 
                     <div class="flex flex-col gap-2">
-                        <flux:button :href="route('blood-tests.index')" variant="primary">{{ __('Upload blood-test PDF') }}</flux:button>
-                        <flux:button :href="route('context-notes.index')" variant="outline">{{ __('Add context note') }}</flux:button>
-                        <flux:button :href="route('reminders.index')" variant="outline">{{ __('Add reminder') }}</flux:button>
-                        <flux:button :href="route('consult-overview.index')" variant="outline">{{ __('Prepare consult overview') }}</flux:button>
+                        <flux:button :href="route('blood-tests.index')" variant="primary">{{ __('Lab-PDF uploaden') }}</flux:button>
+                        <flux:button :href="route('context-notes.index')" variant="outline">{{ __('Contextnotitie toevoegen') }}</flux:button>
+                        <flux:button :href="route('reminders.index')" variant="outline">{{ __('Herinnering toevoegen') }}</flux:button>
+                        <flux:button :href="route('consult-overview.index')" variant="outline">{{ __('Consultlijst voorbereiden') }}</flux:button>
                     </div>
                 </section>
             </div>

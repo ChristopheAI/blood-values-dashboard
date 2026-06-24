@@ -123,6 +123,29 @@ Update this section after each meaningful session.
     counts and generated private storage names were not visible. Private values,
     biomarker names, source snippets, screenshots, and PDF contents were not
     recorded in the repo.
+  - Consult/navigation hardening slice completed on 2026-06-24 and is currently
+    uncommitted: starter-kit/product noise was removed from authenticated
+    navigation and the public welcome page; visible app copy was aligned to
+    Dutch for dashboard, intake/list, detail/review, context notes, and consult
+    surfaces; the consult page is output-first with attention values, compact
+    normal values, trends/timeline, and source documents above the lower
+    selection/configuration form.
+  - The same slice preserved the hard product/privacy boundaries: consult and
+    sensitive health-text forms use POST with CSRF; consult questions are not
+    carried into GET URLs or CSV export inputs; CSV export still escapes
+    spreadsheet formulas; owner scope and confirmed-only behavior remain in the
+    domain/controller layer; no OCR, runtime AI, external processing, provider
+    sync, wearable import, medical advice, diagnosis, treatment, supplement,
+    urgency, scoring, or extra-testing copy was introduced.
+  - Validation for the consult/navigation hardening slice passed locally on
+    2026-06-24 with `sh scripts/validate.sh`: frontend build, Pint, PHPStan,
+    248 Pest tests, 3 Dusk browser smoke tests, and whitespace checks passed.
+    Additional in-app browser QA covered `/`, `/dashboard`, `/blood-tests/3`,
+    opening `/consult-overview` from a blood-test detail page, and mobile consult
+    at 390x844. Browser QA confirmed no starter-kit noise, no forbidden
+    medical-advice copy, no visible private storage path, POST/CSRF forms, CSV
+    without consult questions, output before configuration, and no horizontal
+    overflow.
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`

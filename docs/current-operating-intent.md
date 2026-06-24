@@ -73,6 +73,22 @@ comparison -> context -> consult/export.
   of downstream/export counts and generated private storage names were not visible.
   Private biomarker names, values, source snippets, and PDF contents were not
   recorded in repo docs.
+- Latest local UI/product hardening slice on 2026-06-24: uncommitted changes
+  removed starter-kit/product noise from navigation and the public welcome page,
+  aligned visible copy to Dutch across dashboard/intake/detail/context/consult
+  surfaces, and made the consult page output-first: attention values, compact
+  normal values, trends/timeline, and source documents render above the lower
+  selection/configuration form. Hard boundaries stayed intact: confirmed-only
+  and owner scope remain in domain/controller code, sensitive consult text stays
+  POST/CSRF-only, consult questions are excluded from CSV hidden inputs and GET
+  URLs, CSV formula escaping remains covered, and no medical advice, diagnosis,
+  urgency, runtime AI/OCR, or external processing was added.
+- Latest validation for that slice on 2026-06-24: `sh scripts/validate.sh`
+  passed locally, including frontend build, Pint, PHPStan, 248 Pest tests, 3 Dusk
+  browser smoke tests, and whitespace checks. In-app browser QA covered `/`,
+  `/dashboard`, `/blood-tests/3`, consult opened from detail, and mobile consult
+  at 390x844 with no starter-kit noise, forbidden medical copy, storage-path
+  leak, or horizontal overflow.
 - Local app route used for browser QA: `http://127.0.0.1:8000`.
 - Known unrelated local artifacts: ignored `.codex/` and `.omo/`; scratch
   `bloed-overzicht.tsx` should stay outside this repo.

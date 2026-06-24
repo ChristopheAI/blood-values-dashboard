@@ -62,9 +62,8 @@ it('renders a consult overview with confirmed owner data pins context questions 
             'questions' => 'What should I ask about the change?',
         ])
         ->assertOk()
-        ->assertSee('Self-entered personal tracking data')
-        ->assertSee('not medical advice')
-        ->assertSee('discuss this overview with your doctor')
+        ->assertSee('Persoonlijke trackinggegevens uit bevestigde waarden')
+        ->assertSee('Bespreek dit overzicht met je arts')
         ->assertSee('Ferritin')
         ->assertSee('Follow around consults')
         ->assertSee('Slept poorly before the June test.')
