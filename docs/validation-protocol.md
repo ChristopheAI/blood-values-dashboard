@@ -115,6 +115,43 @@ Critical implementation checks should eventually cover:
   display filenames, owner-authorized download routes, and upload/download tests
   using fake files/disks.
 
+### V2 Clean Auto-Confirm Live Gate
+
+Use this when deciding whether ADR-0011 is proven beyond synthetic fixtures.
+
+Expected proof:
+
+- owner-led fresh upload of a real local PDF in the browser;
+- result/review route reached after upload;
+- extraction run status is `done` and candidate accounting is populated;
+- high-confidence extracted rows have `confirmed_at` and are visible downstream;
+- below-threshold or uncertain extracted rows remain drafts;
+- blood test remains in review when a draft review remainder exists;
+- dashboard, status, history, compare, consult, export, and trends use only
+  confirmed values;
+- export/count checks exclude draft rows and do not expose document binaries or
+  generated private storage paths;
+- source-document UI uses owner-authorized download routes and does not reveal
+  generated private storage filenames;
+- private biomarker names, values, source snippets, screenshots, PDF contents,
+  and account data are not copied into docs, logs, chat summaries, or external
+  tools.
+
+Accepted 2026-06-24 outcome for the first reviewed local CMA policy:
+
+- gate status: passed with review remainder;
+- safe structure: 18 candidates, 16 deterministic auto-confirmed extracted
+  values, 1 extracted draft, 1 source document, blood test status `reviewing`;
+- focused validation: intake/review/upload/privacy feature tests passed
+  (107 tests, 776 assertions);
+- full validation: `sh scripts/validate.sh` passed parser-lab checks, frontend
+  build, Pint, PHPStan/Larastan, Pest, Dusk, and whitespace checks.
+
+This gate proves the ADR-0011 trust policy for the reviewed local layout family.
+It does not prove zero drafts for every PDF, justify threshold relaxation, or
+allow OCR, AI/LLM, external services, runtime network processing, or medical
+advice.
+
 The first PDF-intake implementation must use
 `docs/testing/pdf-first-intake-test-conversion.md` as the test contract. That
 document maps the engineering source radar to concrete future Pest/Livewire

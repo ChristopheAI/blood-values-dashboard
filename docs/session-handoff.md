@@ -42,9 +42,10 @@ Update this section after each meaningful session.
   - `origin` -> `https://github.com/ChristopheAI/blood-values-dashboard.git`
 - Commit state:
   - V2 clean-by-default extraction and confidence-gated auto-confirm are
-    implemented on this branch and awaiting owner review/live verification.
-  - Do not merge yet. The user reviews the code and live-verifies a fresh upload
-    first.
+    implemented on this branch.
+  - ADR-0011 is accepted for the reviewed local CMA trust policy after synthetic
+    tests, automated checks, and the 2026-06-24 owner-led live upload gate.
+  - Do not merge yet. The user still reviews the code before merge.
 - Latest meaningful local checkpoint:
   - Page-aware tabular row clustering prevents cross-page name pollution while
     preserving real page-continuation rows.
@@ -114,6 +115,14 @@ Update this section after each meaningful session.
     entry.
   - Latest full local validation passed on this branch with `sh
     scripts/validate.sh`.
+  - Latest owner-led live upload gate passed on 2026-06-24 with review remainder:
+    the extraction run completed, 18 candidates were counted, 16 extracted rows
+    were deterministically auto-confirmed, 1 extracted row stayed draft, the
+    blood test stayed `reviewing`, and 1 source document was attached. Browser,
+    database, and export checks confirmed drafts stayed out of downstream/export
+    counts and generated private storage names were not visible. Private values,
+    biomarker names, source snippets, screenshots, and PDF contents were not
+    recorded in the repo.
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -266,8 +275,9 @@ Update this section after each meaningful session.
   - `sh scripts/validate.sh` passed with 54 tests, 565 assertions, Pint,
     PHPStan, frontend build, and whitespace checks.
 - Known gaps:
-  - ADR-0011 is still Proposed until owner review and a fresh local upload
-    verify the real UX outside synthetic fixtures.
+  - ADR-0011 is accepted for the reviewed local CMA trust policy after the
+    2026-06-24 owner-led live upload gate, but the branch still needs owner code
+    review before merge.
   - Native OS picker opening and OS drag/drop acceptance are manual live-review
     checks; automated Dusk coverage uses `attach()`.
   - Each imperfect real lab format still needs a sanitized synthetic fixture
@@ -275,9 +285,9 @@ Update this section after each meaningful session.
   - OCR, AI/LLM, provider integrations, wearable sync, and medical advice remain
     out of scope unless a later spec/ADR deliberately expands the boundary.
 - Next recommended action:
-  - Let the owner review this branch and live-verify a fresh local upload:
-    Choose PDF opens the native picker; drag/drop highlights and accepts a PDF;
-    upload lands on auto-filled results plus review strip.
+  - Let the owner review this branch before merge. The fresh local upload gate
+    has already passed with review remainder; do not reopen parser work unless
+    the remaining draft is unacceptable for the supported lab format.
   - If live review finds another imperfect row, reproduce it as a sanitized
     synthetic fixture first, then tune the parser against that test.
   - Before installing any Composer package that touches auth, files, exports,
@@ -289,7 +299,7 @@ Update this section after each meaningful session.
 
 | Marker | Type | Meaning | How To Resume |
 | --- | --- | --- | --- |
-| v2-clean-autoconfirm | project state | V2 clean extraction, confidence-gated auto-confirm, upload-first intake, and hardening follow-ups are implemented on `codex/v2-clean-autoconfirm`; pending owner review/live upload before merge. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v2-spec.md`, `docs/adr/0011-clean-extraction-and-confidence-gated-auto-confirm.md`, `docs/codex-v2-clean-autoconfirm-kickoff.md`, latest git log/status, then run `sh scripts/validate.sh`. |
+| v2-clean-autoconfirm | project state | V2 clean extraction, confidence-gated auto-confirm, upload-first intake, and hardening follow-ups are implemented on `codex/v2-clean-autoconfirm`; ADR-0011 live gate passed with review remainder, and owner code review remains before merge. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v2-spec.md`, `docs/adr/0011-clean-extraction-and-confidence-gated-auto-confirm.md`, `docs/codex-v2-clean-autoconfirm-kickoff.md`, latest git log/status, then run `sh scripts/validate.sh`. |
 
 ## Handoff Prompt For A New Codex Thread
 
@@ -317,11 +327,12 @@ Summarize:
 - what has been validated;
 - what the next smallest action is.
 
-Continue on `codex/v2-clean-autoconfirm`. Do not merge. ADR-0011 remains
-Proposed until owner review and fresh local upload verification. Do not expand
-beyond the PDF-first boundary without a spec, ADR, and task plan. Runtime AI
-interpretation, unreviewed OCR, provider integrations, wearable sync, and
-medical advice remain out of scope.
+Continue on `codex/v2-clean-autoconfirm`. Do not merge. ADR-0011 is accepted
+for the reviewed local CMA trust policy after the 2026-06-24 owner-led live
+upload gate passed with review remainder. Owner code review remains before
+merge. Do not expand beyond the PDF-first boundary without a spec, ADR, and task
+plan. Runtime AI interpretation, unreviewed OCR, provider integrations,
+wearable sync, and medical advice remain out of scope.
 ```
 
 ## End-Of-Session Update Checklist

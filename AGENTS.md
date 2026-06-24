@@ -36,8 +36,9 @@ medical-advice features to this slice.
 - Repo-intelligence tooling follows ADR-0012: use only the local/index-only
   advisory profile, and do not enable LLM docs, hooks, telemetry, hosted
   services, AGENTS rewrites, or private-data processing without a new ADR.
-- Do not merge this branch. The owner reviews the code and live-verifies a fresh
-  upload first.
+- Do not merge this branch. ADR-0011 live upload verification passed on
+  2026-06-24 with review remainder, but owner code review still remains before
+  merge.
 
 ## Intent Layer
 
@@ -160,7 +161,8 @@ ready.
 - Use terse Conventional Commit style already present on this branch, e.g.
   `fix: ...` or `test: ...`.
 - Push to the feature branch when asked, but do not merge.
-- Keep the PR draft until code review and owner live verification pass.
+- Keep the PR draft until code review passes. Owner live verification for
+  ADR-0011 passed on 2026-06-24 with review remainder.
 - If real-upload behavior contradicts tests, treat the live behavior as the
   next bug report and write a synthetic regression before changing parser code.
 

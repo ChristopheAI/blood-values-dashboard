@@ -1,6 +1,6 @@
 # Current Operating Intent
 
-Date: 2026-06-21
+Date: 2026-06-24
 Audience: Codex agents entering `codex/v2-clean-autoconfirm`.
 
 This is the first "where are we now?" card. It does not replace `AGENTS.md`,
@@ -65,16 +65,29 @@ comparison -> context -> consult/export.
 - Last local full validation on 2026-06-24: `sh scripts/validate.sh` passed
   after adding the synthetic multi-blood-test and owner-isolation Dusk gate for
   #17.
+- Latest owner-led live upload gate on 2026-06-24: passed with review remainder.
+  A fresh real local PDF upload produced a completed extraction run with 18
+  candidates, 16 deterministic auto-confirmed extracted values, 1 extracted draft
+  left for review, and 1 source document. The blood test correctly remained in
+  `reviewing` state. Browser/database/export checks confirmed the draft stayed out
+  of downstream/export counts and generated private storage names were not visible.
+  Private biomarker names, values, source snippets, and PDF contents were not
+  recorded in repo docs.
 - Local app route used for browser QA: `http://127.0.0.1:8000`.
 - Known unrelated local artifacts: ignored `.codex/` and `.omo/`; scratch
   `bloed-overzicht.tsx` should stay outside this repo.
-- Do not merge this branch. The owner reviews code and live-verifies the flow.
+- Do not merge this branch. ADR-0011 live verification passed on 2026-06-24 with
+  review remainder, but owner code review still remains before merge.
 
 ## Completed Shape On This Branch
 
 - V2 clean-by-default local extraction and confidence-gated auto-confirm are
   implemented without OCR, runtime AI, external processing, or new package
   scope.
+- ADR-0011 is accepted for the reviewed local CMA trust policy after synthetic
+  tests, automated browser/feature checks, full validation, and the 2026-06-24
+  owner-led live upload gate. Acceptance means "passed with review remainder",
+  not "auto-confirm every row" and not approval to lower thresholds.
 - Upload-first intake lands on the blood-test detail/review route with progress,
   confirmed values, and a compact draft review strip.
 - Patient-friendly "Je bloedresultaten" overview is reused on dashboard and
@@ -114,15 +127,8 @@ comparison -> context -> consult/export.
 
 ## Active Next Move
 
-Finish the intent-layer hardening first:
-
-- keep this file current;
-- keep `docs/architecture.md` aligned with branch reality;
-- close or update stale slice trackers after the implementation lands;
-- keep GitHub issues as product/build todos, not as replacements for local
-  `AGENTS.md` intent layers.
-
-After that, the next product work should be issue #16: Consult Pack
+Intent-layer hardening now records the live gate. The next product work should be
+issue #16: Consult Pack
 reconciliation and hardening, not a blind rebuild. Issue #15 is implemented on
 this branch, and Consult Pack already exists, so start by comparing the
 PRD/issue acceptance criteria with current code and tests.

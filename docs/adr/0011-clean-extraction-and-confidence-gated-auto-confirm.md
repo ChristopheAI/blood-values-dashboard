@@ -2,13 +2,19 @@
 
 ## Status
 
-Proposed
+Accepted
 
 The auto-confirm policy relaxes the confirmed-only trust boundary set in ADR-0005
 and ADR-0009, so it is recorded explicitly. The implementation has been validated
-on synthetic fixtures and automated browser/feature checks on
-`codex/v2-clean-autoconfirm`, but the ADR stays Proposed until owner review and a
-fresh live upload verify the flow with a real local PDF.
+on synthetic fixtures, automated browser/feature checks, and a fresh owner-led
+local upload on `codex/v2-clean-autoconfirm`.
+
+The 2026-06-24 live gate accepted the policy as "passed with review remainder":
+high-confidence rows entered downstream through `confirmed_at`, one uncertain
+extracted row stayed as a draft, and the blood test remained in review until the
+owner handles that draft. This accepts the trust policy; it does not approve
+lowering thresholds, auto-confirming all rows, merging the branch, or expanding
+into OCR, AI, external processing, or medical advice.
 
 ## Context
 
@@ -152,6 +158,24 @@ the backstop.
     disambiguated by appending the unit before auto-import, while same-unit duplicates
     remain review drafts.
 
+- Source: fresh owner-led local upload gate (sanitized, 2026-06-24)
+  - Claim type: fact
+  - Summary: A real local PDF upload landed on the result/review route with the
+    extraction run done, 18 candidates counted, 16 extracted rows confirmed by
+    the deterministic trust gate, 1 extracted row left as draft review remainder,
+    and 1 source document attached. Browser and database checks confirmed the
+    draft stayed out of export/downstream counts, the source document used an
+    owner-authorized download route, and generated private storage names were not
+    visible in the page. Private biomarker names, values, source snippets, and PDF
+    contents were not recorded in this ADR.
+
+- Source: focused and full validation after the live gate (2026-06-24)
+  - Claim type: fact
+  - Summary: Focused intake/review/upload/privacy feature tests passed
+    (107 tests, 776 assertions), followed by the full validator
+    `sh scripts/validate.sh` passing parser-lab checks, Vite build, Pint,
+    PHPStan/Larastan, Pest, Dusk, and whitespace checks.
+
 - Source: competitive UX review (sanitized, 2026-06-19)
   - Claim type: fact
   - Summary: Commercial upload-first demo flows lead with the PDF upload as the first
@@ -222,16 +246,16 @@ the backstop.
 
 ## Confidence
 
-Medium-high for the deterministic implementation path: synthetic unit/feature/browser
+High for the first supported local CMA intake policy: synthetic unit/feature/browser
 checks cover page-aware clustering, continuation rules, catalog anchoring, ambiguity,
 missing units, candidate accounting, confirmed-only downstream behavior, and the
-upload-first intake result flow. Still Proposed until owner review and a fresh live
-upload verify the same flow outside synthetic fixtures.
+upload-first intake result flow, and the 2026-06-24 owner-led local upload verified
+the same policy outside synthetic fixtures. Confidence remains bounded to local
+deterministic PDF-first extraction for the reviewed layout family. New lab formats
+or unacceptable draft remainder still require the sanitized fixture finetune loop.
 
 ## Follow-Up Questions
 
-- Does owner live review accept `AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85` for the
-  first supported lab format?
 - Does the visible "auto-filled from PDF" treatment give enough distinction from
   manually confirmed values during real review?
 - Which next real lab format needs a sanitized synthetic fixture in the finetune loop?

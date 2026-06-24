@@ -2,13 +2,14 @@
 
 Date: 2026-06-19
 
-Implements ADR-0011 (Proposed). V1, tabular extraction, and name-bounding were merged
-on `main` before this branch. The V2 implementation work on
-`codex/v2-clean-autoconfirm` is now committed and locally validated through the
-page-aware clustering, catalog anchor, confidence threshold, auto-confirm,
-upload-first intake, and hardening follow-ups. Goal: zero user friction for
-confidently-extracted values, with a safety net for the uncertain few. Sanitized: no
-real PDF content, names, or values.
+Implements ADR-0011 (Accepted for the reviewed local CMA trust policy). V1,
+tabular extraction, and name-bounding were merged on `main` before this branch.
+The V2 implementation work on `codex/v2-clean-autoconfirm` is now committed and
+validated through page-aware clustering, catalog anchor, confidence threshold,
+auto-confirm, upload-first intake, hardening follow-ups, full validation, and the
+2026-06-24 owner-led live upload gate. Goal: zero user friction for
+confidently-extracted values, with a safety net for the uncertain few.
+Sanitized: no real PDF content, names, or values.
 
 ## Current Branch State
 
@@ -25,7 +26,9 @@ As of the local validation pass on 2026-06-19, the branch contains:
 - upload-first intake with file-selection auto-submit and result landing;
 - confirmed-only downstream invariants for status/history/compare/consult/export.
 
-ADR-0011 remains Proposed until owner review and a fresh live upload verify the flow.
+ADR-0011 live verification passed on 2026-06-24 with review remainder: the trust
+policy is accepted for the reviewed local CMA layout family, but owner code
+review remains before merge.
 
 ## Goal
 
@@ -127,15 +130,18 @@ fixture → tune → lock with a test. Converges to clean for the labs actually 
 ## Working agreement (/implement)
 
 Tests-first; commit incrementally on `codex/v2-clean-autoconfirm`; no TODO stubs;
-`progress.md` if you pause; only "done" when `sh scripts/validate.sh` is green. Do not
-merge — review first (I review the real code and live-verify a fresh upload). Track with
-a V2 issue; close it from the merge commit.
+`progress.md` if you pause; only "done" when `sh scripts/validate.sh` is green.
+Do not merge — owner code review remains even though ADR-0011 live verification
+passed on 2026-06-24 with review remainder. Track with a V2 issue; close it from
+the merge commit.
 
 ## Paste-prompt for a new Codex thread
 
 ```text
 Read AGENTS.md, docs/adr/0009/0010/0011, and docs/codex-v2-clean-autoconfirm-kickoff.md.
-Branch is codex/v2-clean-autoconfirm. ADR-0011 is Proposed pending owner live review.
+Branch is codex/v2-clean-autoconfirm. ADR-0011 is accepted for the reviewed
+local CMA trust policy after the 2026-06-24 owner-led live upload gate passed
+with review remainder; owner code review remains before merge.
 
 Already committed and validated on this branch: page-aware row clustering, continuation
 rules, catalog anchor, AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85, confidence-gated
@@ -161,5 +167,5 @@ Continue on codex/v2-clean-autoconfirm, tests-first:
 
 No OCR/AI/external/new package. Synthetic fixtures only; no real content/values logged.
 Confirmed-only downstream stays (now includes auto-confirmed). Stop and report when
-sh scripts/validate.sh is green. Do not merge; I review + live-verify first.
+sh scripts/validate.sh is green. Do not merge; owner code review remains before merge.
 ```
