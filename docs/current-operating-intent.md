@@ -53,6 +53,8 @@ comparison -> context -> consult/export.
 - Active product issues:
   - #14 `Make blood-test detail the canonical follow-up place` - implemented on
     this branch, still open until review/merge.
+  - #15 `Add confirmed-only longitudinal changes and trends` - implemented and
+    dashboard-hardened on this branch, still open until review/merge.
   - #16 `Build consult pack as downstream print/export output` - next product
     reconciliation/hardening slice.
   - #17 `Prove full multi-blood-test follow-up flow in browser QA` - end-to-end
@@ -60,10 +62,12 @@ comparison -> context -> consult/export.
 - Latest code checkpoint before this intent-layer hardening:
   `c6dff10 fix: order blood tests by collection date`.
 - PR CI on 2026-06-21: two `validate` checks completed successfully.
-- Last local full validation before this docs slice: `sh scripts/validate.sh`
-  passed after the recency-ordering fix.
+- Last local full validation on 2026-06-24: `sh scripts/validate.sh` passed
+  after adding the synthetic multi-blood-test and owner-isolation Dusk gate for
+  #17.
 - Local app route used for browser QA: `http://127.0.0.1:8000`.
-- Known unrelated untracked files: `.omo/`, `bloed-overzicht.tsx`.
+- Known unrelated local artifacts: ignored `.codex/` and `.omo/`; scratch
+  `bloed-overzicht.tsx` should stay outside this repo.
 - Do not merge this branch. The owner reviews code and live-verifies the flow.
 
 ## Completed Shape On This Branch
@@ -78,12 +82,18 @@ comparison -> context -> consult/export.
 - `/blood-tests/{id}` is the canonical workspace for one owned blood draw:
   source documents, confirmed values, comparable previous changes, context
   notes, drafts, and management fallback stay together.
+- Dashboard upload summaries use the shared confirmed-only
+  `BuildLongitudinalChanges` domain builder instead of separate trend queries.
 - Detail views use the route blood test, not the newest upload.
 - Dashboard and blood-test lists order by most recent `test_date`, with null
   dates last, instead of raw creation order.
 - Consult Pack code already exists in `app/Domain/Consult`,
   `app/Http/Controllers/ConsultOverview`, `resources/views/consult-overview`,
   and `tests/Feature/ConsultOverview`.
+- Issue #17 now has an automated synthetic Dusk gate covering dashboard,
+  blood-test list, older/current detail pages, compare, consult CSV export,
+  draft exclusion, source-document path hiding, owner-isolation route/download/
+  export checks, and mobile/desktop consult form smoke.
 
 ## Hard Invariants
 
@@ -113,9 +123,9 @@ Finish the intent-layer hardening first:
   `AGENTS.md` intent layers.
 
 After that, the next product work should be issue #16: Consult Pack
-reconciliation and hardening, not a blind rebuild. Consult Pack already exists,
-so start by comparing the PRD/issue acceptance criteria with current code and
-tests.
+reconciliation and hardening, not a blind rebuild. Issue #15 is implemented on
+this branch, and Consult Pack already exists, so start by comparing the
+PRD/issue acceptance criteria with current code and tests.
 
 Before changing consult code, read:
 
@@ -143,6 +153,7 @@ source documents, selected context, and no medical claims or private-data leaks.
 - `sh scripts/validate.sh` passes for code changes.
 - Browser QA drives the matching route when UI/workflow changes.
 - Only relevant files are staged.
-- `.omo/` and `bloed-overzicht.tsx` stay untouched unless explicitly requested.
+- Ignored local agent artifacts stay out of Git, and scratch health UI files stay
+  outside this repo unless explicitly requested.
 - Issue #17 is used as the full browser proof gate after the relevant product
   slices are ready.

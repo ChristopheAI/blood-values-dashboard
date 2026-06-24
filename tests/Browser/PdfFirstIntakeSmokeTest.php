@@ -3,8 +3,12 @@
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Models\BloodTestDocument;
 use App\Models\User;
+use Database\Seeders\BloodValuesQaScenarioSeeder;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Dusk\Browser;
 
@@ -147,6 +151,193 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
     });
 });
 
+test('synthetic qa scenario proves the full multi blood test follow up flow', function () {
+    Artisan::call('app:seed-blood-test-demo');
+
+    $user = User::query()
+        ->where('email', BloodValuesQaScenarioSeeder::USER_EMAIL)
+        ->firstOrFail();
+    $olderBloodTest = BloodTest::query()
+        ->where('user_id', $user->id)
+        ->where('title', 'QA Blood Test - Older')
+        ->firstOrFail();
+    $currentBloodTest = BloodTest::query()
+        ->where('user_id', $user->id)
+        ->where('title', 'QA Blood Test - Current')
+        ->firstOrFail();
+    $foreignUser = User::factory()->create([
+        'email' => 'qa-foreign-owner@example.test',
+        'email_verified_at' => now(),
+    ]);
+    $foreignBloodTest = BloodTest::factory()->for($foreignUser)->create([
+        'title' => 'Foreign Owner Blood Test',
+        'test_date' => '2026-06-20',
+        'lab_name' => 'Foreign Synthetic Lab',
+        'status' => 'confirmed',
+    ]);
+    $foreignDocument = BloodTestDocument::factory()->for($foreignBloodTest)->create([
+        'original_filename' => 'foreign-owner-lab.pdf',
+        'storage_path' => 'blood-test-documents/foreign-owner-lab.pdf',
+    ]);
+    $foreignBiomarker = Biomarker::factory()->for($foreignUser)->create(['name' => 'Foreign private marker']);
+
+    Storage::disk('local')->put($foreignDocument->storage_path, "%PDF-1.4\n% foreign synthetic QA PDF\n%%EOF\n");
+
+    BiomarkerResult::factory()->for($foreignBloodTest)->for($foreignBiomarker)->create([
+        'value' => 999,
+        'unit' => 'mg/L',
+        'status' => 'high',
+        'confirmed_at' => now(),
+    ]);
+
+    $this->browse(function (Browser $browser) use ($user, $olderBloodTest, $currentBloodTest, $foreignBloodTest, $foreignDocument) {
+        $browser->loginAs($user)
+            ->visit('/dashboard')
+            ->assertPathIs('/dashboard')
+            ->assertAuthenticated()
+            ->assertSee('Je bloedresultaten')
+            ->assertSee('QA Blood Test - Current')
+            ->assertSee('CRP')
+            ->assertSee('7.8 mg/L')
+            ->assertSee('Vitamin D')
+            ->assertDontSee('2.1 mIU/L');
+
+        assertNoForbiddenMedicalCopyAppears($browser);
+
+        $browser->visit('/blood-tests')
+            ->waitForText('QA Blood Test - Current')
+            ->assertSee('QA Blood Test - Older')
+            ->assertSee('Synthetic QA Lab')
+            ->assertDontSee('Foreign Owner Blood Test')
+            ->assertDontSee('Foreign Synthetic Lab');
+
+        $browser->visit(route('blood-tests.show', $olderBloodTest, false))
+            ->waitFor('[data-test="blood-test-result"]')
+            ->assertSee('QA Blood Test - Older')
+            ->assertSee('qa-older-lab.pdf')
+            ->assertSee('Ferritin')
+            ->assertSee('48 ug/L')
+            ->assertDontSee('Vitamin D')
+            ->assertDontSee('2.1 mIU/L')
+            ->assertPresent('[data-test="source-document-row"]');
+
+        assertNoForbiddenMedicalCopyAppears($browser);
+
+        $browser->visit(route('blood-tests.show', $currentBloodTest, false))
+            ->waitFor('[data-test="blood-test-result"]')
+            ->assertSee('QA Blood Test - Current')
+            ->assertSee('qa-current-lab.pdf')
+            ->assertSee('CRP')
+            ->assertSee('7.8 mg/L')
+            ->assertSee('TSH')
+            ->assertSee('Needs confirmation')
+            ->assertPresent('[data-test="extracted-draft-row"][data-state="draft"][data-confidence="low"]');
+
+        assertNoForbiddenMedicalCopyAppears($browser);
+
+        $browser->visit(route('blood-tests.compare', [
+            'first' => $olderBloodTest->id,
+            'second' => $currentBloodTest->id,
+        ], false))
+            ->waitFor('[data-test="blood-test-comparison-table"]')
+            ->assertSee('Ferritin')
+            ->assertSee('-12')
+            ->assertSee('CRP')
+            ->assertSee('+6.6')
+            ->assertDontSee('TSH');
+
+        assertNoForbiddenMedicalCopyAppears($browser);
+
+        resetDuskDownloads();
+
+        $browser->visit(route('consult-overview.index', [], false))
+            ->waitForText('Consult overview')
+            ->check("input[name='blood_test_ids[]'][value='{$olderBloodTest->id}']")
+            ->check("input[name='blood_test_ids[]'][value='{$currentBloodTest->id}']")
+            ->check('[data-test="include-pinned-checkbox"]')
+            ->check('[data-test="include-attention-checkbox"]')
+            ->check('[data-test="include-normal-checkbox"]')
+            ->check('[data-test="include-trends-checkbox"]')
+            ->check('[data-test="include-context-checkbox"]')
+            ->check('[data-test="include-source-documents-checkbox"]')
+            ->type('questions', 'What changed since the older test?')
+            ->click('[data-test="build-consult-overview-button"]')
+            ->waitFor('[data-test="consult-pack"]')
+            ->assertPresent('[data-test="consult-attention-values"]')
+            ->assertPresent('[data-test="consult-normal-values"]')
+            ->assertPresent('[data-test="consult-trend-changes"]')
+            ->assertPresent('[data-test="consult-context-notes"]')
+            ->assertPresent('[data-test="consult-source-documents"]')
+            ->assertSee('CRP')
+            ->assertSee('7.8 mg/L')
+            ->assertSee('Ferritin')
+            ->assertSee('-12 ug/L')
+            ->assertSee('Synthetic QA context note before the current blood draw.')
+            ->assertSee('qa-current-lab.pdf')
+            ->assertSee('What changed since the older test?')
+            ->assertDontSee('2.1 mIU/L')
+            ->assertSourceMissing('blood-test-documents/qa/')
+            ->click('[data-test="export-consult-csv-button"]');
+
+        $browser->waitUsing(10, 100, function (): bool {
+            return duskDownloadedConsultCsvPath() !== null;
+        }, 'The consult CSV file was not downloaded.');
+
+        $csvPath = duskDownloadedConsultCsvPath();
+
+        expect($csvPath)->not->toBeNull();
+
+        $csv = File::get($csvPath);
+
+        expect($csv)->toContain('attention');
+        expect($csv)->toContain('CRP');
+        expect($csv)->toContain('7.8');
+        expect($csv)->toContain('source_document');
+        expect($csv)->toContain('qa-current-lab.pdf');
+        expect($csv)->not->toContain('What changed since the older test?');
+        expect($csv)->not->toContain('2.1');
+        expect($csv)->not->toContain('blood-test-documents/qa/');
+
+        $browser->resize(390, 844)
+            ->visit(route('consult-overview.index', [], false))
+            ->waitForText('Consult overview')
+            ->assertPresent('[data-test="consult-overview-form"]')
+            ->assertDontSee('Foreign Owner Blood Test')
+            ->resize(1280, 900)
+            ->assertPresent('[data-test="consult-overview-form"]');
+
+        assertNoForbiddenMedicalCopyAppears($browser);
+
+        expect(browserGetStatus($browser, route('blood-tests.show', $foreignBloodTest, false)))->toBe(403);
+        expect(browserGetStatus($browser, route('blood-test-documents.download', $foreignDocument, false)))->toBe(403);
+        expect(browserGetStatus($browser, route('blood-tests.compare', [
+            'first' => $olderBloodTest->id,
+            'second' => $foreignBloodTest->id,
+        ], false)))->toBe(403);
+        expect(browserPostStatus($browser, route('consult-overview.index', [], false), [
+            'blood_test_ids' => [$olderBloodTest->id, $foreignBloodTest->id],
+            'include_attention' => '1',
+            'include_source_documents' => '1',
+        ]))->toBe(403);
+        expect(browserPostStatus($browser, route('consult-overview.csv', [], false), [
+            'blood_test_ids' => [$olderBloodTest->id, $foreignBloodTest->id],
+            'include_attention' => '1',
+            'include_source_documents' => '1',
+        ]))->toBe(403);
+
+        $payload = downloadDataExport($browser, 'password', false);
+        $encodedPayload = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+
+        expect($encodedPayload)->toContain('QA Blood Test - Older');
+        expect($encodedPayload)->toContain('QA Blood Test - Current');
+        expect($encodedPayload)->not->toContain('Foreign Owner Blood Test');
+        expect($encodedPayload)->not->toContain('Foreign Synthetic Lab');
+        expect($encodedPayload)->not->toContain('foreign-owner-lab.pdf');
+        expect($encodedPayload)->not->toContain('Foreign private marker');
+        expect($encodedPayload)->not->toContain('999');
+    });
+});
+
 function uploadBloodTestPdf(Browser $browser, string $fixturePath, string $date, string $lab, string $title): void
 {
     $browser->visit('/blood-tests')
@@ -277,16 +468,26 @@ function buildConsultOverview(Browser $browser): void
     assertNoForbiddenMedicalCopyAppears($browser);
 }
 
-function downloadDataExport(Browser $browser, string $password): void
+/**
+ * @return array<string, mixed>
+ */
+function downloadDataExport(Browser $browser, string $password, bool $assertExpectedCounts = true): array
 {
     resetDuskDownloads();
 
     $browser->visit(route('data.edit', [], false))
-        ->waitForText('Confirm password')
-        ->type('password', $password)
-        ->click('[data-test="confirm-password-button"]')
-        ->waitForLocation('/settings/data')
-        ->waitForText('Data and privacy')
+        ->waitUsing(5, 100, function () use ($browser): bool {
+            return $browser->element('[data-test="confirm-password-button"]') !== null
+                || $browser->element('[data-test="download-data-button"]') !== null;
+        }, 'The data export page did not load.');
+
+    if ($browser->element('[data-test="confirm-password-button"]') !== null) {
+        $browser->type('password', $password)
+            ->click('[data-test="confirm-password-button"]')
+            ->waitForLocation('/settings/data');
+    }
+
+    $browser->waitForText('Data and privacy')
         ->assertSee('Download my data')
         ->click('[data-test="download-data-button"]');
 
@@ -300,14 +501,18 @@ function downloadDataExport(Browser $browser, string $password): void
 
     $payload = json_decode(File::get($downloadedExportPath), true, flags: JSON_THROW_ON_ERROR);
 
-    expect($payload['blood_tests'])->toHaveCount(2);
-    expect($payload['biomarker_results'])->toHaveCount(2);
-    expect($payload['documents'])->toHaveCount(2);
-    expect($payload['pinned_biomarkers'])->toHaveCount(1);
-    expect($payload['context_notes'])->toHaveCount(1);
-    expect($payload['reminders'])->toHaveCount(1);
+    if ($assertExpectedCounts) {
+        expect($payload['blood_tests'])->toHaveCount(2);
+        expect($payload['biomarker_results'])->toHaveCount(2);
+        expect($payload['documents'])->toHaveCount(2);
+        expect($payload['pinned_biomarkers'])->toHaveCount(1);
+        expect($payload['context_notes'])->toHaveCount(1);
+        expect($payload['reminders'])->toHaveCount(1);
+    }
 
     assertNoForbiddenMedicalCopyAppears($browser);
+
+    return $payload;
 }
 
 function deleteAllHealthData(Browser $browser): void
@@ -345,9 +550,58 @@ function duskDownloadedExportPath(): ?string
     return $paths[0] ?? null;
 }
 
+function duskDownloadedConsultCsvPath(): ?string
+{
+    $paths = File::glob(duskDownloadDirectory().'/consult-overview*.csv') ?: [];
+
+    return $paths[0] ?? null;
+}
+
 function duskDownloadDirectory(): string
 {
     return storage_path('framework/testing/dusk-downloads');
+}
+
+function browserGetStatus(Browser $browser, string $url): int
+{
+    $result = $browser->script(sprintf(
+        <<<'JS'
+const request = new XMLHttpRequest();
+request.open('GET', %s, false);
+request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+request.send();
+return request.status;
+JS,
+        json_encode($url, JSON_THROW_ON_ERROR),
+    ));
+
+    return (int) ($result[0] ?? 0);
+}
+
+/**
+ * @param  array<string, mixed>  $fields
+ */
+function browserPostStatus(Browser $browser, string $url, array $fields): int
+{
+    $body = http_build_query($fields);
+    $result = $browser->script(sprintf(
+        <<<'JS'
+const token = document.querySelector('input[name="_token"]')?.value;
+const request = new XMLHttpRequest();
+request.open('POST', %s, false);
+request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+if (token) {
+    request.setRequestHeader('X-CSRF-TOKEN', token);
+}
+request.send(%s);
+return request.status;
+JS,
+        json_encode($url, JSON_THROW_ON_ERROR),
+        json_encode($body, JSON_THROW_ON_ERROR),
+    ));
+
+    return (int) ($result[0] ?? 0);
 }
 
 function assertNoForbiddenMedicalCopyAppears(Browser $browser): void
