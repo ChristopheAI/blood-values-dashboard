@@ -73,7 +73,8 @@ comparison -> context -> consult/export.
   of downstream/export counts and generated private storage names were not visible.
   Private biomarker names, values, source snippets, and PDF contents were not
   recorded in repo docs.
-- Latest local UI/product hardening slice on 2026-06-24: uncommitted changes
+- Latest local UI/product hardening slice on 2026-06-24: commit `afcfb31`
+  `fix: harden consult and navigation copy`
   removed starter-kit/product noise from navigation and the public welcome page,
   aligned visible copy to Dutch across dashboard/intake/detail/context/consult
   surfaces, and made the consult page output-first: attention values, compact

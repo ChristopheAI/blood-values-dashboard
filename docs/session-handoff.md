@@ -123,8 +123,8 @@ Update this section after each meaningful session.
     counts and generated private storage names were not visible. Private values,
     biomarker names, source snippets, screenshots, and PDF contents were not
     recorded in the repo.
-  - Consult/navigation hardening slice completed on 2026-06-24 and is currently
-    uncommitted: starter-kit/product noise was removed from authenticated
+  - Consult/navigation hardening slice completed on 2026-06-24 in commit
+    `afcfb31` `fix: harden consult and navigation copy`: starter-kit/product noise was removed from authenticated
     navigation and the public welcome page; visible app copy was aligned to
     Dutch for dashboard, intake/list, detail/review, context notes, and consult
     surfaces; the consult page is output-first with attention values, compact
