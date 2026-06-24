@@ -2,7 +2,9 @@
 
 namespace App\Domain\Dashboard;
 
+use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Models\BloodTestDocument;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -12,10 +14,12 @@ class BuildDashboardOverview
     /**
      * @return array{
      *     nextStep: array{kind: string, title: string, body: string, href: string, action: string},
+     *     workstand: Collection<int, array{label: string, summary: string, help: string}>,
      *     bloodTests: Collection<int, array{id: int, title: non-falsy-string, href: string, date: string, status: string, confirmedCount: int, draftCount: int, documentCount: int}>,
      *     reviewDraftCount: int,
      *     confirmedValueCount: int,
-     *     bloodTestCount: int
+     *     bloodTestCount: int,
+     *     sourceDocumentCount: int
      * }
      */
     public function __invoke(User $user): array
@@ -53,15 +57,45 @@ class BuildDashboardOverview
             'documentCount' => (int) $bloodTest->getAttribute('documents_count'),
         ]);
 
-        $reviewDraftCount = (int) $timeline->sum('draftCount');
-        $confirmedValueCount = (int) $timeline->sum('confirmedCount');
+        $reviewDraftCount = $this->reviewDraftCount($user);
+        $confirmedValueCount = BiomarkerResult::confirmedForUser($user->id)->count();
+        $bloodTestCount = BloodTest::query()
+            ->where('user_id', $user->id)
+            ->count();
+        $sourceDocumentCount = BloodTestDocument::query()
+            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $user->id))
+            ->count();
+        $firstReviewBloodTest = $this->firstReviewBloodTest($user);
 
         return [
-            'nextStep' => $this->nextStep($timeline, $reviewDraftCount, $confirmedValueCount),
+            'nextStep' => $this->nextStep($timeline, $reviewDraftCount, $confirmedValueCount, $firstReviewBloodTest),
+            'workstand' => collect([
+                [
+                    'label' => 'Bloedtesten',
+                    'summary' => $this->countLabel($bloodTestCount, 'bloedtest', 'bloedtesten'),
+                    'help' => 'Eigen uploads in deze werkruimte.',
+                ],
+                [
+                    'label' => 'Bevestigde waarden',
+                    'summary' => $this->countLabel($confirmedValueCount, 'bevestigde waarde', 'bevestigde waarden'),
+                    'help' => 'Alleen waarden voorbij de confirmatiepoort.',
+                ],
+                [
+                    'label' => 'Reviewpunten',
+                    'summary' => $this->countLabel($reviewDraftCount, 'reviewpunt', 'reviewpunten'),
+                    'help' => 'Extracties die nog niet downstream mogen.',
+                ],
+                [
+                    'label' => 'Bronbestanden',
+                    'summary' => $this->countLabel($sourceDocumentCount, 'bronbestand', 'bronbestanden'),
+                    'help' => 'Lokale documenten bij eigen bloedtesten.',
+                ],
+            ]),
             'bloodTests' => $timeline,
             'reviewDraftCount' => $reviewDraftCount,
             'confirmedValueCount' => $confirmedValueCount,
-            'bloodTestCount' => $timeline->count(),
+            'bloodTestCount' => $bloodTestCount,
+            'sourceDocumentCount' => $sourceDocumentCount,
         ];
     }
 
@@ -69,7 +103,7 @@ class BuildDashboardOverview
      * @param  Collection<int, array{id: int, title: non-falsy-string, href: string, date: string, status: string, confirmedCount: int, draftCount: int, documentCount: int}>  $bloodTests
      * @return array{kind: string, title: string, body: string, href: string, action: string}
      */
-    private function nextStep(Collection $bloodTests, int $reviewDraftCount, int $confirmedValueCount): array
+    private function nextStep(Collection $bloodTests, int $reviewDraftCount, int $confirmedValueCount, ?BloodTest $firstReviewBloodTest): array
     {
         if ($bloodTests->isEmpty()) {
             return [
@@ -82,15 +116,15 @@ class BuildDashboardOverview
         }
 
         if ($reviewDraftCount > 0) {
-            $firstReviewBloodTest = $bloodTests->first(fn (array $bloodTest): bool => $bloodTest['draftCount'] > 0);
-
             return [
                 'kind' => 'review',
                 'title' => 'Waarden nakijken',
                 'body' => $reviewDraftCount === 1
                     ? '1 waarde wacht op review voordat ze in overzichten komt.'
                     : $reviewDraftCount.' waarden wachten op review voordat ze in overzichten komen.',
-                'href' => $firstReviewBloodTest['href'],
+                'href' => $firstReviewBloodTest
+                    ? route('blood-tests.show', $firstReviewBloodTest)
+                    : $bloodTests->first()['href'],
                 'action' => 'Review openen',
             ];
         }
@@ -112,6 +146,41 @@ class BuildDashboardOverview
             'href' => $bloodTests->first()['href'],
             'action' => 'Bloedtest openen',
         ];
+    }
+
+    private function reviewDraftCount(User $user): int
+    {
+        return BiomarkerResult::query()
+            ->whereNull('confirmed_at')
+            ->where('entry_source', 'extracted')
+            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $user->id))
+            ->where(function ($query) use ($user): void {
+                $query
+                    ->whereNull('biomarker_id')
+                    ->orWhereHas('biomarker', fn ($query) => $query->where('user_id', $user->id));
+            })
+            ->count();
+    }
+
+    private function firstReviewBloodTest(User $user): ?BloodTest
+    {
+        return BloodTest::query()
+            ->where('user_id', $user->id)
+            ->whereHas('results', fn ($query) => $query
+                ->whereNull('confirmed_at')
+                ->where('entry_source', 'extracted')
+                ->where(function ($query) use ($user): void {
+                    $query
+                        ->whereNull('biomarker_id')
+                        ->orWhereHas('biomarker', fn ($query) => $query->where('user_id', $user->id));
+                }))
+            ->recentFirst()
+            ->first();
+    }
+
+    private function countLabel(int $count, string $singular, string $plural): string
+    {
+        return $count.' '.($count === 1 ? $singular : $plural);
     }
 
     private function formatDutchDate(CarbonInterface $date): string

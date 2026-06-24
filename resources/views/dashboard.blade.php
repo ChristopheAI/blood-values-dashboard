@@ -6,12 +6,14 @@
             @include('blood-tests._upload-dropzone')
         @endif
 
+        @include('dashboard._workstand-summary', ['workstand' => $dashboardOverview['workstand']])
+
         @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])
 
         @if ($latestUploadSummary)
             <section class="space-y-4" data-test="dashboard-latest-confirmed-values">
                 <flux:heading size="lg">{{ __('Laatste bevestigde waarden') }}</flux:heading>
-                @include('dashboard._blood-results-overview', ['summary' => $latestUploadSummary])
+                @include('dashboard._latest-values-preview', ['summary' => $latestUploadSummary])
             </section>
         @elseif (! $recentBloodTests->isEmpty())
             <section class="rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="dashboard-no-confirmed-values">

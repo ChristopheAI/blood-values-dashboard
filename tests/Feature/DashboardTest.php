@@ -147,6 +147,56 @@ class DashboardTest extends TestCase
             ->assertSee('1 bronbestand');
     }
 
+    public function test_dashboard_workstand_summarizes_owned_follow_up_state(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $first = BloodTest::factory()->for($user)->create(['title' => 'First owned test']);
+        $second = BloodTest::factory()->for($user)->create(['title' => 'Second owned test']);
+        $foreign = BloodTest::factory()->for($otherUser)->create(['title' => 'Foreign test']);
+        $ownedMarkers = collect(range(1, 6))
+            ->map(fn (int $number): Biomarker => Biomarker::query()->create([
+                'user_id' => $user->id,
+                'name' => 'Owned marker '.$number,
+                'active' => true,
+            ]));
+        $foreignMarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign marker']);
+
+        BloodTestDocument::factory()->for($first)->create();
+        BloodTestDocument::factory()->for($second)->create();
+        BloodTestDocument::factory()->for($foreign)->create();
+
+        foreach ($ownedMarkers->take(2) as $ownedMarker) {
+            BiomarkerResult::factory()->for($first)->for($ownedMarker)->create([
+                'confirmed_at' => now(),
+            ]);
+        }
+
+        foreach ($ownedMarkers->slice(2, 3) as $ownedMarker) {
+            BiomarkerResult::factory()->for($second)->for($ownedMarker)->create([
+                'confirmed_at' => now(),
+            ]);
+        }
+
+        BiomarkerResult::factory()->for($second)->for($ownedMarkers->last())->create([
+            'entry_source' => 'extracted',
+            'confirmed_at' => null,
+        ]);
+        BiomarkerResult::factory()->for($foreign)->for($foreignMarker)->create([
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-workstand-summary"', false)
+            ->assertSee('2 bloedtesten')
+            ->assertSee('5 bevestigde waarden')
+            ->assertSee('1 reviewpunt')
+            ->assertSee('2 bronbestanden')
+            ->assertDontSee('Foreign test');
+    }
+
     public function test_dashboard_shows_only_owned_confirmed_values_needing_attention(): void
     {
         $user = User::factory()->create();
@@ -178,23 +228,16 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('data-test="blood-results-overview"', false)
-            ->assertSee('Deze waarde vraagt aandacht')
-            ->assertSee('data-test="attention-values-section"', false)
-            ->assertSee('data-test="normal-values-section"', false)
+            ->assertSee('data-test="dashboard-latest-values-preview"', false)
+            ->assertSee('Laatste bevestigde waarden')
+            ->assertDontSee('data-test="blood-results-overview"', false)
+            ->assertDontSee('data-test="attention-values-section"', false)
+            ->assertDontSee('data-test="normal-values-section"', false)
             ->assertSee('Low marker')
             ->assertSee('Normal marker')
             ->assertDontSee('Draft marker')
             ->assertDontSee('Other marker')
             ->assertDontSee('data-test="dashboard-attention-results"', false);
-
-        $attentionSection = str($response->getContent())
-            ->after('data-test="attention-values-section"')
-            ->before('data-test="normal-values-section"')
-            ->toString();
-
-        $this->assertStringContainsString('Low marker', $attentionSection);
-        $this->assertStringNotContainsString('Normal marker', $attentionSection);
     }
 
     public function test_dashboard_upload_summary_uses_the_most_recent_blood_test_date(): void
@@ -392,19 +435,20 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('data-test="blood-results-overview"', false)
-            ->assertSee('Je bloedresultaten')
+            ->assertSee('data-test="dashboard-latest-values-preview"', false)
+            ->assertSee('Laatste bevestigde waarden')
             ->assertSee('Afname 8 april 2026')
             ->assertSee('Bloedafname Christophe VH')
             ->assertSee('1/3 waarde is normaal')
             ->assertSee('2 waarden vragen aandacht')
-            ->assertSee('Deze waarden vragen aandacht')
-            ->assertSee('Deze waarde is in orde')
-            ->assertSee('data-test="featured-attention-card"', false)
-            ->assertSee('data-test="attention-featured-row"', false)
-            ->assertSee('data-test="normal-values-panel"', false)
-            ->assertSee('data-test="compact-normal-row"', false)
-            ->assertSee('data-test="compact-review-row"', false)
+            ->assertSee('data-test="dashboard-latest-value-row"', false)
+            ->assertDontSee('Deze waarden vragen aandacht')
+            ->assertDontSee('Deze waarde is in orde')
+            ->assertDontSee('data-test="featured-attention-card"', false)
+            ->assertDontSee('data-test="attention-featured-row"', false)
+            ->assertDontSee('data-test="normal-values-panel"', false)
+            ->assertDontSee('data-test="compact-normal-row"', false)
+            ->assertDontSee('data-test="compact-review-row"', false)
             ->assertSee('Ferritine')
             ->assertSee('+7 ug/L')
             ->assertSee('CRP')
@@ -413,7 +457,7 @@ class DashboardTest extends TestCase
             ->assertSee('Aandacht')
             ->assertSee('Zit binnen de opgegeven referentie.')
             ->assertSee('Ligt boven de opgegeven referentie.')
-            ->assertSee('data-test="biomarker-range-bar"', false)
+            ->assertDontSee('data-test="biomarker-range-bar"', false)
             ->assertSee('Maak consultlijst')
             ->assertDontSee('Latest upload')
             ->assertDontSee('What changed')
@@ -421,15 +465,6 @@ class DashboardTest extends TestCase
             ->assertDontSee('data-test="biomarker-status-card"', false)
             ->assertDontSee('data-test="dashboard-attention-results"', false)
             ->assertDontSee('slechte cholesterol');
-
-        $response = $this->actingAs($user)->get(route('dashboard'));
-        $normalSection = str($response->getContent())
-            ->after('data-test="normal-values-section"')
-            ->before('data-test="dashboard-supporting-links"')
-            ->toString();
-
-        $this->assertStringContainsString('data-test="compact-normal-row"', $normalSection);
-        $this->assertStringNotContainsString('data-test="biomarker-status-card"', $normalSection);
     }
 
     public function test_dashboard_latest_upload_digest_uses_confirmed_owned_results_only(): void
@@ -467,7 +502,7 @@ class DashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Latest confirmed-only digest')
-            ->assertSee('data-test="blood-results-overview"', false)
+            ->assertSee('data-test="dashboard-latest-values-preview"', false)
             ->assertSee('1/1 waarde is normaal')
             ->assertSee('Owned confirmed marker')
             ->assertDontSee('Draft marker')
