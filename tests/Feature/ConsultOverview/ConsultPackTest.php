@@ -89,7 +89,11 @@ it('builds a print ready consult pack from selected owned confirmed values and s
     expect(strpos($content, 'data-test="consult-attention-values"'))
         ->toBeLessThan(strpos($content, 'data-test="consult-normal-values"'))
         ->and(strpos($content, 'data-test="consult-normal-values"'))
-        ->toBeLessThan(strpos($content, 'data-test="consult-trend-changes"'));
+        ->toBeLessThan(strpos($content, 'data-test="consult-trend-changes"'))
+        ->and(strpos($content, 'data-test="consult-trend-changes"'))
+        ->toBeLessThan(strpos($content, 'data-test="consult-source-documents"'))
+        ->and(strpos($content, 'data-test="consult-source-documents"'))
+        ->toBeLessThan(strpos($content, 'data-test="consult-selected-tests"'));
 });
 
 it('does not show a trend change when comparable units are missing', function () {

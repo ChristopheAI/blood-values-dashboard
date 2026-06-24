@@ -78,18 +78,6 @@
         </section>
     @endif
 
-    <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="consult-selected-tests">
-        <flux:heading size="lg">{{ __('Geselecteerde bloedtesten') }}</flux:heading>
-
-        <div class="space-y-2">
-            @forelse ($overview['bloodTests'] as $bloodTest)
-                <div class="text-sm">{{ $bloodTest->test_date?->toDateString() ?? __('Geen datum') }} · {{ $bloodTest->title ?: __('Bloedtest zonder titel') }}</div>
-            @empty
-                <flux:text>{{ __('Geen bloedtesten geselecteerd voor dit overzicht.') }}</flux:text>
-            @endforelse
-        </div>
-    </section>
-
     @if ($filters['include_pinned'])
         <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="consult-pinned-biomarkers">
             <flux:heading size="lg">{{ __('Gevolgde biomarkers') }}</flux:heading>
@@ -190,6 +178,18 @@
             </div>
         </section>
     @endif
+
+    <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="consult-selected-tests">
+        <flux:heading size="lg">{{ __('Geselecteerde bloedtesten') }}</flux:heading>
+
+        <div class="space-y-2">
+            @forelse ($overview['bloodTests'] as $bloodTest)
+                <div class="text-sm">{{ $bloodTest->test_date?->toDateString() ?? __('Geen datum') }} · {{ $bloodTest->title ?: __('Bloedtest zonder titel') }}</div>
+            @empty
+                <flux:text>{{ __('Geen bloedtesten geselecteerd voor dit overzicht.') }}</flux:text>
+            @endforelse
+        </div>
+    </section>
 
     @if ($filters['include_context'])
         <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="consult-context-notes">
