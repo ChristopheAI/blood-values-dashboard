@@ -15,6 +15,20 @@ One sentence describing the exact slice being built.
 - Design or data-model reference:
 - Known gaps:
 
+## Slice Contract
+
+Use `docs/templates/slice-contract-template.md` when this slice changes product
+behavior, workflow, UI, exports, downloads, intake, privacy-sensitive data, or
+confirmed-only downstream behavior.
+
+- Outcome:
+- Source reference:
+- Route or surface:
+- Required state:
+- Positive proof:
+- Negative proof:
+- Drift gates:
+
 ## Current State
 
 - Branch:
@@ -36,6 +50,17 @@ Focused commands:
 ```bash
 
 ```
+
+Repo intelligence:
+
+```bash
+sh scripts/repowise-local-check.sh
+```
+
+- Central/risky files:
+- Hidden coupling or co-change notes:
+- Governing ADR/spec:
+- Skipped reason, if unavailable:
 
 Full validator:
 

@@ -7,6 +7,9 @@ and add slice-specific checks where needed.
 
 - [ ] The slice supports the PRD product sentence.
 - [ ] The slice is tied to a GitHub issue or explicit source-of-truth gap.
+- [ ] The relevant root and child `AGENTS.md` files were read before editing.
+- [ ] The work started from local repo context, not from chat-only assumptions.
+- [ ] The slice contract was filled in or explicitly marked not applicable.
 - [ ] Every user-facing/domain task cites a resolvable PRD/spec/ADR/design,
   data-model, or issue reference, unless it is pure infrastructure.
 - [ ] Any missing design or product decision is tagged `[NEEDS-DESIGN]` or
@@ -20,6 +23,8 @@ and add slice-specific checks where needed.
 
 ## Data Boundary
 
+- [ ] The exact route, selected IDs, export, download, or query boundary is
+  named before implementation.
 - [ ] Confirmed-only downstream is preserved.
 - [ ] Drafts stay out of dashboard, status, history, compare, consult, export,
   and trends.
@@ -40,6 +45,8 @@ and add slice-specific checks where needed.
 
 - [ ] The matching surface was driven in this turn: browser route, export,
   console command, issue form, or other user-visible/developer-visible surface.
+- [ ] Browser/manual proof maps back to the slice contract's positive and
+  negative checks.
 - [ ] Real route inspected when the slice changes UI or workflow behavior.
 - [ ] Correct account/user used.
 - [ ] Synthetic QA data or a privacy-safe fixture was used unless the owner
@@ -52,6 +59,10 @@ and add slice-specific checks where needed.
 
 ## Validation
 
+- [ ] Local repo-intelligence check run for risky/shared/privacy-sensitive
+  changes, or explicitly skipped with reason.
+- [ ] Repo-intelligence findings were treated as advisory and verified through
+  source inspection, tests, validation, or browser/manual proof.
 - [ ] `php artisan view:clear` run when Blade/Livewire views changed.
 - [ ] Focused tests run and passed.
 - [ ] `sh scripts/validate.sh` run and passed for code changes.
@@ -60,6 +71,7 @@ and add slice-specific checks where needed.
 ## Git Hygiene
 
 - [ ] `git status --short --branch` checked.
+- [ ] The diff was reviewed before final handoff.
 - [ ] Only files in this slice are staged.
 - [ ] Unrelated `.omo/`, scratch files, generated files, or other slices remain
   unstaged.

@@ -1,5 +1,17 @@
 # Project Brief: Persoonlijk Bloedwaarden-Dashboard
 
+## Current Status Note
+
+This brief captures the original V1 product intent. The implementation has since
+moved into an active Laravel/Livewire branch with V2 clean-by-default CMA intake,
+confidence-gated deterministic auto-confirm, and confirmed-only downstream
+behavior.
+
+For current implementation state and precedence, read `AGENTS.md`,
+`docs/current-operating-intent.md`, `docs/codex-prd.md`, and the accepted or
+proposed ADRs. If this brief conflicts with those files, the current AGENTS/PRD
+and ADR layer wins.
+
 ## One-Line Purpose
 
 Een persoonlijk Laravel-dashboard waar een gebruiker eerst zijn labo-PDF oplaadt
@@ -134,7 +146,10 @@ Belangrijke datakwaliteitsregels:
 - status mag "onbekend" zijn wanneer range, eenheid of waarde onvoldoende vergelijkbaar is;
 - originele documenten en gestructureerde waarden blijven gescheiden;
 - de originele PDF is de intakebron, maar gestructureerde waarden worden pas
-  gebruikt na review of bevestiging;
+  gebruikt na expliciete review/bevestiging of ADR-0011 confidence-gated
+  deterministic auto-confirm;
+- `confirmed_at` is de downstream trust gate: drafts mogen niet naar dashboard,
+  history, compare, consult, export of trends;
 - onzekerheid wordt zichtbaar gemaakt, niet verstopt.
 
 ## Workflows
@@ -201,6 +216,11 @@ Deze stack is bewust nog niet ingevuld als installatiebeslissing. Eerst brief, d
 - Decision: V1 begint met PDF-first intake en menselijke bevestiging.
   Reason: De echte bloeduitslag moet eerst als bron binnenkomen, maar waarden
   mogen pas dashboarddata worden nadat ze gecontroleerd of aangevuld zijn.
+
+- Decision: High-confidence CMA-extractie mag volgens ADR-0011 auto-confirmed
+  worden.
+  Reason: De V2-richting wil frictie verlagen zonder drafts of onzekere parses
+  downstream te laten lekken; alles onder de drempel blijft review-only.
 
 - Decision: Het product geeft geen medisch advies.
   Reason: De waarde zit in ordenen, opvolgen en consultvoorbereiding. Diagnose en behandeladvies horen bij een arts.
@@ -273,11 +293,13 @@ wordt in plaats van een strak bloedwaarden-opvolgsysteem.
 
 ### 6. Verdict: bouwen
 
-Bouwen is logisch, maar niet meteen. De volgende stap is een V1-spec en planningbaseline, niet Laravel-code.
+Bouwen is logisch. Historisch was de volgende stap een V1-spec en
+planningbaseline; inmiddels bestaat de Laravel/Livewire scaffold en moet nieuw
+werk via de actuele AGENTS/PRD/ADR-laag en kleine gevalideerde slices lopen.
 
 ## First Build Slice
 
-De eerste implementatieslice moet klein maar echt zijn:
+Deze oorspronkelijke eerste implementatieslice moest klein maar echt zijn:
 
 - gebruiker kan inloggen;
 - gebruiker kan twee labo-PDF's uploaden;
@@ -305,7 +327,7 @@ V1 is pas klaar wanneer een projectlokaal validatiecommando de relevante checks 
 sh scripts/validate.sh
 ```
 
-In de latere planning moet dat script minstens meegroeien naar:
+In de implementatiefase moet dat script minstens bewijzen:
 
 - codekwaliteit en tests;
 - domeintests voor statusberekening;
@@ -315,4 +337,6 @@ In de latere planning moet dat script minstens meegroeien naar:
 - test voor export/delete wanneer die in scope zit;
 - eventueel browser-smoke voor de belangrijkste V1-flow.
 
-Voor nu bewijst deze brief alleen de projectrichting. Hij is geen toestemming om al Laravel-code te genereren.
+Deze brief bewijst de oorspronkelijke projectrichting. Hij is geen actuele
+toestemming om scope te verbreden; gebruik de huidige AGENTS/PRD/ADR-laag,
+validatieprotocol en browser-QA-gates voor nieuw werk.

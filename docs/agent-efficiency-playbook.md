@@ -53,6 +53,41 @@ AI tools, Exa, Firecrawl, OCR services, screenshots, logs, or external services
 on private PDFs, biomarker values, notes, consult exports, account data, or
 source documents.
 
+## Reliable Codex Build Loop
+
+Source: `/Users/christophe/Projects/Codextheverythingapp/codex-playlist-notes.md`
+
+The Codex guide is useful for this Laravel project as a reliability pattern, not
+as product scope. The product remains the private blood-values app. The guide's
+usable signal is: Codex becomes reliable when work lives in local source files,
+permissions are explicit, repeated work becomes SOPs/skills, and every change
+leaves proof.
+
+Use this loop for every build slice:
+
+```text
+source of truth -> bounded task -> permission boundary -> first failing proof ->
+smallest code change -> review own diff -> focused tests -> full validator when
+code changed -> browser route/export proof -> issue/PR/handoff evidence
+```
+
+Concrete actions for this repo:
+
+| Action | Why it matters here | Failure prevented |
+| --- | --- | --- |
+| Start from `AGENTS.md`, nearest child `AGENTS.md`, PRD, ADR, and issue. | Codex should come to the repo context instead of inventing from chat. | Generic health-dashboard drift and missed privacy rules. |
+| Name the exact owned route, selected IDs, or data boundary before coding. | Blood data is owner-scoped and route-specific. | Foreign-data leaks, newest-upload mistakes, and widened queries. |
+| Write the first failing test before behavior changes. | Confirmed-only and privacy rules need executable proof. | Green code that silently includes drafts or wrong tests. |
+| Keep permissions explicit. | Private PDFs, biomarker values, notes, and exports are sensitive. | AI/OCR/Exa/Firecrawl/log/screenshot leakage. |
+| Review the diff before handoff. | AI code can pass tests while adding scope or stale docs. | Hidden broad rewrites, weak copy, and unrelated churn. |
+| Drive the matching surface. | The user experiences routes, exports, downloads, and browser flows, not just tests. | Claiming completion from green tests while the app is wrong. |
+| Promote recurring checks to SOPs, templates, or child `AGENTS.md`. | Repeated friction should become local context. | Rediscovering the same rule every run. |
+
+Do not convert Codex-guide ideas into app features unless a product issue or ADR
+explicitly says so. "Codex as everything app" belongs to the agent/workflow
+layer. This Laravel app's feature layer stays blood-test understanding:
+original PDF, confirmed values, context, comparisons, and consult preparation.
+
 ## Discovery And Wedge Gate
 
 Before a slice becomes implementation work, name the smallest wedge that proves
@@ -118,6 +153,115 @@ If the bundle is missing design detail for a user-facing flow, tag the work as
 `[NEEDS-DESIGN]`. If it is missing a product or architecture decision, tag it as
 `[NEEDS-DECISION]`. Do not let an agent fill those gaps from taste.
 
+## Slice Contract
+
+Use `docs/templates/slice-contract-template.md` as the proof card for any slice
+that changes product behavior, workflow, UI, exports, downloads, intake,
+privacy-sensitive data, or confirmed-only downstream behavior.
+
+The contract joins the outcome to the observable surface before coding:
+
+```text
+outcome -> source reference -> route/surface -> required state ->
+positive proof -> negative proof -> drift gates
+```
+
+This is not a second PRD. Keep it small. Its job is to stop agents from
+building from a vague idea or claiming "done" from green tests alone. If a
+changed behavior cannot map back to the contract or a named source, treat it as
+scope drift and move it to a follow-up source instead of merging it silently.
+
+## Local Repo Intelligence
+
+Source: `docs/adr/0012-use-local-repo-intelligence-for-agent-workflows.md`
+
+Adopt the useful Repowise pattern as a local advisory layer: graph context, git
+history, code health, change risk, decision history, and route-aware blast
+radius before risky changes.
+
+Approved wrapper:
+
+```bash
+sh scripts/repowise-local-check.sh
+```
+
+This wrapper is the safe profile:
+
+```text
+telemetry disabled -> index-only init/update -> health -> risk
+```
+
+Use it before touching shared, privacy-sensitive, or downstream behavior when
+Repowise is available. Bring the results back into the slice contract as a short
+note: central files, risky files, suspected hidden coupling, governing ADRs, and
+tests or browser checks that must prove the work.
+
+Hard limits:
+
+- Repo intelligence is development tooling, not product scope.
+- It must not process private PDFs, biomarker values, notes, exports, account
+  data, source documents, screenshots, logs, or storage files.
+- It must not generate LLM docs, install hooks, rewrite `AGENTS.md`, enable
+  telemetry, or use hosted services without a new ADR and privacy review.
+- Its output is advisory only; code inspection, tests, validation, and browser
+  proof remain the trust gates.
+
+## Senior Engineer Filter
+
+Source: `docs/research/2026-06-23-senior-engineer-handbook-transfer.md`
+
+The useful signal from the senior-engineer handbook is not the catalog of links.
+It is the pattern behind the catalog: senior work combines communication, system
+design, reliability, product judgement, writing, and ownership of tradeoffs.
+
+Use this filter before starting or handing off a non-trivial slice:
+
+```text
+communicate the outcome -> map the system -> name the tradeoff ->
+prove the behavior -> leave the next engineer unblocked
+```
+
+Checklist:
+
+- Outcome: can the slice be explained in one plain-language sentence?
+- System: are the route, owner boundary, domain/model boundary, downstream
+  surfaces, and failure state named?
+- Tradeoff: is the chosen scope smaller and safer than the tempting broad
+  version?
+- Proof: do tests and browser/manual checks cover both expected behavior and
+  negative privacy/confirmed-only behavior?
+- Handoff: can a fresh engineer resume from the docs, issue, diff, commands,
+  and known risks without reading the whole conversation?
+
+If the answer is weak, tighten the Slice Contract or source document before
+coding.
+
+## Top Engineer Habits Filter
+
+Source: `docs/research/2026-06-23-engineers-codex-top-engineer-habits.md`
+
+Use this filter during implementation and review:
+
+```text
+human-readable -> local-standard -> simple -> predictable -> reviewed ->
+exception documented
+```
+
+Checklist:
+
+- Human-readable: route, model, domain service, and test intent are clear
+  without reading the conversation.
+- Local-standard: existing Laravel, Livewire, Pest, Blade, domain-service, and
+  docs patterns were followed before adding a new abstraction.
+- Simple: the change is the smallest correct one that preserves privacy,
+  confirmed-only behavior, owner scope, and source-document separation.
+- Predictable: positive and negative paths are covered by tests and the matching
+  browser/manual surface where needed.
+- Reviewed: the diff was inspected for scope creep, private-data leaks, stale
+  docs, weak tests, and unrelated churn.
+- Exception documented: if a project rule was bent deliberately, the reason is
+  recorded in an ADR, spec, slice tracker, or handoff.
+
 ## Context Budget
 
 Treat context pressure as a quality risk. Keep long work anchored in durable
@@ -133,6 +277,35 @@ repo artifacts instead of conversation memory:
 When context gets large, update the tracker or issue with current state before
 continuing. Do not rush implementation to finish before the context window runs
 out.
+
+## Agent Strengthening Loop
+
+Source: `docs/research/2026-06-21-x-agent-workflow-signals.md`
+
+After substantial slices, review whether agent friction came from a missing
+repo rule, stale docs, unclear issue acceptance, noisy output, or weak browser
+QA instructions. Only patch durable artifacts when the lesson is likely to
+recur.
+
+Use this improvement loop:
+
+```text
+friction observed -> source artifact identified -> smallest rule/doc patch ->
+next slice uses the rule -> keep or remove based on evidence
+```
+
+For this repo, the agent's context layer is local and explicit: `AGENTS.md`,
+child `AGENTS.md`, PRD, ADRs, architecture notes, GitHub issues, slice trackers,
+and handoffs. Do not replace this with external tools for private health data.
+
+Use bounded subagents for noisy, non-private work only: code mapping, synthetic
+browser-QA checklists, test-output triage, issue/PRD reconciliation, and
+post-implementation review. The main agent keeps the product decision and
+privacy boundary.
+
+Treat every slice like a small distributed workflow: permissions, traceability,
+tests, browser route, commit, push, and issue/PR evidence must line up before
+handoff.
 
 ## Skill Vs Agent Rule
 

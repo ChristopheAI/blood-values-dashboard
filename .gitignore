@@ -8,6 +8,9 @@
 /storage/*.key
 /storage/pail
 /vendor
+.codex/
+.omo/
+.repowise/
 .env
 .env.backup
 .env.dusk.*
