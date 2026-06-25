@@ -119,6 +119,20 @@ it('rejects selected blood tests not owned by the authenticated user', function 
         ->assertForbidden();
 });
 
+it('rejects csv export when selected blood tests are not owned by the authenticated user', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $ownedBloodTest = BloodTest::factory()->for($owner)->create();
+    $otherBloodTest = BloodTest::factory()->for($otherUser)->create();
+
+    $this->actingAs($owner)
+        ->post(route('consult-overview.csv'), [
+            'blood_test_ids' => [$ownedBloodTest->id, $otherBloodTest->id],
+            'include_attention' => '1',
+        ])
+        ->assertForbidden();
+});
+
 it('does not render corrupted cross-owner pinned biomarkers in consult overview', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();

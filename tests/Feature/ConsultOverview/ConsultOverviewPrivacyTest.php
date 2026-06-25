@@ -3,6 +3,7 @@
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Models\BloodTestDocument;
 use App\Models\PinnedBiomarker;
 use App\Models\User;
 
@@ -102,4 +103,50 @@ it('does not carry consult questions into the csv export form', function () {
         ->assertSee('data-test="export-consult-csv-form"', false)
         ->assertDontSee('type="hidden" name="questions"', false)
         ->assertDontSee('value="'.$secretQuestion.'"', false);
+});
+
+it('does not expose private storage paths in consult pack html or csv export', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => '2026-06-01',
+        'title' => 'June test',
+    ]);
+    $document = BloodTestDocument::factory()->for($bloodTest)->create([
+        'original_filename' => 'june-lab.pdf',
+        'storage_path' => 'blood-test-documents/synthetic-private-storage-name.pdf',
+    ]);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
+        'value' => 55,
+        'unit' => 'ug/L',
+        'status' => 'high',
+        'confirmed_at' => '2026-06-02 09:00:00',
+    ]);
+
+    $filters = [
+        'blood_test_ids' => [$bloodTest->id],
+        'include_attention' => '1',
+        'include_source_documents' => '1',
+    ];
+
+    $html = $this->actingAs($user)
+        ->post(route('consult-overview.index'), $filters)
+        ->assertOk()
+        ->assertSee('june-lab.pdf')
+        ->getContent();
+
+    expect($html)
+        ->not->toContain($document->storage_path)
+        ->not->toContain('blood-test-documents/synthetic-private-storage-name.pdf');
+
+    $csv = $this->actingAs($user)
+        ->post(route('consult-overview.csv'), $filters)
+        ->assertOk()
+        ->getContent();
+
+    expect($csv)
+        ->toContain('june-lab.pdf')
+        ->not->toContain($document->storage_path)
+        ->not->toContain('blood-test-documents/synthetic-private-storage-name.pdf');
 });

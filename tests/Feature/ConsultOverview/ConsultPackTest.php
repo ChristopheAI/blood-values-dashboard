@@ -174,6 +174,7 @@ it('exports consult pack normal values changes and source documents as csv', fun
     $response = $this->actingAs($user)
         ->post(route('consult-overview.csv'), [
             'blood_test_ids' => [$april->id, $june->id],
+            'include_attention' => '1',
             'include_normal' => '1',
             'include_trends' => '1',
             'include_source_documents' => '1',
@@ -187,6 +188,7 @@ it('exports consult pack normal values changes and source documents as csv', fun
 
     expect($rows)->toContain(
         ['section', 'date', 'biomarker', 'value', 'unit', 'status', 'source', 'confirmed_at', 'note'],
+        ['attention', '2026-06-01', 'Ferritin', '55', 'ug/L', 'high', 'June test', '2026-06-02', ''],
         ['normal', '2026-04-01', 'Ferritin', '42', 'ug/L', 'normal', 'April test', '2026-04-02', ''],
         ['normal', '2026-06-01', 'Hemoglobin', '14', 'g/dL', 'normal', 'June test', '2026-06-02', ''],
         ['change', '2026-06-01', 'Ferritin', '55', 'ug/L', 'high', 'June test', '2026-06-02', 'previous 42 ug/L; change +13 ug/L'],
