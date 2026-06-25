@@ -171,6 +171,12 @@ it('clears extracted source snippets when deleting a source document', function 
         'confirmed_at' => null,
         'source_snippet' => 'Synthetic PDF evidence for draft row',
     ]);
+    $legacy = BiomarkerResult::factory()->for($bloodTest)->create([
+        'blood_test_document_id' => null,
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'source_snippet' => 'Synthetic legacy PDF evidence without document link',
+    ]);
 
     Storage::disk('local')->put($document->storage_path, 'pdf bytes');
 
@@ -180,8 +186,10 @@ it('clears extracted source snippets when deleting a source document', function 
 
     expect($confirmed->refresh()->source_snippet)->toBeNull()
         ->and($draft->refresh()->source_snippet)->toBeNull()
+        ->and($legacy->refresh()->source_snippet)->toBeNull()
         ->and(BiomarkerResult::query()->whereKey($confirmed->id)->exists())->toBeTrue()
-        ->and(BiomarkerResult::query()->whereKey($draft->id)->exists())->toBeTrue();
+        ->and(BiomarkerResult::query()->whereKey($draft->id)->exists())->toBeTrue()
+        ->and(BiomarkerResult::query()->whereKey($legacy->id)->exists())->toBeTrue();
 });
 
 it('keeps source snippets for confirmed and draft rows from remaining documents', function () {
@@ -213,6 +221,12 @@ it('keeps source snippets for confirmed and draft rows from remaining documents'
         'confirmed_at' => null,
         'source_snippet' => 'Synthetic draft evidence from remaining PDF',
     ]);
+    $legacyResult = BiomarkerResult::factory()->for($bloodTest)->create([
+        'blood_test_document_id' => null,
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'source_snippet' => 'Synthetic legacy evidence without document link',
+    ]);
 
     Storage::disk('local')->put($deletedDocument->storage_path, 'pdf bytes');
     Storage::disk('local')->put($remainingDocument->storage_path, 'pdf bytes');
@@ -223,7 +237,8 @@ it('keeps source snippets for confirmed and draft rows from remaining documents'
 
     expect($deletedResult->refresh()->source_snippet)->toBeNull()
         ->and($remainingResult->refresh()->source_snippet)->toBe('Synthetic evidence from remaining PDF')
-        ->and($remainingDraft->refresh()->source_snippet)->toBe('Synthetic draft evidence from remaining PDF');
+        ->and($remainingDraft->refresh()->source_snippet)->toBe('Synthetic draft evidence from remaining PDF')
+        ->and($legacyResult->refresh()->source_snippet)->toBe('Synthetic legacy evidence without document link');
 });
 
 it('rolls back snippet clearing when deleting one pdf of a multi-document blood test fails', function () {
