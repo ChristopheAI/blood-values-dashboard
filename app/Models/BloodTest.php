@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\BloodTestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -66,7 +67,39 @@ class BloodTest extends Model
      */
     public function confirmedResults(): HasMany
     {
-        return $this->results()->whereNotNull('confirmed_at');
+        return $this->results()
+            ->whereNotNull('confirmed_at')
+            ->whereHas('biomarker', fn ($query) => $query->where('user_id', $this->user_id));
+    }
+
+    /**
+     * @param  Builder<BloodTest>  $query
+     * @return Builder<BloodTest>
+     */
+    public function scopeRecentFirst(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw('case when test_date is null then 1 else 0 end')
+            ->orderByDesc('test_date')
+            ->orderByDesc('id');
+    }
+
+    public function recalculateStatusFromResults(): void
+    {
+        $hasDrafts = $this->results()
+            ->where('entry_source', 'extracted')
+            ->whereNull('confirmed_at')
+            ->where(function ($query): void {
+                $query
+                    ->whereNull('biomarker_id')
+                    ->orWhereHas('biomarker', fn ($query) => $query->where('user_id', $this->user_id));
+            })
+            ->exists();
+        $hasConfirmedValues = $this->confirmedResults()->exists();
+
+        $this->update([
+            'status' => $hasConfirmedValues && ! $hasDrafts ? 'confirmed' : 'reviewing',
+        ]);
     }
 
     /**
@@ -82,6 +115,10 @@ class BloodTest extends Model
      */
     public function contextNotes(): HasMany
     {
-        return $this->hasMany(ContextNote::class);
+        return $this->hasMany(ContextNote::class)
+            ->whereHas(
+                'bloodTest',
+                fn ($query) => $query->whereColumn('blood_tests.user_id', 'context_notes.user_id'),
+            );
     }
 }

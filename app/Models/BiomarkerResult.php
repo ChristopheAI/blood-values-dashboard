@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\BiomarkerResultFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -73,5 +74,17 @@ class BiomarkerResult extends Model
     public function biomarker(): BelongsTo
     {
         return $this->belongsTo(Biomarker::class);
+    }
+
+    /**
+     * @param  Builder<BiomarkerResult>  $query
+     * @return Builder<BiomarkerResult>
+     */
+    public function scopeConfirmedForUser(Builder $query, int $userId): Builder
+    {
+        return $query
+            ->whereNotNull('biomarker_results.confirmed_at')
+            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $userId))
+            ->whereHas('biomarker', fn ($query) => $query->where('user_id', $userId));
     }
 }

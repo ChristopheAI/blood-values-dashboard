@@ -8,17 +8,25 @@ This is not a diagnosis machine and must not provide medical advice.
 
 ## Current Phase
 
-First PDF-first intake implementation slice.
+V2 clean-by-default CMA intake with confidence-gated auto-confirm.
 
-The Laravel Livewire starter scaffold now exists on the implementation branch.
-Keep new work inside the reviewed V1 boundary unless a spec, ADR, and task plan
-explicitly expand it. Do not add runtime AI interpretation, unreviewed OCR,
-provider integrations, wearable sync, or medical-advice features to this slice.
+The Laravel Livewire scaffold exists. Current work is local deterministic
+PDF-first intake, compact review for uncertain rows, and confirmed-only
+downstream behavior. ADR-0011 is accepted for the reviewed local CMA trust policy
+after synthetic tests, automated checks, full validation, and a 2026-06-24
+owner-led local upload that passed with review remainder.
+
+Keep new work inside the reviewed PDF-first/V2 boundary unless a spec, ADR, and
+task plan explicitly expand it. Do not add runtime AI interpretation,
+unreviewed OCR, provider integrations, wearable sync, external processing, or
+medical-advice features to this slice.
 
 ## Read First
 
 - `AGENTS.md`
 - `docs/project-brief.md`
+- `docs/codex-prd.md`
+- `docs/agent-efficiency-playbook.md`
 - `docs/v1-spec.md`
 - `docs/product-system-check.md`
 - `docs/evidence/source-index.md`
@@ -40,16 +48,18 @@ provider integrations, wearable sync, or medical-advice features to this slice.
 brief -> evidence -> ADR -> spec -> task plan -> baseline commit -> build -> verify -> review -> handoff
 ```
 
-The first implementation target is the first vertical slice:
+The current implementation target is the V2 follow-up flow:
 
 - auth;
 - PDF-first blood test intake;
 - private lab-document storage;
-- review/confirmation of biomarker values from the uploaded document;
+- deterministic confidence-gated auto-confirm for trusted local CMA extraction;
+- review/confirmation of uncertain biomarker values from the uploaded document;
 - small biomarker catalog;
 - status calculation;
 - biomarker history;
-- compare two blood tests.
+- compare two blood tests;
+- confirmed-only dashboard/detail/consult/export surfaces.
 
 ## Validation
 
@@ -61,6 +71,17 @@ sh scripts/validate.sh
 
 This currently proves scaffold integrity, runs the Laravel test/quality suite,
 builds frontend assets, and checks whitespace.
+
+## QA Scenario
+
+Seed a stable synthetic browser-QA dataset:
+
+```bash
+php artisan app:seed-blood-test-demo
+```
+
+Login with `qa@example.com` / `password`. See
+`docs/testing/qa-seed-scenario.md`.
 
 ## Product Boundary
 

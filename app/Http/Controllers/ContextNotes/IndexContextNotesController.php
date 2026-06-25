@@ -21,7 +21,7 @@ class IndexContextNotesController extends Controller
                 ->get(),
             'contextNotes' => ContextNote::query()
                 ->where('user_id', Auth::id())
-                ->with('bloodTest')
+                ->with(['bloodTest' => fn ($query) => $query->where('user_id', Auth::id())])
                 ->latest('note_date')
                 ->get(),
         ]);

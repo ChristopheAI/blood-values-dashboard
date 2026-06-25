@@ -24,8 +24,8 @@
                     @forelse ($rows as $row)
                         <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="blood-test-comparison-row">
                             <td class="p-3">{{ $row['biomarker'] }}</td>
-                            <td class="p-3">{{ $row['previous_value'] }} {{ $row['unit'] }}</td>
-                            <td class="p-3">{{ $row['current_value'] }} {{ $row['unit'] }}</td>
+                            <td class="p-3">{{ trim($row['previous_value'].' '.$row['previous_unit']) }}</td>
+                            <td class="p-3">{{ trim($row['current_value'].' '.$row['current_unit']) }}</td>
                             <td class="p-3">{{ $row['delta'] }}</td>
                             <td class="p-3">{{ $row['status'] }}</td>
                         </tr>

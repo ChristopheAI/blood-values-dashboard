@@ -366,21 +366,23 @@ Rules:
 - if reference range unit is present and does not match value unit: `unknown`;
 - if only minimum exists:
   - value below minimum: `low`;
-  - value equal or above minimum: `unknown`;
+  - value equal or above minimum: `normal`;
 - if only maximum exists:
   - value above maximum: `high`;
-  - value equal or below maximum: `unknown`;
+  - value equal or below maximum: `normal`;
 - if both minimum and maximum exist:
   - value below minimum: `low`;
   - value above maximum: `high`;
   - value inside inclusive range: `normal`;
 - if minimum is greater than maximum: `unknown`.
 
-Why one-sided ranges remain partly unknown:
+Why one-sided ranges are threshold based:
 
-- Some lab values use threshold logic where "below max" may be acceptable, but
-  the meaning depends on the biomarker and lab. V1 should avoid pretending a
-  one-sided threshold is a universal normal range.
+- Some lab values use threshold logic where "below max" or "above min" may be
+  acceptable for the entered lab range.
+- The product may mark the non-violating side `normal` for that entered
+  threshold, but must not present it as a universal medical conclusion.
+- Copy must continue to frame status as based on the entered reference range.
 
 Test cases required later:
 
@@ -391,7 +393,9 @@ Test cases required later:
 - mismatched unit returns `unknown`;
 - reversed min/max returns `unknown`;
 - one-sided minimum below threshold returns `low`;
-- one-sided maximum above threshold returns `high`.
+- one-sided minimum at or above threshold returns `normal`;
+- one-sided maximum above threshold returns `high`;
+- one-sided maximum at or below threshold returns `normal`.
 
 ## 7. Core Workflows
 

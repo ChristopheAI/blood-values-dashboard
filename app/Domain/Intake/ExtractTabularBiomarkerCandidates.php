@@ -6,6 +6,10 @@ class ExtractTabularBiomarkerCandidates
 {
     private const ROW_TOLERANCE = 4.0;
 
+    private const NAME_PROSE_GAP = 32.0;
+
+    private const CONTINUATION_PREVIOUS_PAGE_BOTTOM_Y = 160.0;
+
     private const MAX_CANDIDATES = 80;
 
     /**
@@ -15,36 +19,87 @@ class ExtractTabularBiomarkerCandidates
     public function __invoke(array $fragments): array
     {
         $rows = $this->rows($fragments);
-        $headerIndex = $this->headerIndex($rows);
-
-        if ($headerIndex === null) {
-            return [];
-        }
-
-        $columnLayout = $this->columns($rows[$headerIndex]);
-
-        if ($columnLayout === null) {
-            return [];
-        }
+        $rowsByPage = $this->rowsByPage($rows);
 
         $candidates = [];
+        $activeColumnLayout = null;
+        $lastTablePage = null;
+        $lastTableRowY = null;
 
-        foreach (array_slice($rows, $headerIndex + 1) as $row) {
-            $cells = $this->cells($row, $columnLayout['columns']);
-            $candidate = $this->candidate($cells, $columnLayout['inferred_value_column']);
+        foreach ($rowsByPage as $page => $pageRows) {
+            $headerIndex = $this->headerIndex($pageRows);
 
-            if ($candidate === null) {
-                continue;
+            if ($headerIndex !== null) {
+                $activeColumnLayout = $this->columns($pageRows[$headerIndex]);
+
+                if ($activeColumnLayout === null) {
+                    continue;
+                }
+
+                $candidateRows = array_slice($pageRows, $headerIndex + 1);
+            } else {
+                if (
+                    $activeColumnLayout === null
+                    || ! $this->canContinueTable((int) $page, $lastTablePage, $lastTableRowY)
+                ) {
+                    continue;
+                }
+
+                $candidateRows = $pageRows;
             }
 
-            $candidates[] = $candidate;
+            foreach ($candidateRows as $row) {
+                $cells = $this->cells($row, $activeColumnLayout['columns']);
+                $candidate = $this->candidate($cells, $activeColumnLayout['source']);
 
-            if (count($candidates) >= self::MAX_CANDIDATES) {
-                break;
+                if ($candidate === null) {
+                    continue;
+                }
+
+                $candidates[] = $candidate;
+                $lastTablePage = (int) $page;
+                $lastTableRowY = $this->rowY($row);
+
+                if (count($candidates) >= self::MAX_CANDIDATES) {
+                    return $candidates;
+                }
             }
         }
 
         return $candidates;
+    }
+
+    /**
+     * @param  list<list<PositionedTextFragment>>  $rows
+     * @return array<int, list<list<PositionedTextFragment>>>
+     */
+    private function rowsByPage(array $rows): array
+    {
+        $rowsByPage = [];
+
+        foreach ($rows as $row) {
+            $rowsByPage[$row[0]->page][] = $row;
+        }
+
+        ksort($rowsByPage);
+
+        return $rowsByPage;
+    }
+
+    private function canContinueTable(int $page, ?int $lastTablePage, ?float $lastTableRowY): bool
+    {
+        return $lastTablePage !== null
+            && $lastTableRowY !== null
+            && $page === $lastTablePage + 1
+            && $lastTableRowY <= self::CONTINUATION_PREVIOUS_PAGE_BOTTOM_Y;
+    }
+
+    /**
+     * @param  list<PositionedTextFragment>  $row
+     */
+    private function rowY(array $row): float
+    {
+        return $row[0]->y;
     }
 
     /**
@@ -60,7 +115,8 @@ class ExtractTabularBiomarkerCandidates
 
         usort(
             $fragments,
-            fn (PositionedTextFragment $left, PositionedTextFragment $right): int => $right->y <=> $left->y
+            fn (PositionedTextFragment $left, PositionedTextFragment $right): int => $left->page <=> $right->page
+                ?: $right->y <=> $left->y
                 ?: $left->x <=> $right->x,
         );
 
@@ -68,7 +124,7 @@ class ExtractTabularBiomarkerCandidates
 
         foreach ($fragments as $fragment) {
             foreach ($rows as &$row) {
-                if (abs($row[0]->y - $fragment->y) <= self::ROW_TOLERANCE) {
+                if ($row[0]->page === $fragment->page && abs($row[0]->y - $fragment->y) <= self::ROW_TOLERANCE) {
                     $row[] = $fragment;
 
                     continue 2;
@@ -114,7 +170,7 @@ class ExtractTabularBiomarkerCandidates
 
     /**
      * @param  list<PositionedTextFragment>  $headerRow
-     * @return array{columns: array{name: array{left: float, x: float, right: float}, value: array{left: float, x: float, right: float}, unit: array{left: float, x: float, right: float}, reference: array{left: float, x: float, right: float}}, inferred_value_column: bool}|null
+     * @return array{source: string, columns: array{name: array{left: float, x: float, right: float}, value: array{left: float, x: float, right: float}, unit: array{left: float, x: float, right: float}, reference: array{left: float, x: float, right: float}}}|null
      */
     private function columns(array $headerRow): ?array
     {
@@ -134,12 +190,14 @@ class ExtractTabularBiomarkerCandidates
             }
         }
 
-        $inferredValueColumn = ! array_key_exists('value', $columns);
         $columns['value'] ??= $this->midpoint($columns['name'], $columns['unit']);
 
         $rightBoundary = $columns['reference'] + (($columns['reference'] - $columns['unit']) * 1.5);
 
         return [
+            'source' => $this->isCmaInferredValueHeader($headerRow)
+                ? ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR
+                : ExtractedBiomarkerCandidate::SOURCE_TABULAR,
             'columns' => [
                 'name' => [
                     'left' => $columns['name'] - ($columns['value'] - $columns['name']),
@@ -162,8 +220,27 @@ class ExtractTabularBiomarkerCandidates
                     'right' => $rightBoundary,
                 ],
             ],
-            'inferred_value_column' => $inferredValueColumn,
         ];
+    }
+
+    /**
+     * @param  list<PositionedTextFragment>  $headerRow
+     */
+    private function isCmaInferredValueHeader(array $headerRow): bool
+    {
+        $labels = array_map(
+            fn (PositionedTextFragment $fragment): string => strtolower(trim($fragment->text)),
+            $headerRow,
+        );
+        $keys = array_map(
+            fn (PositionedTextFragment $fragment): string => $this->headerKey($fragment->text),
+            $headerRow,
+        );
+
+        return in_array('analyse', $labels, true)
+            && in_array('eenheid', $labels, true)
+            && in_array('referentie', $labels, true)
+            && ! in_array('value', $keys, true);
     }
 
     private function midpoint(float $left, float $right): float
@@ -209,11 +286,40 @@ class ExtractTabularBiomarkerCandidates
         }
 
         return [
-            'name' => $this->cleanText(implode(' ', $cells['name'])),
+            'name' => $this->cleanNameCell($row, $columns['name']),
             'value' => $this->cleanText(implode(' ', $cells['value'])),
             'unit' => $this->cleanText(implode(' ', $cells['unit'])),
             'reference' => $this->cleanText(implode(' ', $cells['reference'])),
         ];
+    }
+
+    /**
+     * @param  list<PositionedTextFragment>  $row
+     * @param  array{left: float, x: float, right: float}  $nameColumn
+     */
+    private function cleanNameCell(array $row, array $nameColumn): string
+    {
+        $fragments = array_values(array_filter(
+            $row,
+            fn (PositionedTextFragment $fragment): bool => $fragment->x >= $nameColumn['left']
+                && $fragment->x <= $nameColumn['right'],
+        ));
+
+        usort($fragments, fn (PositionedTextFragment $left, PositionedTextFragment $right): int => $left->x <=> $right->x);
+
+        $kept = [];
+        $previous = null;
+
+        foreach ($fragments as $fragment) {
+            if ($previous instanceof PositionedTextFragment && ($fragment->x - $previous->x) >= self::NAME_PROSE_GAP) {
+                break;
+            }
+
+            $kept[] = trim($fragment->text);
+            $previous = $fragment;
+        }
+
+        return $this->cleanText(implode(' ', $kept));
     }
 
     /**
@@ -243,9 +349,9 @@ class ExtractTabularBiomarkerCandidates
     /**
      * @param  array{name: string, value: string, unit: string, reference: string}  $cells
      */
-    private function candidate(array $cells, bool $inferredValueColumn): ?ExtractedBiomarkerCandidate
+    private function candidate(array $cells, string $source): ?ExtractedBiomarkerCandidate
     {
-        if ($cells['name'] === '' || $cells['unit'] === '') {
+        if ($cells['name'] === '') {
             return null;
         }
 
@@ -256,15 +362,32 @@ class ExtractTabularBiomarkerCandidates
         }
 
         $reference = $this->reference($cells['reference']);
-        $isOneSided = str_contains($cells['value'], '<') || str_contains($cells['value'], '>')
-            || str_contains($cells['reference'], '<') || str_contains($cells['reference'], '>');
+        $valueIsOneSided = str_contains($cells['value'], '<') || str_contains($cells['value'], '>');
 
         $name = $this->sanitizeName($cells['name']);
         $nameWasTruncated = $name !== $cells['name'];
 
-        $confidence = $inferredValueColumn ? 0.7 : ($isOneSided ? 0.75 : 0.85);
+        if (! $this->containsLetter($name)) {
+            return null;
+        }
+
+        $hasReference = $reference['min'] !== null || $reference['max'] !== null;
+
+        $confidence = match (true) {
+            ! $hasReference => 0.7,
+            $valueIsOneSided => 0.75,
+            default => 0.85,
+        };
+
+        if ($source === ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR && ! $hasReference && $cells['unit'] !== '') {
+            $confidence = 0.85;
+        }
 
         if ($nameWasTruncated) {
+            $confidence = min($confidence, 0.6);
+        }
+
+        if ($cells['unit'] === '') {
             $confidence = min($confidence, 0.6);
         }
 
@@ -274,9 +397,10 @@ class ExtractTabularBiomarkerCandidates
             unit: $cells['unit'],
             referenceMin: $reference['min'],
             referenceMax: $reference['max'],
-            referenceUnit: $cells['unit'],
+            referenceUnit: $reference['unit'] ?? $cells['unit'],
             confidence: $confidence,
             sourceSnippet: $this->sourceSnippet($cells),
+            source: $source,
         );
     }
 
@@ -290,34 +414,38 @@ class ExtractTabularBiomarkerCandidates
     }
 
     /**
-     * @return array{min: string|null, max: string|null}
+     * @return array{min: string|null, max: string|null, unit: string|null}
      */
     private function reference(string $text): array
     {
-        if (preg_match('/(?<min>-?\d+(?:[,.]\d+)?)\s*[-–]\s*(?<max>-?\d+(?:[,.]\d+)?)/u', $text, $match)) {
+        if (preg_match('/(?<min>-?\d+(?:[,.]\d+)?)\s*[-–]\s*(?<max>-?\d+(?:[,.]\d+)?)(?:\s*(?<unit>\S+))?/u', $text, $match)) {
             return [
                 'min' => $this->cleanNumber($match['min']),
                 'max' => $this->cleanNumber($match['max']),
+                'unit' => $this->cleanUnit($match['unit'] ?? null),
             ];
         }
 
-        if (preg_match('/<\s*(?<max>-?\d+(?:[,.]\d+)?)/u', $text, $match)) {
+        if (preg_match('/<\s*(?<max>-?\d+(?:[,.]\d+)?)(?:\s*(?<unit>\S+))?/u', $text, $match)) {
             return [
                 'min' => null,
                 'max' => $this->cleanNumber($match['max']),
+                'unit' => $this->cleanUnit($match['unit'] ?? null),
             ];
         }
 
-        if (preg_match('/>\s*(?<min>-?\d+(?:[,.]\d+)?)/u', $text, $match)) {
+        if (preg_match('/>\s*(?<min>-?\d+(?:[,.]\d+)?)(?:\s*(?<unit>\S+))?/u', $text, $match)) {
             return [
                 'min' => $this->cleanNumber($match['min']),
                 'max' => null,
+                'unit' => $this->cleanUnit($match['unit'] ?? null),
             ];
         }
 
         return [
             'min' => null,
             'max' => null,
+            'unit' => null,
         ];
     }
 
@@ -342,6 +470,22 @@ class ExtractTabularBiomarkerCandidates
     private function cleanNumber(string $number): string
     {
         return str_replace(',', '.', trim($number));
+    }
+
+    private function cleanUnit(?string $unit): ?string
+    {
+        if ($unit === null) {
+            return null;
+        }
+
+        $unit = trim($this->cleanText($unit), " \t\n\r\0\x0B()[]{}.,;:<>=≤≥");
+
+        return $unit === '' ? null : $unit;
+    }
+
+    private function containsLetter(string $text): bool
+    {
+        return preg_match('/\p{L}/u', $text) === 1;
     }
 
     private function sanitizeName(string $name): string

@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\BloodTestDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class DestroyBloodTestDocumentController extends Controller
 {
@@ -16,8 +18,23 @@ class DestroyBloodTestDocumentController extends Controller
 
         abort_unless($bloodTest->user_id === Auth::id(), 403);
 
-        Storage::disk($bloodTestDocument->storage_disk)->delete($bloodTestDocument->storage_path);
-        $bloodTestDocument->delete();
+        $storageDisk = $bloodTestDocument->storage_disk;
+        $storagePath = $bloodTestDocument->storage_path;
+
+        // Delete the single private PDF inside the transaction, after the database
+        // delete: a file-delete failure rolls the row delete back, so the record and
+        // its file stay consistent (never a record without its file, never a leak).
+        DB::transaction(function () use ($bloodTest, $bloodTestDocument, $storageDisk, $storagePath): void {
+            $bloodTestDocument->delete();
+            $bloodTest->results()
+                ->where('entry_source', 'extracted')
+                ->whereNotNull('source_snippet')
+                ->update(['source_snippet' => null]);
+
+            if (! Storage::disk($storageDisk)->delete($storagePath)) {
+                throw new RuntimeException('Failed to delete stored lab PDF.');
+            }
+        });
 
         return redirect()->route('blood-tests.show', $bloodTest);
     }

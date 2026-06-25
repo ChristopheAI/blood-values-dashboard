@@ -37,14 +37,14 @@ class DetermineBiomarkerStatus
             };
         }
 
-        if ($referenceMinimum !== null && $value < $referenceMinimum) {
-            return BiomarkerStatus::Low;
+        if ($referenceMinimum !== null) {
+            return $value < $referenceMinimum
+                ? BiomarkerStatus::Low
+                : BiomarkerStatus::Normal;
         }
 
-        if ($referenceMaximum !== null && $value > $referenceMaximum) {
-            return BiomarkerStatus::High;
-        }
-
-        return BiomarkerStatus::Unknown;
+        return $value > $referenceMaximum
+            ? BiomarkerStatus::High
+            : BiomarkerStatus::Normal;
     }
 }

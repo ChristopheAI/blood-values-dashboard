@@ -8,6 +8,10 @@
 /storage/*.key
 /storage/pail
 /vendor
+.codex/
+.omo/
+.repowise/
+.firecrawl/
 .env
 .env.backup
 .env.dusk.*
@@ -24,3 +28,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+__pycache__/
+*.pyc

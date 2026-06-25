@@ -37,8 +37,10 @@ class ShowConsultOverviewController extends Controller
      *     blood_test_ids: list<int>,
      *     include_pinned: bool,
      *     include_attention: bool,
+     *     include_normal: bool,
      *     include_trends: bool,
      *     include_context: bool,
+     *     include_source_documents: bool,
      *     questions: string|null
      * }
      */
@@ -51,8 +53,10 @@ class ShowConsultOverviewController extends Controller
             'blood_test_ids.*' => ['integer'],
             'include_pinned' => ['nullable', 'boolean'],
             'include_attention' => ['nullable', 'boolean'],
+            'include_normal' => ['nullable', 'boolean'],
             'include_trends' => ['nullable', 'boolean'],
             'include_context' => ['nullable', 'boolean'],
+            'include_source_documents' => ['nullable', 'boolean'],
             'questions' => ['nullable', 'string', 'max:5000'],
         ]);
 
@@ -62,8 +66,10 @@ class ShowConsultOverviewController extends Controller
             'blood_test_ids' => array_values(array_map('intval', $validated['blood_test_ids'] ?? [])),
             'include_pinned' => $request->boolean('include_pinned'),
             'include_attention' => $request->boolean('include_attention'),
+            'include_normal' => $request->boolean('include_normal'),
             'include_trends' => $request->boolean('include_trends'),
             'include_context' => $request->boolean('include_context'),
+            'include_source_documents' => $request->boolean('include_source_documents'),
             'questions' => $request->isMethod('post') ? ($validated['questions'] ?? null) : null,
         ];
     }

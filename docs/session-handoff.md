@@ -35,24 +35,117 @@ The project is following the `ChristopheAI/Codex` starter-kit workflow:
 
 Update this section after each meaningful session.
 
-- Branch: `codex/pdf-first-intake-slice`
+- Branch: `codex/v2-clean-autoconfirm`
 - Worktree:
-  `/Users/christophe/.config/superpowers/worktrees/laravel-1st-project/pdf-first-intake-slice`
+  `/Users/christophe/Projects/Laravel 1st project`
 - Remote:
   - `origin` -> `https://github.com/ChristopheAI/blood-values-dashboard.git`
 - Commit state:
-  - Planning baseline, pre-scaffold review gate, AI Architect decision layer,
-    future AI-agent boundary, Freek/Spatie engineering profile, and engineering
-    source radar should be committed and pushed.
-  - The PDF-first intake test contract, repo/service layer diagrams, and
-    workflow-value evidence should be committed as planning-content checkpoints.
+  - V2 clean-by-default extraction and confidence-gated auto-confirm are
+    implemented on this branch.
+  - ADR-0011 is accepted for the reviewed local CMA trust policy after synthetic
+    tests, automated checks, and the 2026-06-24 owner-led live upload gate.
+  - Do not merge yet. The user still reviews the code before merge.
 - Latest meaningful local checkpoint:
-  - The Laravel Livewire starter scaffold exists on this branch.
-  - The first PDF-first intake slice is implemented with private PDF upload,
-    owner-authorized document download, manual biomarker value confirmation,
-    status calculation, biomarker history, blood-test comparison, and deletion
-    access blocking.
-  - `sh scripts/validate.sh` is now implementation-stage validation and passes.
+  - Page-aware tabular row clustering prevents cross-page name pollution while
+    preserving real page-continuation rows.
+  - Catalog anchoring is deterministic and conservative: ambiguous exact aliases
+    and equal-strength prefixes stay as drafts.
+  - `AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.85`; clean, unambiguous,
+    catalog-matched rows may be auto-confirmed, while prefix-only, ambiguous,
+    missing-unit, missing-range, unmatched, or noisy rows remain drafts.
+  - Extracted biomarker names are whitespace-normalized before catalog matching,
+    including non-breaking PDF spacing, so clean rows do not become unmatched
+    drafts because of layout artifacts.
+  - Catalog anchoring accepts punctuation/whitespace boundaries after a
+    canonical name, but still keeps those prefix-only rows as drafts.
+  - Extracted decimal-comma values and numeric PDF whitespace are normalized
+    before confidence gating, status calculation, and storage, matching manual
+    review input behavior.
+  - Extracted units/reference units are whitespace-normalized before confidence
+    gating, status calculation, and storage, including non-breaking PDF spacing,
+    so padding cannot create an `unknown` auto-confirmed value or false unit
+    mismatch.
+  - Review-form confirmation trims Unicode/PDF whitespace from draft and manual
+    inputs before status calculation and storage, so the manual trust gate does
+    not reintroduce parser spacing artifacts.
+  - Review-form confirmation strips wrapper/trailing punctuation from
+    value/reference units before status calculation and storage, so manually
+    confirming a draft behaves like auto-confirmed extraction for common PDF
+    unit formatting such as `(ug/L)` or `[ug/L]`.
+  - Review-form biomarker names collapse Unicode/PDF whitespace before catalog
+    lookup and creation, so manual/draft confirmation reuses existing catalog
+    entries instead of creating spacing-only duplicates.
+  - If multiple existing catalog entries normalize to the same review-form name,
+    name-only confirmation is rejected and the owner must choose an explicit
+    biomarker, avoiding arbitrary history/trend attachment.
+  - Wrapper/trailing punctuation around extracted value/reference units is
+    normalized centrally before auto-confirm, so candidate sources behave
+    consistently.
+  - Duplicate extracted candidates that map to the same catalog biomarker in one
+    run stay as separate drafts, preventing silent overwrite/auto-confirm of an
+    ambiguous repeated row.
+  - Present but unparseable reference bounds keep extracted rows below the
+    auto-confirm gate; parser output must be numerically parseable, not just
+    non-empty.
+  - Candidates with unparseable values are counted in extraction telemetry but
+    are not stored as biomarker results.
+  - Reference-unit mismatches keep extracted rows below the auto-confirm gate
+    because comparison rules are not trustworthy.
+  - Tabular reference cells with an explicit unit preserve that `reference_unit`
+    instead of falling back to the value unit, including compact forms like
+    `10-20g/L` and `<8g/L`, so mismatches are not masked.
+  - Wrapper/trailing punctuation around tabular reference units is stripped, so
+    common formatting like `10-20 (mg/L)` does not force a clean row to draft.
+  - Reversed two-sided reference ranges keep extracted rows below the
+    auto-confirm gate; one-sided parseable ranges remain allowed.
+  - Empty intake is upload-first with a PDF dropzone and file-selection
+    auto-submit. No metadata form, email, account field, OCR, AI, external
+    service, or new package was introduced.
+  - The result screen lands on confirmed values, status/trend affordances, and a
+    compact review strip for below-threshold rows.
+  - Confirmed-only downstream behavior remains covered for dashboard, history,
+    compare, consult overview, and data export; auto-confirmed extracted rows
+    count as confirmed, drafts do not.
+  - Blood-test status recalculation is owner-scoped: corrupt cross-owner
+    biomarker drafts cannot make, feed, or block confirmed owner status.
+  - Extracted source snippets are stored as compact single-line trace metadata,
+    preserving short provenance without raw line-break/control whitespace.
+  - Failed and empty extraction states are inspectable and fall back to manual
+    entry.
+  - Latest full local validation passed on this branch with `sh
+    scripts/validate.sh`.
+  - Latest owner-led live upload gate passed on 2026-06-24 with review remainder:
+    the extraction run completed, 18 candidates were counted, 16 extracted rows
+    were deterministically auto-confirmed, 1 extracted row stayed draft, the
+    blood test stayed `reviewing`, and 1 source document was attached. Browser,
+    database, and export checks confirmed drafts stayed out of downstream/export
+    counts and generated private storage names were not visible. Private values,
+    biomarker names, source snippets, screenshots, and PDF contents were not
+    recorded in the repo.
+  - Consult/navigation hardening slice completed on 2026-06-24 in commit
+    `afcfb31` `fix: harden consult and navigation copy`: starter-kit/product noise was removed from authenticated
+    navigation and the public welcome page; visible app copy was aligned to
+    Dutch for dashboard, intake/list, detail/review, context notes, and consult
+    surfaces; the consult page is output-first with attention values, compact
+    normal values, trends/timeline, and source documents above the lower
+    selection/configuration form.
+  - The same slice preserved the hard product/privacy boundaries: consult and
+    sensitive health-text forms use POST with CSRF; consult questions are not
+    carried into GET URLs or CSV export inputs; CSV export still escapes
+    spreadsheet formulas; owner scope and confirmed-only behavior remain in the
+    domain/controller layer; no OCR, runtime AI, external processing, provider
+    sync, wearable import, medical advice, diagnosis, treatment, supplement,
+    urgency, scoring, or extra-testing copy was introduced.
+  - Validation for the consult/navigation hardening slice passed locally on
+    2026-06-24 with `sh scripts/validate.sh`: frontend build, Pint, PHPStan,
+    248 Pest tests, 3 Dusk browser smoke tests, and whitespace checks passed.
+    Additional in-app browser QA covered `/`, `/dashboard`, `/blood-tests/3`,
+    opening `/consult-overview` from a blood-test detail page, and mobile consult
+    at 390x844. Browser QA confirmed no starter-kit noise, no forbidden
+    medical-advice copy, no visible private storage path, POST/CSRF forms, CSV
+    without consult questions, output before configuration, and no horizontal
+    overflow.
 - Files created so far:
   - `README.md`
   - `docs/project-brief.md`
@@ -205,19 +298,21 @@ Update this section after each meaningful session.
   - `sh scripts/validate.sh` passed with 54 tests, 565 assertions, Pint,
     PHPStan, frontend build, and whitespace checks.
 - Known gaps:
-  - The PDF-first pre-scaffold result is an internal planning review, not an
-    external human review.
-  - The first slice is manual-confirmation-first. It does not implement OCR,
-    lab-provider import, wearable import, export/delete account flows,
-    reminders, or consult exports yet.
-  - Browser workflow proof should be added before calling the user-facing slice
-    polished; current validation is automated tests, static analysis, build,
-    and whitespace checks.
+  - ADR-0011 is accepted for the reviewed local CMA trust policy after the
+    2026-06-24 owner-led live upload gate, but the branch still needs owner code
+    review before merge.
+  - Native OS picker opening and OS drag/drop acceptance are manual live-review
+    checks; automated Dusk coverage uses `attach()`.
+  - Each imperfect real lab format still needs a sanitized synthetic fixture
+    before parser tuning. Do not commit or log real PDF content or values.
+  - OCR, AI/LLM, provider integrations, wearable sync, and medical advice remain
+    out of scope unless a later spec/ADR deliberately expands the boundary.
 - Next recommended action:
-  - Run a browser smoke pass against upload, review/confirm, download, history,
-    compare, and delete flows.
-  - Keep Apple Health or wearable import as a separate V2 ADR/spec before any
-    implementation.
+  - Let the owner review this branch before merge. The fresh local upload gate
+    has already passed with review remainder; do not reopen parser work unless
+    the remaining draft is unacceptable for the supported lab format.
+  - If live review finds another imperfect row, reproduce it as a sanitized
+    synthetic fixture first, then tune the parser against that test.
   - Before installing any Composer package that touches auth, files, exports,
     jobs, logs, or health data, create a package review note or ADR.
   - Keep new implementation inside the PDF-first V1 boundary unless a spec, ADR,
@@ -227,7 +322,7 @@ Update this section after each meaningful session.
 
 | Marker | Type | Meaning | How To Resume |
 | --- | --- | --- | --- |
-| pdf-first-intake-slice | project state | Laravel scaffold exists and the first PDF-first intake slice is implemented on `codex/pdf-first-intake-slice`. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v1-spec.md`, the active plan, review docs, and run `sh scripts/validate.sh`. |
+| v2-clean-autoconfirm | project state | V2 clean extraction, confidence-gated auto-confirm, upload-first intake, and hardening follow-ups are implemented on `codex/v2-clean-autoconfirm`; ADR-0011 live gate passed with review remainder, and owner code review remains before merge. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v2-spec.md`, `docs/adr/0011-clean-extraction-and-confidence-gated-auto-confirm.md`, `docs/codex-v2-clean-autoconfirm-kickoff.md`, latest git log/status, then run `sh scripts/validate.sh`. |
 
 ## Handoff Prompt For A New Codex Thread
 
@@ -235,11 +330,14 @@ Update this section after each meaningful session.
 Read README.md, AGENTS.md, docs/session-handoff.md, docs/validation-protocol.md,
 docs/project-brief.md, docs/v1-spec.md, docs/product-system-check.md,
 docs/evidence/source-index.md, docs/adr/,
+docs/v2-spec.md,
+docs/adr/0011-clean-extraction-and-confidence-gated-auto-confirm.md,
 docs/research/laravel-stack-decision.md,
 docs/research/ai-architect-program-transfer.md,
 docs/research/2026-06-18-blood-values-workflow-value-evidence.md,
 docs/research/2026-06-18-engineering-source-radar.md,
 docs/testing/pdf-first-intake-test-conversion.md,
+docs/codex-v2-clean-autoconfirm-kickoff.md,
 docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md,
 docs/superpowers/plans/2026-06-16-first-vertical-slice.md as historical context,
 docs/reviews/pre-scaffold-review-request.md,
@@ -252,9 +350,12 @@ Summarize:
 - what has been validated;
 - what the next smallest action is.
 
-Do not expand beyond the PDF-first V1 boundary without a spec, ADR, and task
-plan. Runtime AI interpretation, unreviewed OCR, provider integrations, wearable
-sync, and medical advice remain out of scope.
+Continue on `codex/v2-clean-autoconfirm`. Do not merge. ADR-0011 is accepted
+for the reviewed local CMA trust policy after the 2026-06-24 owner-led live
+upload gate passed with review remainder. Owner code review remains before
+merge. Do not expand beyond the PDF-first boundary without a spec, ADR, and task
+plan. Runtime AI interpretation, unreviewed OCR, provider integrations,
+wearable sync, and medical advice remain out of scope.
 ```
 
 ## End-Of-Session Update Checklist

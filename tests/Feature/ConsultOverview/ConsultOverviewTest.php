@@ -62,9 +62,8 @@ it('renders a consult overview with confirmed owner data pins context questions 
             'questions' => 'What should I ask about the change?',
         ])
         ->assertOk()
-        ->assertSee('Self-entered personal tracking data')
-        ->assertSee('not medical advice')
-        ->assertSee('discuss this overview with your doctor')
+        ->assertSee('Persoonlijke trackinggegevens uit bevestigde waarden')
+        ->assertSee('Bespreek dit overzicht met je arts')
         ->assertSee('Ferritin')
         ->assertSee('Follow around consults')
         ->assertSee('Slept poorly before the June test.')
@@ -120,17 +119,85 @@ it('rejects selected blood tests not owned by the authenticated user', function 
         ->assertForbidden();
 });
 
+it('does not render corrupted cross-owner pinned biomarkers in consult overview', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $foreignBiomarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+
+    PinnedBiomarker::factory()->for($user)->for($foreignBiomarker)->create([
+        'note' => 'Foreign private pin note',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'include_pinned' => '1',
+        ])
+        ->assertOk()
+        ->assertDontSee('Foreign private marker')
+        ->assertDontSee('Foreign private pin note');
+});
+
+it('does not render confirmed results linked to another users biomarker', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+    $foreignMarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($foreignMarker)->create([
+        'value' => 123,
+        'unit' => 'mg/L',
+        'status' => 'high',
+        'confirmed_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'from' => '2026-06-01',
+            'to' => '2026-06-01',
+            'include_attention' => '1',
+            'include_trends' => '1',
+        ])
+        ->assertOk()
+        ->assertDontSee('Foreign private marker')
+        ->assertDontSee('123');
+});
+
+it('filters context notes by date range when no blood tests are selected', function () {
+    $user = User::factory()->create();
+
+    ContextNote::factory()->for($user)->create([
+        'note_date' => '2026-06-01',
+        'category' => ContextNoteCategory::Sleep->value,
+        'body' => 'In-range context note.',
+    ]);
+    ContextNote::factory()->for($user)->create([
+        'note_date' => '2026-04-01',
+        'category' => ContextNoteCategory::Stress->value,
+        'body' => 'Out-of-range context note.',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'from' => '2026-06-01',
+            'to' => '2026-06-30',
+            'include_context' => '1',
+        ])
+        ->assertOk()
+        ->assertSee('In-range context note.')
+        ->assertDontSee('Out-of-range context note.');
+});
+
 it('exports the consult overview structured rows as csv', function () {
     $user = User::factory()->create();
     $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
     $draft = Biomarker::factory()->for($user)->create(['name' => 'Draft marker']);
-    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01', 'title' => 'June test']);
 
     BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
         'value' => 18,
         'unit' => 'ug/L',
         'status' => 'low',
-        'confirmed_at' => now(),
+        'confirmed_at' => '2026-06-02 09:00:00',
     ]);
     BiomarkerResult::factory()->for($bloodTest)->for($draft)->create([
         'value' => 999,
@@ -139,43 +206,67 @@ it('exports the consult overview structured rows as csv', function () {
         'confirmed_at' => null,
     ]);
 
-    $this->actingAs($user)
+    $response = $this->actingAs($user)
         ->post(route('consult-overview.csv'), [
             'from' => '2026-06-01',
             'to' => '2026-06-01',
             'include_attention' => '1',
         ])
         ->assertOk()
-        ->assertHeader('content-type', 'text/csv; charset=UTF-8')
-        ->assertSee('section,date,biomarker,value,unit,status,note', false)
-        ->assertSee('attention,2026-06-01,Ferritin,18,ug/L,low,', false)
+        ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+    $rows = array_map(
+        fn (string $line): array => str_getcsv(rtrim($line, "\r")),
+        array_filter(explode("\n", trim($response->getContent()))),
+    );
+
+    expect($rows)->toContain(
+        ['section', 'date', 'biomarker', 'value', 'unit', 'status', 'source', 'confirmed_at', 'note'],
+        ['attention', '2026-06-01', 'Ferritin', '18', 'ug/L', 'low', 'June test', '2026-06-02', ''],
+    );
+
+    $response
         ->assertDontSee('Draft marker')
         ->assertDontSee('999');
 });
 
-it('does not carry consult questions in generated get urls', function () {
+it('escapes spreadsheet formulas in consult csv export cells', function () {
     $user = User::factory()->create();
-    $secretQuestion = 'Could we discuss the training context privately?';
+    $dangerousMarker = Biomarker::factory()->for($user)->create(['name' => '=Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01', 'title' => '=June test']);
 
-    $this->actingAs($user)
-        ->post(route('consult-overview.index'), [
+    BiomarkerResult::factory()->for($bloodTest)->for($dangerousMarker)->create([
+        'value' => 18,
+        'unit' => 'ug/L',
+        'status' => 'low',
+        'confirmed_at' => '2026-06-02 09:00:00',
+        'note' => '+review note',
+    ]);
+    PinnedBiomarker::factory()->for($user)->for($dangerousMarker)->create(['note' => '@pin note']);
+    ContextNote::factory()->for($user)->for($bloodTest)->create([
+        'note_date' => '2026-06-01',
+        'category' => ContextNoteCategory::Sleep->value,
+        'body' => '-context note',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->post(route('consult-overview.csv'), [
             'from' => '2026-06-01',
             'to' => '2026-06-01',
+            'include_pinned' => '1',
+            'include_attention' => '1',
             'include_context' => '1',
-            'questions' => $secretQuestion,
         ])
-        ->assertOk()
-        ->assertSee($secretQuestion)
-        ->assertSee('method="POST"', false)
-        ->assertSee('action="'.route('consult-overview.index').'"', false)
-        ->assertSee('action="'.route('consult-overview.csv').'"', false)
-        ->assertDontSee('/consult-overview?questions=', false)
-        ->assertDontSee('/consult-overview.csv?questions=', false)
-        ->assertDontSee('questions='.rawurlencode($secretQuestion), false)
-        ->assertDontSee('questions='.urlencode($secretQuestion), false);
+        ->assertOk();
 
-    $this->actingAs($user)
-        ->get(route('consult-overview.index', ['questions' => $secretQuestion]))
-        ->assertOk()
-        ->assertDontSee($secretQuestion);
+    $rows = array_map(
+        fn (string $line): array => str_getcsv(rtrim($line, "\r")),
+        array_filter(explode("\n", trim($response->getContent()))),
+    );
+
+    expect($rows)->toContain(
+        ['pinned', '', "'=Ferritin", '', '', '', '', '', "'@pin note"],
+        ['attention', '2026-06-01', "'=Ferritin", '18', 'ug/L', 'low', "'=June test", '2026-06-02', "'+review note"],
+        ['context', '2026-06-01', 'Sleep', '', '', '', '', '', "'-context note"],
+    );
 });

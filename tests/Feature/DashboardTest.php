@@ -2,12 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\BloodTests\LongitudinalChange;
+use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Models\BloodTestDocument;
 use App\Models\Reminder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -27,6 +32,200 @@ class DashboardTest extends TestCase
 
         $response = $this->get(route('dashboard'));
         $response->assertOk();
+    }
+
+    public function test_empty_dashboard_is_upload_first_without_metadata_or_account_fields(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-next-step"', false)
+            ->assertSee('Eerste lab-PDF toevoegen')
+            ->assertSee('Sleep je lab-PDF hierheen')
+            ->assertSee('Alleen PDF')
+            ->assertSee('data-test="lab-pdf-dropzone"', false)
+            ->assertSee('data-test="lab-pdf-input"', false)
+            ->assertSee('data-test="choose-pdf-button"', false)
+            ->assertSee('data-test="selected-file-name"', false)
+            ->assertSee('data-test="intake-progress"', false)
+            ->assertDontSee('Personal overview')
+            ->assertDontSee('Je bloedresultaten')
+            ->assertDontSee('data-test="blood-test-date-input"', false)
+            ->assertDontSee('data-test="blood-test-lab-input"', false)
+            ->assertDontSee('data-test="blood-test-title-input"', false)
+            ->assertDontSee('name="email"', false)
+            ->assertDontSee('name="account"', false);
+    }
+
+    public function test_dashboard_prompts_review_when_owned_extracted_drafts_remain(): void
+    {
+        $user = User::factory()->create();
+        $bloodTest = BloodTest::factory()->for($user)->create([
+            'title' => 'June blood test',
+            'test_date' => '2026-06-15',
+            'status' => 'reviewing',
+        ]);
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+
+        BiomarkerResult::factory()->for($bloodTest)->for($marker)->create([
+            'value' => 42,
+            'unit' => 'ug/L',
+            'entry_source' => 'extracted',
+            'confirmed_at' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-next-step"', false)
+            ->assertSee('Waarden nakijken')
+            ->assertSee('1 waarde wacht op review')
+            ->assertSee('June blood test');
+    }
+
+    public function test_dashboard_timeline_lists_only_owned_blood_tests(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        BloodTest::factory()->for($user)->create(['title' => 'Owned timeline test']);
+        BloodTest::factory()->for($otherUser)->create(['title' => 'Foreign timeline test']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-blood-test-timeline"', false)
+            ->assertSee('Owned timeline test')
+            ->assertDontSee('Foreign timeline test');
+    }
+
+    public function test_dashboard_timeline_counts_drafts_without_showing_draft_values(): void
+    {
+        $user = User::factory()->create();
+        $bloodTest = BloodTest::factory()->for($user)->create(['title' => 'Review test']);
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Draft marker']);
+
+        BiomarkerResult::factory()->for($bloodTest)->for($marker)->create([
+            'value' => 999,
+            'unit' => 'mg/L',
+            'entry_source' => 'extracted',
+            'confirmed_at' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('1 review')
+            ->assertDontSee('Draft marker')
+            ->assertDontSee('999');
+    }
+
+    public function test_dashboard_timeline_shows_confirmed_and_source_document_counts(): void
+    {
+        $user = User::factory()->create();
+        $bloodTest = BloodTest::factory()->for($user)->create([
+            'title' => 'Documented blood test',
+            'test_date' => '2026-06-15',
+        ]);
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Confirmed marker']);
+
+        BloodTestDocument::factory()->for($bloodTest)->create();
+        BiomarkerResult::factory()->for($bloodTest)->for($marker)->create([
+            'value' => 12,
+            'unit' => 'mg/L',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Documented blood test')
+            ->assertSee('15 juni 2026')
+            ->assertSee('1 bevestigd')
+            ->assertSee('1 bronbestand');
+    }
+
+    public function test_dashboard_workstand_summarizes_owned_follow_up_state(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $first = BloodTest::factory()->for($user)->create(['title' => 'First owned test']);
+        $second = BloodTest::factory()->for($user)->create(['title' => 'Second owned test']);
+        $foreign = BloodTest::factory()->for($otherUser)->create(['title' => 'Foreign test']);
+        $ownedMarkers = collect(range(1, 6))
+            ->map(fn (int $number): Biomarker => Biomarker::query()->create([
+                'user_id' => $user->id,
+                'name' => 'Owned marker '.$number,
+                'active' => true,
+            ]));
+        $foreignMarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign marker']);
+
+        BloodTestDocument::factory()->for($first)->create();
+        BloodTestDocument::factory()->for($second)->create();
+        BloodTestDocument::factory()->for($foreign)->create();
+
+        foreach ($ownedMarkers->take(2) as $ownedMarker) {
+            BiomarkerResult::factory()->for($first)->for($ownedMarker)->create([
+                'confirmed_at' => now(),
+            ]);
+        }
+
+        foreach ($ownedMarkers->slice(2, 3) as $ownedMarker) {
+            BiomarkerResult::factory()->for($second)->for($ownedMarker)->create([
+                'confirmed_at' => now(),
+            ]);
+        }
+
+        BiomarkerResult::factory()->for($second)->for($ownedMarkers->last())->create([
+            'entry_source' => 'extracted',
+            'confirmed_at' => null,
+        ]);
+        BiomarkerResult::factory()->for($foreign)->for($foreignMarker)->create([
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-dossier-status-line"', false)
+            ->assertSee('Dossierstatus')
+            ->assertSee('2 bloedtesten · 5 bevestigde waarden · 1 reviewpunt · 2 bronbestanden')
+            ->assertDontSee('Werkstand')
+            ->assertDontSee('Foreign test');
+    }
+
+    public function test_dashboard_renders_latest_blood_test_as_the_primary_dossier_panel(): void
+    {
+        $user = User::factory()->create();
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+        $latest = BloodTest::factory()->for($user)->create([
+            'title' => 'Laatste controle',
+            'test_date' => '2026-06-12',
+        ]);
+
+        BloodTestDocument::factory()->for($latest)->create();
+        BiomarkerResult::factory()->for($latest)->for($marker)->create([
+            'value' => 42,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-latest-blood-test"', false)
+            ->assertSee('Laatste bloedtest')
+            ->assertSee('Laatste controle')
+            ->assertSee('Afname 12 juni 2026')
+            ->assertSee('1 bevestigd')
+            ->assertSee('1 bronbestand')
+            ->assertSee('Alleen bevestigde waarden verschijnen hieronder.')
+            ->assertDontSee('Health Status')
+            ->assertDontSee('risico')
+            ->assertDontSee('advies');
     }
 
     public function test_dashboard_shows_only_owned_confirmed_values_needing_attention(): void
@@ -57,14 +256,308 @@ class DashboardTest extends TestCase
             'confirmed_at' => now(),
         ]);
 
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-latest-values-preview"', false)
+            ->assertSee('Laatste bevestigde waarden')
+            ->assertDontSee('data-test="blood-results-overview"', false)
+            ->assertDontSee('data-test="attention-values-section"', false)
+            ->assertDontSee('data-test="normal-values-section"', false)
+            ->assertSee('Low marker')
+            ->assertSee('Normal marker')
+            ->assertDontSee('Draft marker')
+            ->assertDontSee('Other marker')
+            ->assertDontSee('data-test="dashboard-attention-results"', false);
+    }
+
+    public function test_dashboard_upload_summary_uses_the_most_recent_blood_test_date(): void
+    {
+        $user = User::factory()->create();
+        $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+        $current = BloodTest::factory()->for($user)->create([
+            'title' => 'Current dated blood test',
+            'test_date' => '2026-06-15',
+            'status' => 'confirmed',
+            'created_at' => now()->subDay(),
+        ]);
+        $older = BloodTest::factory()->for($user)->create([
+            'title' => 'Older but later created record',
+            'test_date' => '2026-04-15',
+            'status' => 'confirmed',
+            'created_at' => now(),
+        ]);
+
+        BiomarkerResult::factory()->for($current)->for($ferritin)->create([
+            'value' => 36,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
+        BiomarkerResult::factory()->for($older)->for($ferritin)->create([
+            'value' => 48,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now()->subMonth(),
+        ]);
+
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Values needing attention')
-            ->assertSee('Low marker')
-            ->assertDontSee('Normal marker')
+            ->assertSee('Current dated blood test')
+            ->assertSee('Afname 15 juni 2026')
+            ->assertDontSee('Older but later created record · 1 bevestigde waarde');
+    }
+
+    public function test_upload_summary_compares_against_previous_blood_test_only(): void
+    {
+        $user = User::factory()->create();
+        $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+        $previous = BloodTest::factory()->for($user)->create([
+            'title' => 'Previous blood test',
+            'test_date' => '2026-03-01',
+        ]);
+        $selected = BloodTest::factory()->for($user)->create([
+            'title' => 'Selected older blood test',
+            'test_date' => '2026-04-08',
+        ]);
+        $future = BloodTest::factory()->for($user)->create([
+            'title' => 'Future blood test',
+            'test_date' => '2026-06-01',
+        ]);
+
+        BiomarkerResult::factory()->for($previous)->for($ferritin)->create([
+            'value' => 35,
+            'unit' => 'ug/L',
+            'confirmed_at' => now()->subMonths(2),
+        ]);
+        BiomarkerResult::factory()->for($selected)->for($ferritin)->create([
+            'value' => 42,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now()->subMonth(),
+        ]);
+        BiomarkerResult::factory()->for($future)->for($ferritin)->create([
+            'value' => 12,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
+
+        $summary = app(BuildLatestUploadSummary::class)->forBloodTest($user, $selected);
+
+        $this->assertNotNull($summary);
+
+        $ferritinRow = $summary['rows']->firstWhere('name', 'Ferritine');
+
+        $this->assertSame('+7 ug/L', $ferritinRow['trendLabel']);
+    }
+
+    public function test_upload_summary_uses_shared_longitudinal_changes_builder_for_trends(): void
+    {
+        $user = User::factory()->create();
+        $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+        $previous = BloodTest::factory()->for($user)->create(['test_date' => '2026-03-01']);
+        $selected = BloodTest::factory()->for($user)->create(['test_date' => '2026-04-08']);
+        $previousResult = BiomarkerResult::factory()->for($previous)->for($ferritin)->create([
+            'value' => 40,
+            'unit' => 'ug/L',
+            'confirmed_at' => now()->subMonth(),
+        ]);
+        $currentResult = BiomarkerResult::factory()->for($selected)->for($ferritin)->create([
+            'value' => 47,
+            'unit' => 'ug/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->app->instance(BuildLongitudinalChanges::class, new class($previousResult, $currentResult) extends BuildLongitudinalChanges
+        {
+            public function __construct(
+                private readonly BiomarkerResult $previousResult,
+                private readonly BiomarkerResult $currentResult,
+            ) {}
+
+            public function across(User $user, Collection $bloodTests): Collection
+            {
+                return collect([
+                    new LongitudinalChange(
+                        biomarker: 'Ferritine',
+                        result: $this->currentResult,
+                        previousResult: $this->previousResult,
+                        previousValue: '40',
+                        currentValue: '47',
+                        previousUnit: 'ug/L',
+                        currentUnit: 'ug/L',
+                        status: 'normal',
+                        delta: '+99',
+                        changeLabel: '+99 ug/L',
+                        comparable: true,
+                        reason: null,
+                        direction: 'higher',
+                    ),
+                ]);
+            }
+        });
+
+        $summary = app(BuildLatestUploadSummary::class)->forBloodTest($user, $selected);
+
+        $this->assertNotNull($summary);
+
+        $ferritinRow = $summary['rows']->firstWhere('name', 'Ferritine');
+
+        $this->assertSame('+99 ug/L', $ferritinRow['trendLabel']);
+    }
+
+    public function test_dashboard_shows_a_confirmed_latest_upload_digest(): void
+    {
+        $user = User::factory()->create();
+        $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+        $crp = Biomarker::factory()->for($user)->create(['name' => 'CRP']);
+        $hemoglobin = Biomarker::factory()->for($user)->create(['name' => 'Hemoglobine']);
+        $previous = BloodTest::factory()->for($user)->create([
+            'title' => 'Previous blood test',
+            'test_date' => '2026-03-01',
+            'created_at' => now()->subMonth(),
+        ]);
+        $latest = BloodTest::factory()->for($user)->create([
+            'title' => 'Bloedafname Christophe VH',
+            'test_date' => '2026-04-08',
+            'status' => 'confirmed',
+            'created_at' => now(),
+        ]);
+
+        BiomarkerResult::factory()->for($previous)->for($ferritin)->create([
+            'value' => 35,
+            'unit' => 'ug/L',
+            'confirmed_at' => now()->subMonth(),
+        ]);
+        BiomarkerResult::factory()->for($latest)->for($ferritin)->create([
+            'value' => 42,
+            'unit' => 'ug/L',
+            'reference_min' => '30',
+            'reference_max' => '150',
+            'reference_unit' => 'ug/L',
+            'status' => 'normal',
+            'entry_source' => 'extracted',
+            'confirmed_at' => now(),
+        ]);
+        BiomarkerResult::factory()->for($latest)->for($crp)->create([
+            'value' => 4.2,
+            'unit' => 'mg/L',
+            'reference_min' => null,
+            'reference_max' => null,
+            'reference_unit' => 'mg/L',
+            'status' => 'unknown',
+            'entry_source' => 'extracted',
+            'confirmed_at' => now(),
+        ]);
+        BiomarkerResult::factory()->for($latest)->for($hemoglobin)->create([
+            'value' => 18.1,
+            'unit' => 'g/dL',
+            'reference_min' => '13',
+            'reference_max' => '17',
+            'reference_unit' => 'g/dL',
+            'status' => 'high',
+            'entry_source' => 'extracted',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-latest-values-preview"', false)
+            ->assertSee('Laatste bevestigde waarden')
+            ->assertSee('Afname 8 april 2026')
+            ->assertSee('Bloedafname Christophe VH')
+            ->assertSee('1/3 waarde is normaal')
+            ->assertSee('2 waarden vragen aandacht')
+            ->assertSee('data-test="dashboard-latest-value-row"', false)
+            ->assertDontSee('Deze waarden vragen aandacht')
+            ->assertDontSee('Deze waarde is in orde')
+            ->assertDontSee('data-test="featured-attention-card"', false)
+            ->assertDontSee('data-test="attention-featured-row"', false)
+            ->assertDontSee('data-test="normal-values-panel"', false)
+            ->assertDontSee('data-test="compact-normal-row"', false)
+            ->assertDontSee('data-test="compact-review-row"', false)
+            ->assertSee('Ferritine')
+            ->assertSee('+7 ug/L')
+            ->assertSee('CRP')
+            ->assertSee('Controle nodig')
+            ->assertSee('Hemoglobine')
+            ->assertSee('Aandacht')
+            ->assertSee('Zit binnen de opgegeven referentie.')
+            ->assertSee('Ligt boven de opgegeven referentie.')
+            ->assertDontSee('data-test="biomarker-range-bar"', false)
+            ->assertSee('Maak consultlijst')
+            ->assertDontSee('Latest upload')
+            ->assertDontSee('What changed')
+            ->assertDontSee('Range context')
+            ->assertDontSee('data-test="biomarker-status-card"', false)
+            ->assertDontSee('data-test="dashboard-attention-results"', false)
+            ->assertDontSee('slechte cholesterol');
+    }
+
+    public function test_dashboard_latest_upload_digest_uses_confirmed_owned_results_only(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $owned = Biomarker::factory()->for($user)->create(['name' => 'Owned confirmed marker']);
+        $draft = Biomarker::factory()->for($user)->create(['name' => 'Draft marker']);
+        $foreign = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+        $latest = BloodTest::factory()->for($user)->create([
+            'title' => 'Latest confirmed-only digest',
+            'status' => 'confirmed',
+        ]);
+
+        BiomarkerResult::factory()->for($latest)->for($owned)->create([
+            'value' => 12,
+            'unit' => 'mg/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
+        BiomarkerResult::factory()->for($latest)->for($draft)->create([
+            'value' => 999,
+            'unit' => 'mg/L',
+            'status' => 'high',
+            'confirmed_at' => null,
+        ]);
+        BiomarkerResult::factory()->for($latest)->for($foreign)->create([
+            'value' => 888,
+            'unit' => 'mg/L',
+            'status' => 'high',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Latest confirmed-only digest')
+            ->assertSee('data-test="dashboard-latest-values-preview"', false)
+            ->assertSee('1/1 waarde is normaal')
+            ->assertSee('Owned confirmed marker')
             ->assertDontSee('Draft marker')
-            ->assertDontSee('Other marker');
+            ->assertDontSee('999')
+            ->assertDontSee('Foreign private marker')
+            ->assertDontSee('888');
+    }
+
+    public function test_dashboard_ignores_confirmed_results_linked_to_another_users_biomarker(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+        $foreignMarker = Biomarker::factory()->for($otherUser)->create(['name' => 'Foreign private marker']);
+
+        BiomarkerResult::factory()->for($bloodTest)->for($foreignMarker)->create([
+            'status' => 'high',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Foreign private marker');
     }
 
     public function test_dashboard_shows_the_next_open_reminder_only(): void
@@ -97,7 +590,7 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Next reminder')
+            ->assertSee('Volgende herinnering')
             ->assertSee('Next open reminder')
             ->assertSee('2026-07-01')
             ->assertSee('Plan the next blood test.')

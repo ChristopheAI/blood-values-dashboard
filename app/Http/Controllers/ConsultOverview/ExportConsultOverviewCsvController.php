@@ -20,10 +20,10 @@ class ExportConsultOverviewCsvController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $overview = $buildConsultOverview($user, $filters);
-        $rows = [['section', 'date', 'biomarker', 'value', 'unit', 'status', 'note']];
+        $rows = [['section', 'date', 'biomarker', 'value', 'unit', 'status', 'source', 'confirmed_at', 'note']];
 
         foreach ($overview['pinnedBiomarkers'] as $pin) {
-            $rows[] = ['pinned', '', $pin->biomarker->name, '', '', '', $pin->note ?? ''];
+            $rows[] = ['pinned', '', $pin->biomarker->name, '', '', '', '', '', $pin->note ?? ''];
         }
 
         foreach ($overview['attentionResults'] as $result) {
@@ -34,7 +34,40 @@ class ExportConsultOverviewCsvController extends Controller
                 (string) (float) $result->value,
                 $result->unit,
                 $result->status,
+                $this->sourceLabel($result->bloodTest),
+                $result->confirmed_at?->toDateString() ?? '',
                 $result->note ?? '',
+            ];
+        }
+
+        foreach ($overview['normalResults'] as $result) {
+            $rows[] = [
+                'normal',
+                $result->bloodTest->test_date?->toDateString() ?? '',
+                $result->biomarker->name,
+                (string) (float) $result->value,
+                $result->unit,
+                $result->status,
+                $this->sourceLabel($result->bloodTest),
+                $result->confirmed_at?->toDateString() ?? '',
+                $result->note ?? '',
+            ];
+        }
+
+        foreach ($overview['trendChanges'] as $change) {
+            $result = $change['result'];
+            $previousResult = $change['previousResult'];
+
+            $rows[] = [
+                'change',
+                $result->bloodTest->test_date?->toDateString() ?? '',
+                $result->biomarker->name,
+                (string) (float) $result->value,
+                $result->unit,
+                $result->status,
+                $this->sourceLabel($result->bloodTest),
+                $result->confirmed_at?->toDateString() ?? '',
+                'previous '.(string) (float) $previousResult->value.' '.$previousResult->unit.'; change '.$change['changeLabel'],
             ];
         }
 
@@ -46,7 +79,23 @@ class ExportConsultOverviewCsvController extends Controller
                 (string) (float) $result->value,
                 $result->unit,
                 $result->status,
+                $this->sourceLabel($result->bloodTest),
+                $result->confirmed_at?->toDateString() ?? '',
                 $result->note ?? '',
+            ];
+        }
+
+        foreach ($overview['sourceDocuments'] as $document) {
+            $rows[] = [
+                'source_document',
+                $document->bloodTest->test_date?->toDateString() ?? '',
+                $document->original_filename,
+                '',
+                '',
+                '',
+                $this->sourceLabel($document->bloodTest),
+                '',
+                '',
             ];
         }
 
@@ -55,6 +104,8 @@ class ExportConsultOverviewCsvController extends Controller
                 'context',
                 $note->note_date->toDateString(),
                 ucfirst($note->category->value),
+                '',
+                '',
                 '',
                 '',
                 '',
@@ -69,7 +120,7 @@ class ExportConsultOverviewCsvController extends Controller
         }
 
         foreach ($rows as $row) {
-            fputcsv($handle, $row);
+            fputcsv($handle, $this->escapeSpreadsheetFormulas($row), ',', '"', '\\');
         }
 
         rewind($handle);
@@ -83,14 +134,32 @@ class ExportConsultOverviewCsvController extends Controller
     }
 
     /**
+     * @param  list<string>  $row
+     * @return list<string>
+     */
+    private function escapeSpreadsheetFormulas(array $row): array
+    {
+        return array_map(function (string $cell): string {
+            return preg_match('/^\s*[=+\-@\t\r]/', $cell) === 1 ? "'".$cell : $cell;
+        }, $row);
+    }
+
+    private function sourceLabel(BloodTest $bloodTest): string
+    {
+        return $bloodTest->title ?: __('Bloedtest zonder titel');
+    }
+
+    /**
      * @return array{
      *     from: string|null,
      *     to: string|null,
      *     blood_test_ids: list<int>,
      *     include_pinned: bool,
      *     include_attention: bool,
+     *     include_normal: bool,
      *     include_trends: bool,
      *     include_context: bool,
+     *     include_source_documents: bool,
      *     questions: string|null
      * }
      */
@@ -103,9 +172,10 @@ class ExportConsultOverviewCsvController extends Controller
             'blood_test_ids.*' => ['integer'],
             'include_pinned' => ['nullable', 'boolean'],
             'include_attention' => ['nullable', 'boolean'],
+            'include_normal' => ['nullable', 'boolean'],
             'include_trends' => ['nullable', 'boolean'],
             'include_context' => ['nullable', 'boolean'],
-            'questions' => ['nullable', 'string', 'max:5000'],
+            'include_source_documents' => ['nullable', 'boolean'],
         ]);
 
         return [
@@ -114,9 +184,11 @@ class ExportConsultOverviewCsvController extends Controller
             'blood_test_ids' => array_values(array_map('intval', $validated['blood_test_ids'] ?? [])),
             'include_pinned' => $request->boolean('include_pinned'),
             'include_attention' => $request->boolean('include_attention'),
+            'include_normal' => $request->boolean('include_normal'),
             'include_trends' => $request->boolean('include_trends'),
             'include_context' => $request->boolean('include_context'),
-            'questions' => $validated['questions'] ?? null,
+            'include_source_documents' => $request->boolean('include_source_documents'),
+            'questions' => null,
         ];
     }
 

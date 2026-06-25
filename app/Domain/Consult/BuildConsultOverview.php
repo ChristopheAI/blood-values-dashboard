@@ -2,8 +2,11 @@
 
 namespace App\Domain\Consult;
 
+use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\BloodTests\LongitudinalChange;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Models\BloodTestDocument;
 use App\Models\ContextNote;
 use App\Models\PinnedBiomarker;
 use App\Models\User;
@@ -11,6 +14,8 @@ use Illuminate\Support\Collection;
 
 class BuildConsultOverview
 {
+    public function __construct(private readonly BuildLongitudinalChanges $buildLongitudinalChanges) {}
+
     /**
      * @param  array{
      *     from?: string|null,
@@ -18,16 +23,21 @@ class BuildConsultOverview
      *     blood_test_ids?: list<int>,
      *     include_pinned?: bool,
      *     include_attention?: bool,
+     *     include_normal?: bool,
      *     include_trends?: bool,
      *     include_context?: bool,
+     *     include_source_documents?: bool,
      *     questions?: string|null
      * }  $filters
      * @return array{
      *     bloodTests: Collection<int, BloodTest>,
      *     pinnedBiomarkers: Collection<int, PinnedBiomarker>,
      *     attentionResults: Collection<int, BiomarkerResult>,
+     *     normalResults: Collection<int, BiomarkerResult>,
      *     trendResults: Collection<int, BiomarkerResult>,
+     *     trendChanges: Collection<int, array{result: BiomarkerResult, previousResult: BiomarkerResult, changeLabel: string}>,
      *     contextNotes: Collection<int, ContextNote>,
+     *     sourceDocuments: Collection<int, BloodTestDocument>,
      *     questions: string|null
      * }
      */
@@ -48,11 +58,20 @@ class BuildConsultOverview
             'attentionResults' => ($filters['include_attention'] ?? false)
                 ? $this->confirmedResults($user, $bloodTestIds, ['low', 'high', 'unknown'])
                 : collect(),
+            'normalResults' => ($filters['include_normal'] ?? false)
+                ? $this->confirmedResults($user, $bloodTestIds, ['normal'])
+                : collect(),
             'trendResults' => ($filters['include_trends'] ?? false)
                 ? $this->confirmedResults($user, $bloodTestIds)
                 : collect(),
+            'trendChanges' => ($filters['include_trends'] ?? false)
+                ? $this->trendChanges($user, $bloodTests)
+                : collect(),
             'contextNotes' => ($filters['include_context'] ?? false)
                 ? $this->contextNotes($user, $filters, $bloodTestIds)
+                : collect(),
+            'sourceDocuments' => ($filters['include_source_documents'] ?? false)
+                ? $this->sourceDocuments($user, $bloodTestIds)
                 : collect(),
             'questions' => $filters['questions'] ?? null,
         ];
@@ -64,6 +83,10 @@ class BuildConsultOverview
      */
     private function bloodTests(User $user, array $filters): Collection
     {
+        if (empty($filters['blood_test_ids']) && empty($filters['from']) && empty($filters['to'])) {
+            return collect();
+        }
+
         $query = BloodTest::query()
             ->where('user_id', $user->id)
             ->orderBy('test_date');
@@ -89,7 +112,7 @@ class BuildConsultOverview
     private function pinnedBiomarkers(User $user): Collection
     {
         return PinnedBiomarker::query()
-            ->where('user_id', $user->id)
+            ->forUserWithOwnedBiomarker($user->id)
             ->with('biomarker')
             ->orderByDesc('created_at')
             ->get();
@@ -107,12 +130,12 @@ class BuildConsultOverview
         }
 
         $query = BiomarkerResult::query()
-            ->whereNotNull('biomarker_results.confirmed_at')
+            ->confirmedForUser($user->id)
             ->whereIn('biomarker_results.blood_test_id', $bloodTestIds)
-            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $user->id))
             ->with(['biomarker', 'bloodTest'])
             ->join('blood_tests', 'biomarker_results.blood_test_id', '=', 'blood_tests.id')
             ->orderBy('blood_tests.test_date')
+            ->orderBy('blood_tests.id')
             ->orderBy('biomarker_results.id')
             ->select('biomarker_results.*');
 
@@ -121,6 +144,44 @@ class BuildConsultOverview
         }
 
         return $query->get();
+    }
+
+    /**
+     * @param  Collection<int, BloodTest>  $bloodTests
+     * @return Collection<int, array{result: BiomarkerResult, previousResult: BiomarkerResult, changeLabel: string}>
+     */
+    private function trendChanges(User $user, Collection $bloodTests): Collection
+    {
+        return $this->buildLongitudinalChanges
+            ->across($user, $bloodTests)
+            ->filter(fn (LongitudinalChange $change): bool => $change->comparable && $change->direction !== 'unchanged')
+            ->map(fn (LongitudinalChange $change): array => [
+                'result' => $change->result,
+                'previousResult' => $change->previousResult,
+                'changeLabel' => $change->changeLabel,
+            ])
+            ->values();
+    }
+
+    /**
+     * @param  list<int>  $bloodTestIds
+     * @return Collection<int, BloodTestDocument>
+     */
+    private function sourceDocuments(User $user, array $bloodTestIds): Collection
+    {
+        if ($bloodTestIds === []) {
+            return collect();
+        }
+
+        return BloodTestDocument::query()
+            ->whereHas('bloodTest', function ($query) use ($user, $bloodTestIds): void {
+                $query
+                    ->where('user_id', $user->id)
+                    ->whereIn('id', $bloodTestIds);
+            })
+            ->with('bloodTest')
+            ->orderBy('id')
+            ->get();
     }
 
     /**
@@ -151,6 +212,14 @@ class BuildConsultOverview
                     });
                 }
             });
+        } else {
+            if (! empty($filters['from'])) {
+                $query->whereDate('note_date', '>=', $filters['from']);
+            }
+
+            if (! empty($filters['to'])) {
+                $query->whereDate('note_date', '<=', $filters['to']);
+            }
         }
 
         return $query->get();

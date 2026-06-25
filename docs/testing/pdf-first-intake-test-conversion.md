@@ -5,17 +5,31 @@ Date: 2026-06-18
 Purpose:
 
 - Convert the engineering source radar into concrete first-slice test gates.
-- Keep the project pre-scaffold while making the future Laravel/Pest tests
-  explicit.
+- Trace the original pre-scaffold test contract into the current Laravel/Pest
+  implementation tests.
 - Explain exactly which rules were converted and why.
+
+Implementation status:
+
+- This file began as a pre-scaffold conversion artifact. The Laravel app now
+  exists, and the V1/V2 intake contract has been converted into real Pest,
+  Livewire, architecture, and browser-smoke tests.
+- Keep this document as the source trace for why those tests exist, but do not
+  treat its pre-scaffold wording as the current repo state.
+- ADR-0011 extends the original V1/V2 rule: clean, unambiguous,
+  high-confidence extracted rows may be auto-confirmed; below-threshold rows
+  remain drafts and stay out of downstream confirmed-only workflows.
 
 Planning boundary:
 
-- This document does not create Laravel code.
-- This document does not create executable Pest tests yet.
-- The repository still validates that no Laravel scaffold exists.
-- When implementation starts, these named tests become the minimum test contract
-  for the PDF-first intake slice.
+- This document itself does not create Laravel code.
+- The executable tests now live in `tests/Feature`, `tests/Feature/Architecture`,
+  and `tests/Browser`.
+- The repository now validates the implementation stage through
+  `sh scripts/validate.sh`, including frontend build, Pint, PHPStan, Pest,
+  browser smoke, and whitespace checks.
+- The named tests below remain the historical minimum contract for the original
+  PDF-first intake slice.
 
 Primary source:
 
@@ -46,14 +60,21 @@ Converted now:
 11. package review before sensitive dependencies;
 12. no public/external processing path for lab PDFs.
 
-Deferred but recorded:
+Originally deferred:
 
 1. architecture tests for module boundaries;
 2. browser workflow proof;
 3. dependency/security automation;
 4. backup/activity-log package behavior.
 
-Why deferred:
+Current implementation note:
+
+- Architecture and browser checks now exist for the implemented slice, including
+  privacy/medical-copy boundaries and a PDF-first Dusk smoke flow. Broader
+  dependency/security automation and backup/activity-log behavior remain
+  deferred unless a later ADR expands scope.
+
+Why some items were deferred originally:
 
 - They require a Laravel scaffold, concrete namespaces, CI setup, package
   decisions, or deployment context. The correct move now is to define the test
@@ -67,8 +88,8 @@ These are target files for the Laravel implementation phase.
 - `tests/Feature/BloodTests/BloodTestDocumentDownloadTest.php`
 - `tests/Feature/BloodTests/BloodTestDocumentDeletionTest.php`
 - `tests/Feature/Livewire/BloodTestReviewAuthorizationTest.php`
-- `tests/Architecture/PrivacyBoundaryTest.php`
-- `tests/Architecture/PackageBoundaryTest.php`
+- `tests/Feature/Architecture/PrivacyBoundaryTest.php`
+- `tests/Feature/Architecture/PackageBoundaryTest.php`
 
 Exact class, model, route, and component names may be adjusted to the scaffold's
 real naming, but the behaviors below must stay intact.
@@ -114,7 +135,7 @@ Why:
 
 Proof expected:
 
-- upload file named `Van_Hoof-Christophe-20260519-Labo_CMA.pdf`;
+- upload file named `synthetic-private-lab-2026-05-19.pdf`;
 - stored path does not contain the original filename;
 - stored path contains a generated identifier or server-chosen path segment;
 - original filename is stored only as sanitized display metadata.
