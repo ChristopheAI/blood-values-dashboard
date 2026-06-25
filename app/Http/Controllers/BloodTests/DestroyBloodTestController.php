@@ -19,6 +19,11 @@ class DestroyBloodTestController extends Controller
         $documents = $bloodTest->documents()
             ->get(['id', 'storage_disk', 'storage_path']);
 
+        // Delete the private PDFs inside the transaction, after the database delete: a
+        // file-delete failure rolls the row deletes back, so a record is never left
+        // without its file and a file is never orphaned without its record. With
+        // several documents a later-file failure leaves earlier files deleted while
+        // the rows are restored — a recoverable orphaned reference, healed by retry.
         DB::transaction(function () use ($bloodTest, $documents): void {
             $bloodTest->delete();
 
