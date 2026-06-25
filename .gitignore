@@ -11,6 +11,7 @@
 .codex/
 .omo/
 .repowise/
+.firecrawl/
 .env
 .env.backup
 .env.dusk.*
