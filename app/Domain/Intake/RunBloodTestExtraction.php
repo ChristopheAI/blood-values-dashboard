@@ -189,7 +189,6 @@ class RunBloodTestExtraction
 
             $attributes = [
                 'blood_test_id' => $bloodTest->id,
-                'blood_test_document_id' => $document->id,
                 'entry_source' => 'extracted',
             ];
 
