@@ -197,3 +197,11 @@ it('caps undated blood tests to upload order when building across changes', func
         ->and($change->result->is($undatedResult))->toBeTrue()
         ->and($change->changeLabel)->toBe('+2 ug/L');
 });
+
+it('returns no blood tests for a foreign blood test in bloodTestsUpToAndIncluding', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $foreignBloodTest = BloodTest::factory()->for($otherUser)->create(['test_date' => '2026-05-01']);
+
+    expect($user->bloodTestsUpToAndIncluding($foreignBloodTest))->toBeEmpty();
+});

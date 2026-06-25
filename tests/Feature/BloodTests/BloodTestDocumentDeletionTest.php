@@ -219,6 +219,50 @@ it('keeps source snippets for remaining documents when deleting one of multiple 
         ->and($remainingResult->refresh()->source_snippet)->toBe('Synthetic evidence from remaining PDF');
 });
 
+it('rolls back snippet clearing when deleting one pdf of a multi-document blood test fails', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $deletedDocument = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => 'blood-test-documents/multi-delete-fails.pdf',
+    ]);
+    $remainingDocument = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => 'blood-test-documents/multi-remaining.pdf',
+    ]);
+    $deletedResult = BiomarkerResult::factory()->for($bloodTest)->create([
+        'blood_test_document_id' => $deletedDocument->id,
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'source_snippet' => 'Synthetic evidence from deleted PDF',
+    ]);
+    $remainingResult = BiomarkerResult::factory()->for($bloodTest)->create([
+        'blood_test_document_id' => $remainingDocument->id,
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'source_snippet' => 'Synthetic evidence from remaining PDF',
+    ]);
+    $disk = Mockery::mock(Filesystem::class);
+
+    $disk->shouldReceive('delete')
+        ->once()
+        ->with($deletedDocument->storage_path)
+        ->andReturnFalse();
+    Storage::shouldReceive('disk')
+        ->once()
+        ->with('local')
+        ->andReturn($disk);
+
+    $this->actingAs($user)
+        ->delete(route('blood-test-documents.destroy', $deletedDocument))
+        ->assertServerError();
+
+    expect(BloodTestDocument::query()->whereKey($deletedDocument->id)->exists())->toBeTrue()
+        ->and(BloodTestDocument::query()->whereKey($remainingDocument->id)->exists())->toBeTrue()
+        ->and($deletedResult->refresh()->source_snippet)->toBe('Synthetic evidence from deleted PDF')
+        ->and($remainingResult->refresh()->source_snippet)->toBe('Synthetic evidence from remaining PDF');
+});
+
 it('keeps the document record when physical pdf deletion fails', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create();

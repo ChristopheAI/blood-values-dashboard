@@ -226,6 +226,22 @@ it('streams a safe failed extract stage when enhanced pdf parsing fails', functi
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
+it('redirects failed non-stream uploads back to the intake index', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $file = UploadedFile::fake()->create('malformed-lab.pdf', 64, 'application/pdf');
+
+    $this->actingAs($user)
+        ->post(route('blood-tests.store'), [
+            'document' => $file,
+        ])
+        ->assertRedirect(route('blood-tests.index'));
+
+    expect(BloodTest::query()->count())->toBe(1)
+        ->and(ExtractionRun::query()->firstOrFail()->status)->toBe('failed');
+});
+
 it('lab pdf storage path does not use original filename', function () {
     Storage::fake('local');
 
