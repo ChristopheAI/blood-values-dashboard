@@ -46,6 +46,42 @@ it('extracts candidates from positioned tabular fragments', function () {
         ->and($candidates[1]->confidence)->toBe(0.85);
 });
 
+it('extracts qualitative serology and pcr rows from trusted cma tabular layouts', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analyse', 40, 700),
+        new PositionedTextFragment('Eenheid', 300, 700),
+        new PositionedTextFragment('Referentie', 390, 700),
+        new PositionedTextFragment('T. pallidum AL*', 40, 680),
+        new PositionedTextFragment('Negatief', 210, 680),
+        new PositionedTextFragment('Negatief', 390, 680),
+        new PositionedTextFragment('<', 470, 680),
+        new PositionedTextFragment('Antinucleaire factor', 40, 660),
+        new PositionedTextFragment('Negatief', 210, 660),
+        new PositionedTextFragment('Negatief', 390, 660),
+        new PositionedTextFragment('<', 470, 660),
+        new PositionedTextFragment('C. trachomatis DNA (PCR)', 40, 640),
+        new PositionedTextFragment('Niet gedetecteerd', 210, 640),
+        new PositionedTextFragment('<', 470, 640),
+    ]);
+
+    expect($candidates)->toHaveCount(3);
+
+    expect($candidates[0]->extractedName)->toBe('T. pallidum AL*')
+        ->and($candidates[0]->value)->toBe('Negatief')
+        ->and($candidates[0]->referenceQualitative)->toBe('Negatief')
+        ->and($candidates[0]->confidence)->toBe(0.85);
+
+    expect($candidates[1]->extractedName)->toBe('Antinucleaire factor')
+        ->and($candidates[1]->value)->toBe('Negatief')
+        ->and($candidates[1]->referenceQualitative)->toBe('Negatief');
+
+    expect($candidates[2]->extractedName)->toBe('C. trachomatis DNA (PCR)')
+        ->and($candidates[2]->value)->toBe('Niet gedetecteerd')
+        ->and($candidates[2]->confidence)->toBe(0.85);
+});
+
 it('preserves below-detection value prefixes from tabular value cells', function () {
     $extract = new ExtractTabularBiomarkerCandidates;
 

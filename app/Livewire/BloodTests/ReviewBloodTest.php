@@ -4,6 +4,7 @@ namespace App\Livewire\BloodTests;
 
 use App\Domain\Biomarkers\DetectionLimitValue;
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
+use App\Domain\Biomarkers\QualitativeLabValue;
 use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Domain\BloodTests\LongitudinalChange;
 use App\Domain\Dashboard\BuildLatestUploadSummary;
@@ -67,10 +68,11 @@ class ReviewBloodTest extends Component
         ]);
 
         $form = $this->normalizeResultForm($validated['resultForm']);
-        $storedValue = DetectionLimitValue::numericFromInput((string) $form['value']);
+        $storedValue = DetectionLimitValue::numericFromInput((string) $form['value'])
+            ?? QualitativeLabValue::parse((string) $form['value'])?->storedValue();
 
         if ($storedValue === null) {
-            $this->addError('resultForm.value', 'The value must be a number or a detection-limit value such as <10.');
+            $this->addError('resultForm.value', 'The value must be a number, a detection-limit value such as <10, or a qualitative result such as Negatief.');
 
             return;
         }
@@ -95,11 +97,17 @@ class ReviewBloodTest extends Component
 
         $statusCalculator = new DetermineBiomarkerStatus;
         $detectionLimit = DetectionLimitValue::parse((string) $validated['resultForm']['value']);
+        $qualitative = QualitativeLabValue::parse((string) $validated['resultForm']['value']);
         $referenceMinimum = $form['reference_min'] === null ? null : (float) $form['reference_min'];
         $referenceMaximum = $form['reference_max'] === null ? null : (float) $form['reference_max'];
         $referenceUnit = $form['reference_unit'] ?: $form['unit'];
 
-        $status = $detectionLimit instanceof DetectionLimitValue
+        $status = $qualitative instanceof QualitativeLabValue
+            ? $this->qualitativeStatus(
+                qualitative: $qualitative,
+                draft: $draft,
+            )
+            : ($detectionLimit instanceof DetectionLimitValue
             ? $statusCalculator->forDetectionLimit(
                 detectionLimit: $detectionLimit,
                 valueUnit: $form['unit'],
@@ -113,7 +121,7 @@ class ReviewBloodTest extends Component
                 referenceMinimum: $referenceMinimum,
                 referenceMaximum: $referenceMaximum,
                 referenceUnit: $referenceUnit,
-            );
+            ));
 
         $payload = [
             'biomarker_id' => $biomarker->id,
@@ -162,7 +170,8 @@ class ReviewBloodTest extends Component
         $this->resultForm = [
             'biomarker_id' => $result->biomarker_id,
             'name' => $result->biomarker->name,
-            'value' => Format::biomarkerValue($result->value, $result->source_snippet),
+            'value' => QualitativeLabValue::fromResult($result)?->storedValue()
+                ?? Format::biomarkerValue($result->value, $result->source_snippet),
             'unit' => $result->unit,
             'reference_min' => $this->formatDecimal($result->reference_min),
             'reference_max' => $this->formatDecimal($result->reference_max),
@@ -498,6 +507,21 @@ class ReviewBloodTest extends Component
         }
 
         return $result->biomarker?->user_id === Auth::id();
+    }
+
+    private function qualitativeStatus(QualitativeLabValue $qualitative, ?BiomarkerResult $draft): \App\Enums\BiomarkerStatus
+    {
+        $sourceSnippet = (string) ($draft?->source_snippet ?? '');
+        $referenceQualitative = null;
+
+        if ($sourceSnippet !== '' && preg_match('/\s'.preg_quote($qualitative->storedValue(), '/').'\s+(?<reference>[A-Za-z ]+?)\s*</u', $sourceSnippet, $match)) {
+            $referenceQualitative = QualitativeLabValue::parse(trim($match['reference']));
+        }
+
+        return $qualitative->statusAgainstReference(
+            $referenceQualitative,
+            $qualitative->isPcrNegativeExpectation(str_ends_with(trim($sourceSnippet), '<') ? '<' : ''),
+        );
     }
 
     private function formatDecimal(mixed $value): ?string

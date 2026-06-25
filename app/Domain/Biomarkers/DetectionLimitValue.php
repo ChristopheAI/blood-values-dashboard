@@ -2,6 +2,8 @@
 
 namespace App\Domain\Biomarkers;
 
+use App\Models\BiomarkerResult;
+
 final class DetectionLimitValue
 {
     private function __construct(
@@ -68,5 +70,26 @@ final class DetectionLimitValue
     public function numericForStatus(): float
     {
         return (float) $this->numeric;
+    }
+
+    public static function fromStoredResult(BiomarkerResult $result): ?self
+    {
+        if (! is_numeric($result->value)) {
+            return null;
+        }
+
+        if ($result->source_snippet === null || $result->source_snippet === '') {
+            return null;
+        }
+
+        if (preg_match('/\s(?<prefix><|>)\s*(?<num>\d+(?:[,.]\d+)?)/u', $result->source_snippet, $match)) {
+            $bound = str_replace(',', '.', $match['num']);
+
+            if (abs((float) $bound - (float) $result->value) < 0.0001) {
+                return self::parse($match['prefix'].$bound);
+            }
+        }
+
+        return null;
     }
 }

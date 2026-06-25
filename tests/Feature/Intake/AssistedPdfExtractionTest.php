@@ -736,6 +736,45 @@ it('auto-confirms safe below-detection tabular rows such as RA and CCP', functio
         ->and($ccp->source_snippet)->toContain('<1,1');
 });
 
+it('auto-confirms trusted qualitative serology and pcr rows', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $path = syntheticQualitativeTabularPdfPath();
+    $file = new UploadedFile(
+        $path,
+        'qualitative-tabular.pdf',
+        'application/pdf',
+        null,
+        true,
+    );
+
+    try {
+        $this->actingAs($user)
+            ->post(route('blood-tests.store'), [
+                'document' => $file,
+                'test_date' => '2026-05-19',
+                'lab_name' => 'Synthetic Lab',
+                'title' => 'Qualitative tabular fixture',
+            ])
+            ->assertRedirect();
+    } finally {
+        @unlink($path);
+    }
+
+    $bloodTest = BloodTest::query()->firstOrFail();
+    $results = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->orderBy('extracted_name')
+        ->get();
+
+    expect($bloodTest->status)->toBe('confirmed')
+        ->and($results)->toHaveCount(3)
+        ->and($results->pluck('confirmed_at')->filter())->toHaveCount(3)
+        ->and($results->firstWhere('extracted_name', 'Antinucleaire factor')?->value)->toBe('Negatief')
+        ->and($results->firstWhere('extracted_name', 'C. trachomatis DNA (PCR)')?->value)->toBe('Niet gedetecteerd');
+});
+
 it('auto-confirms clean inferred-value tabular rows when the biomarker is already in the catalog', function () {
     Storage::fake('local');
 
@@ -2232,6 +2271,32 @@ function syntheticBelowDetectionTabularPdfPath(): string
         positionedPdfText('<1,1', 210, 140),
         positionedPdfText('U/mL', 300, 140),
         positionedPdfText('≤6,9', 390, 140),
+        'ET',
+        '',
+    ]);
+
+    return syntheticPdfPath($stream);
+}
+
+function syntheticQualitativeTabularPdfPath(): string
+{
+    $stream = implode("\n", [
+        'BT',
+        '/F1 12 Tf',
+        positionedPdfText('Analyse', 40, 180),
+        positionedPdfText('Eenheid', 300, 180),
+        positionedPdfText('Referentie', 390, 180),
+        positionedPdfText('Antinucleaire factor', 40, 160),
+        positionedPdfText('Negatief', 210, 160),
+        positionedPdfText('Negatief', 390, 160),
+        positionedPdfText('<', 470, 160),
+        positionedPdfText('T. pallidum AL*', 40, 140),
+        positionedPdfText('Negatief', 210, 140),
+        positionedPdfText('Negatief', 390, 140),
+        positionedPdfText('<', 470, 140),
+        positionedPdfText('C. trachomatis DNA (PCR)', 40, 120),
+        positionedPdfText('Niet gedetecteerd', 210, 120),
+        positionedPdfText('<', 470, 120),
         'ET',
         '',
     ]);
