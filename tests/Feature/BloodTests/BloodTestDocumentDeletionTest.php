@@ -160,11 +160,13 @@ it('clears extracted source snippets when deleting a source document', function 
         'storage_path' => 'blood-test-documents/with-snippets.pdf',
     ]);
     $confirmed = BiomarkerResult::factory()->for($bloodTest)->create([
+        'blood_test_document_id' => $document->id,
         'entry_source' => 'extracted',
         'confirmed_at' => now(),
         'source_snippet' => 'Synthetic PDF evidence for confirmed row',
     ]);
     $draft = BiomarkerResult::factory()->for($bloodTest)->create([
+        'blood_test_document_id' => $document->id,
         'entry_source' => 'extracted',
         'confirmed_at' => null,
         'source_snippet' => 'Synthetic PDF evidence for draft row',
@@ -180,6 +182,41 @@ it('clears extracted source snippets when deleting a source document', function 
         ->and($draft->refresh()->source_snippet)->toBeNull()
         ->and(BiomarkerResult::query()->whereKey($confirmed->id)->exists())->toBeTrue()
         ->and(BiomarkerResult::query()->whereKey($draft->id)->exists())->toBeTrue();
+});
+
+it('keeps source snippets for remaining documents when deleting one of multiple pdfs', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $deletedDocument = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_path' => 'blood-test-documents/deleted.pdf',
+    ]);
+    $remainingDocument = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_path' => 'blood-test-documents/remaining.pdf',
+    ]);
+    $deletedResult = BiomarkerResult::factory()->for($bloodTest)->create([
+        'blood_test_document_id' => $deletedDocument->id,
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'source_snippet' => 'Synthetic evidence from deleted PDF',
+    ]);
+    $remainingResult = BiomarkerResult::factory()->for($bloodTest)->create([
+        'blood_test_document_id' => $remainingDocument->id,
+        'entry_source' => 'extracted',
+        'confirmed_at' => now(),
+        'source_snippet' => 'Synthetic evidence from remaining PDF',
+    ]);
+
+    Storage::disk('local')->put($deletedDocument->storage_path, 'pdf bytes');
+    Storage::disk('local')->put($remainingDocument->storage_path, 'pdf bytes');
+
+    $this->actingAs($user)
+        ->delete(route('blood-test-documents.destroy', $deletedDocument))
+        ->assertRedirect(route('blood-tests.show', $bloodTest));
+
+    expect($deletedResult->refresh()->source_snippet)->toBeNull()
+        ->and($remainingResult->refresh()->source_snippet)->toBe('Synthetic evidence from remaining PDF');
 });
 
 it('keeps the document record when physical pdf deletion fails', function () {

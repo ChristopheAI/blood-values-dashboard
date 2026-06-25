@@ -160,3 +160,40 @@ it('excludes drafts foreign blood tests and cross-owner biomarker links', functi
     expect($changes->pluck('biomarker')->all())->toBe(['Ferritin'])
         ->and($changes->first()->changeLabel)->toBe('+13 ug/L');
 });
+
+it('caps undated blood tests to upload order when building across changes', function () {
+    $user = User::factory()->create();
+    $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $previousBloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-05-01']);
+    $undatedBloodTest = BloodTest::factory()->for($user)->create(['test_date' => null]);
+    $futureBloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-07-01']);
+
+    $previousResult = BiomarkerResult::factory()->for($previousBloodTest)->for($ferritin)->create([
+        'value' => 40,
+        'unit' => 'ug/L',
+        'confirmed_at' => now()->subMonths(2),
+    ]);
+    BiomarkerResult::factory()->for($futureBloodTest)->for($ferritin)->create([
+        'value' => 50,
+        'unit' => 'ug/L',
+        'confirmed_at' => now(),
+    ]);
+    $undatedResult = BiomarkerResult::factory()->for($undatedBloodTest)->for($ferritin)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'confirmed_at' => now()->subMonth(),
+    ]);
+
+    $changes = app(BuildLongitudinalChanges::class)->across(
+        $user,
+        $user->bloodTestsUpToAndIncluding($undatedBloodTest),
+    );
+
+    expect($changes)->toHaveCount(1);
+
+    $change = $changes->first();
+
+    expect($change->previousResult->is($previousResult))->toBeTrue()
+        ->and($change->result->is($undatedResult))->toBeTrue()
+        ->and($change->changeLabel)->toBe('+2 ug/L');
+});

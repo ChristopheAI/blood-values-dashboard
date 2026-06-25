@@ -21,15 +21,27 @@ class DestroyBloodTestDocumentController extends Controller
         $storageDisk = $bloodTestDocument->storage_disk;
         $storagePath = $bloodTestDocument->storage_path;
 
-        // Delete the single private PDF inside the transaction, after the database
-        // delete: a file-delete failure rolls the row delete back, so the record and
-        // its file stay consistent (never a record without its file, never a leak).
-        DB::transaction(function () use ($bloodTest, $bloodTestDocument, $storageDisk, $storagePath): void {
-            $bloodTestDocument->delete();
+        $clearsLegacyNullSnippets = $bloodTest->documents()
+            ->whereKeyNot($bloodTestDocument->id)
+            ->doesntExist();
+
+        // Clear snippets before the row delete so FK nullOnDelete does not skip the
+        // update, then delete the PDF inside the transaction so a file failure rolls
+        // the database delete back and the record and file stay consistent.
+        DB::transaction(function () use ($bloodTest, $bloodTestDocument, $storageDisk, $storagePath, $clearsLegacyNullSnippets): void {
             $bloodTest->results()
                 ->where('entry_source', 'extracted')
                 ->whereNotNull('source_snippet')
+                ->where(function ($query) use ($bloodTestDocument, $clearsLegacyNullSnippets): void {
+                    $query->where('blood_test_document_id', $bloodTestDocument->id);
+
+                    if ($clearsLegacyNullSnippets) {
+                        $query->orWhereNull('blood_test_document_id');
+                    }
+                })
                 ->update(['source_snippet' => null]);
+
+            $bloodTestDocument->delete();
 
             if (! Storage::disk($storageDisk)->delete($storagePath)) {
                 throw new RuntimeException('Failed to delete stored lab PDF.');

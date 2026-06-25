@@ -209,8 +209,9 @@ it('streams a safe failed extract stage when enhanced pdf parsing fails', functi
     expect($events)->sequence(
         fn ($event) => $event->toMatchArray(['stage' => 'extract', 'state' => 'active']),
         fn ($event) => $event->toMatchArray(['stage' => 'extract', 'state' => 'failed']),
-        fn ($event) => $event->toHaveKey('redirect'),
     );
+
+    expect(collect($events)->contains(fn (array $event): bool => array_key_exists('redirect', $event)))->toBeFalse();
 
     expect($content)
         ->not->toContain('malformed-lab.pdf')
@@ -220,8 +221,7 @@ it('streams a safe failed extract stage when enhanced pdf parsing fails', functi
     $bloodTest = BloodTest::query()->firstOrFail();
     $run = ExtractionRun::query()->firstOrFail();
 
-    expect($events[2]['redirect'])->toBe(route('blood-tests.show', $bloodTest, false))
-        ->and($run->status)->toBe('failed')
+    expect($run->status)->toBe('failed')
         ->and($run->candidate_count)->toBe(0)
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });

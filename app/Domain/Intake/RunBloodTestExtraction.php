@@ -187,6 +187,7 @@ class RunBloodTestExtraction
 
             $attributes = [
                 'blood_test_id' => $bloodTest->id,
+                'blood_test_document_id' => $document->id,
                 'entry_source' => 'extracted',
             ];
 
@@ -205,6 +206,7 @@ class RunBloodTestExtraction
             }
 
             $values = [
+                'blood_test_document_id' => $document->id,
                 'biomarker_id' => $biomarker?->id,
                 'extracted_name' => $extractedName,
                 'value' => $value,

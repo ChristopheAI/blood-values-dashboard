@@ -66,9 +66,13 @@ class StoreBloodTestController extends Controller
             return $this->streamExtractionProgress($bloodTest, $document, $runBloodTestExtraction);
         }
 
-        $runBloodTestExtraction($document);
+        $run = $runBloodTestExtraction($document);
 
-        return redirect()->route('blood-tests.show', $bloodTest);
+        if ($run->status === 'done') {
+            return redirect()->route('blood-tests.show', $bloodTest);
+        }
+
+        return redirect()->route('blood-tests.index');
     }
 
     private function wantsProgressStream(Request $request): bool
@@ -93,7 +97,7 @@ class StoreBloodTestController extends Controller
                 flush();
             };
 
-            $runBloodTestExtraction(
+            $run = $runBloodTestExtraction(
                 $document,
                 function (string $stage, string $state) use ($emit): void {
                     $emit([
@@ -103,7 +107,9 @@ class StoreBloodTestController extends Controller
                 },
             );
 
-            $emit(['redirect' => route('blood-tests.show', $bloodTest, false)]);
+            if ($run->status === 'done') {
+                $emit(['redirect' => route('blood-tests.show', $bloodTest, false)]);
+            }
         }, 200, [
             'Content-Type' => 'application/x-ndjson',
             'Cache-Control' => 'no-cache',

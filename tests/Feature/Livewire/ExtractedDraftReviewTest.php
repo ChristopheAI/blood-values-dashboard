@@ -660,13 +660,13 @@ it('shows confirmed only comparable changes for the selected blood test', functi
     $user = User::factory()->create();
     $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
     $tsh = Biomarker::factory()->for($user)->create(['name' => 'TSH']);
-    $currentBloodTest = BloodTest::factory()->for($user)->create([
-        'test_date' => null,
-        'status' => 'reviewing',
-    ]);
     $previousBloodTest = BloodTest::factory()->for($user)->create([
         'test_date' => '2026-05-01',
         'status' => 'confirmed',
+    ]);
+    $currentBloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => null,
+        'status' => 'reviewing',
     ]);
 
     BiomarkerResult::factory()->for($previousBloodTest)->for($ferritin)->create([
