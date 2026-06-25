@@ -47,4 +47,40 @@ class DetermineBiomarkerStatus
             ? BiomarkerStatus::High
             : BiomarkerStatus::Normal;
     }
+
+    public function forDetectionLimit(
+        DetectionLimitValue $detectionLimit,
+        ?string $valueUnit,
+        ?float $referenceMinimum,
+        ?float $referenceMaximum,
+        ?string $referenceUnit,
+    ): BiomarkerStatus {
+        if (blank($valueUnit)) {
+            return BiomarkerStatus::Unknown;
+        }
+
+        if ($referenceMinimum === null && $referenceMaximum === null) {
+            return BiomarkerStatus::Unknown;
+        }
+
+        if (filled($referenceUnit) && $referenceUnit !== $valueUnit) {
+            return BiomarkerStatus::Unknown;
+        }
+
+        $bound = $detectionLimit->numericForStatus();
+
+        if ($detectionLimit->boundForStatus() === 'lt' && $referenceMaximum !== null && $referenceMinimum === null) {
+            return $bound > $referenceMaximum
+                ? BiomarkerStatus::Unknown
+                : BiomarkerStatus::Normal;
+        }
+
+        if ($detectionLimit->boundForStatus() === 'gt' && $referenceMinimum !== null && $referenceMaximum === null) {
+            return $bound < $referenceMinimum
+                ? BiomarkerStatus::Unknown
+                : BiomarkerStatus::Normal;
+        }
+
+        return BiomarkerStatus::Unknown;
+    }
 }

@@ -610,6 +610,7 @@ it('creates extracted draft rows from tabular positioned pdf uploads', function 
 
     $user = User::factory()->create();
     $markerAlpha = Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha']);
+    $markerBeta = Biomarker::factory()->for($user)->create(['name' => 'Marker Beta']);
     $path = syntheticTabularPdfPath();
     $file = new UploadedFile(
         $path,
@@ -635,7 +636,7 @@ it('creates extracted draft rows from tabular positioned pdf uploads', function 
     $bloodTest = BloodTest::query()->firstOrFail();
     $run = ExtractionRun::query()->firstOrFail();
 
-    expect($bloodTest->status)->toBe('reviewing')
+    expect($bloodTest->status)->toBe('confirmed')
         ->and($run->engine)->toBe('smalot/pdfparser')
         ->and($run->status)->toBe('done')
         ->and($run->candidate_count)->toBe(2);
@@ -663,16 +664,76 @@ it('creates extracted draft rows from tabular positioned pdf uploads', function 
         ->and((float) $alphaDraft->extraction_confidence)->toBe(0.85);
 
     expect($betaDraft)->not->toBeNull()
-        ->and($betaDraft->biomarker_id)->toBeNull()
+        ->and($betaDraft->biomarker_id)->toBe($markerBeta->id)
+        ->and($betaDraft->extracted_name)->toBe('Marker Beta')
         ->and((float) $betaDraft->value)->toBe(5.0)
         ->and($betaDraft->unit)->toBe('U/mL')
         ->and($betaDraft->reference_min)->toBeNull()
         ->and((float) $betaDraft->reference_max)->toBe(8.0)
         ->and($betaDraft->reference_unit)->toBe('U/mL')
-        ->and($betaDraft->confirmed_at)->toBeNull()
-        ->and((float) $betaDraft->extraction_confidence)->toBe(0.75);
+        ->and($betaDraft->status)->toBe('normal')
+        ->and($betaDraft->confirmed_at)->not->toBeNull()
+        ->and((float) $betaDraft->extraction_confidence)->toBe(0.85);
 
+    expect($drafts->whereNull('confirmed_at'))->toHaveCount(0);
     expect($drafts->pluck('extracted_name')->all())->not->toContain('Marker Gamma');
+});
+
+it('auto-confirms safe below-detection tabular rows such as RA and CCP', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $path = syntheticBelowDetectionTabularPdfPath();
+    $file = new UploadedFile(
+        $path,
+        'below-detection-tabular.pdf',
+        'application/pdf',
+        null,
+        true,
+    );
+
+    try {
+        $this->actingAs($user)
+            ->post(route('blood-tests.store'), [
+                'document' => $file,
+                'test_date' => '2026-05-19',
+                'lab_name' => 'Synthetic Lab',
+                'title' => 'Below detection tabular fixture',
+            ])
+            ->assertRedirect();
+    } finally {
+        @unlink($path);
+    }
+
+    $bloodTest = BloodTest::query()->firstOrFail();
+
+    expect($bloodTest->status)->toBe('confirmed');
+
+    $results = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->orderBy('id')
+        ->get();
+
+    expect($results)->toHaveCount(2);
+
+    $ra = $results->firstWhere('extracted_name', 'RA*');
+    $ccp = $results->firstWhere('extracted_name', 'CCP antilichamen*');
+
+    expect($ra)->not->toBeNull()
+        ->and($ra->biomarker_id)->not->toBeNull()
+        ->and((float) $ra->value)->toBe(10.0)
+        ->and($ra->unit)->toBe('kIU/L')
+        ->and($ra->status)->toBe('normal')
+        ->and($ra->confirmed_at)->not->toBeNull()
+        ->and($ra->source_snippet)->toContain('<10');
+
+    expect($ccp)->not->toBeNull()
+        ->and($ccp->biomarker_id)->not->toBeNull()
+        ->and((float) $ccp->value)->toBe(1.1)
+        ->and($ccp->unit)->toBe('U/mL')
+        ->and($ccp->status)->toBe('normal')
+        ->and($ccp->confirmed_at)->not->toBeNull()
+        ->and($ccp->source_snippet)->toContain('<1,1');
 });
 
 it('auto-confirms clean inferred-value tabular rows when the biomarker is already in the catalog', function () {
@@ -2153,6 +2214,29 @@ function assistedCmaLayoutText(array $rows): string
 function assistedCmaLayoutRow(string $name, string $value, string $unit, string $reference): string
 {
     return str_pad($name, 36).str_pad($value, 36).str_pad($unit, 24).$reference.'        <';
+}
+
+function syntheticBelowDetectionTabularPdfPath(): string
+{
+    $stream = implode("\n", [
+        'BT',
+        '/F1 12 Tf',
+        positionedPdfText('Analyse', 40, 180),
+        positionedPdfText('Eenheid', 300, 180),
+        positionedPdfText('Referentie', 390, 180),
+        positionedPdfText('RA*', 40, 160),
+        positionedPdfText('<10', 210, 160),
+        positionedPdfText('kIU/L', 300, 160),
+        positionedPdfText('≤13', 390, 160),
+        positionedPdfText('CCP antilichamen*', 40, 140),
+        positionedPdfText('<1,1', 210, 140),
+        positionedPdfText('U/mL', 300, 140),
+        positionedPdfText('≤6,9', 390, 140),
+        'ET',
+        '',
+    ]);
+
+    return syntheticPdfPath($stream);
 }
 
 function syntheticInferredValueTabularPdfPath(): string

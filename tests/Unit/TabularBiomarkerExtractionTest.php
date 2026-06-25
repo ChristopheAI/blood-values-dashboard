@@ -43,7 +43,7 @@ it('extracts candidates from positioned tabular fragments', function () {
         ->and($candidates[1]->referenceMin)->toBeNull()
         ->and($candidates[1]->referenceMax)->toBe('8')
         ->and($candidates[1]->referenceUnit)->toBe('U/mL')
-        ->and($candidates[1]->confidence)->toBe(0.75);
+        ->and($candidates[1]->confidence)->toBe(0.85);
 });
 
 it('preserves below-detection value prefixes from tabular value cells', function () {
@@ -71,7 +71,7 @@ it('preserves below-detection value prefixes from tabular value cells', function
         ->and($candidates[0]->referenceMin)->toBeNull()
         ->and($candidates[0]->referenceMax)->toBe('13')
         ->and($candidates[0]->referenceUnit)->toBe('kIU/L')
-        ->and($candidates[0]->confidence)->toBe(0.75)
+        ->and($candidates[0]->confidence)->toBe(0.85)
         ->and($candidates[0]->source)->toBe(ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR);
 
     expect($candidates[1]->extractedName)->toBe('CCP antilichamen*')
@@ -80,7 +80,25 @@ it('preserves below-detection value prefixes from tabular value cells', function
         ->and($candidates[1]->referenceMin)->toBeNull()
         ->and($candidates[1]->referenceMax)->toBe('6.9')
         ->and($candidates[1]->referenceUnit)->toBe('U/mL')
-        ->and($candidates[1]->confidence)->toBe(0.75);
+        ->and($candidates[1]->confidence)->toBe(0.85);
+});
+
+it('keeps ambiguous below-detection limits at reduced confidence', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analyse', 40, 700),
+        new PositionedTextFragment('Eenheid', 300, 700),
+        new PositionedTextFragment('Referentie', 390, 700),
+        new PositionedTextFragment('Marker Alpha', 40, 680),
+        new PositionedTextFragment('<14', 210, 680),
+        new PositionedTextFragment('kIU/L', 300, 680),
+        new PositionedTextFragment('≤13', 390, 680),
+    ]);
+
+    expect($candidates)->toHaveCount(1)
+        ->and($candidates[0]->value)->toBe('<14')
+        ->and($candidates[0]->confidence)->toBe(0.75);
 });
 
 it('returns no tabular candidates when no header row is recognized', function () {
