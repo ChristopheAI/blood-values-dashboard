@@ -120,6 +120,46 @@ it('marks unsafe pairwise comparisons with explicit reasons', function () {
         ->and($rows['TSH']->delta)->toBe('not comparable');
 });
 
+it('applies qualitative comparison before numeric and unit guards', function () {
+    $user = User::factory()->create();
+    $pcr = Biomarker::factory()->for($user)->create(['name' => 'PCR']);
+    $serology = Biomarker::factory()->for($user)->create(['name' => 'Serology']);
+    $may = BloodTest::factory()->for($user)->create(['test_date' => '2026-05-01']);
+    $june = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+
+    BiomarkerResult::factory()->for($may)->for($pcr)->create([
+        'value' => 'Niet gedetecteerd',
+        'unit' => '',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($june)->for($pcr)->create([
+        'value' => 'Niet gedetecteerd',
+        'unit' => '',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($may)->for($serology)->create([
+        'value' => 'Negatief',
+        'unit' => 'tekst',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($june)->for($serology)->create([
+        'value' => 'Positief',
+        'unit' => 'tekst',
+        'confirmed_at' => now(),
+    ]);
+
+    $rows = app(BuildLongitudinalChanges::class)->between($user, $may, $june)->keyBy('biomarker');
+
+    expect($rows['PCR']->comparable)->toBeTrue()
+        ->and($rows['PCR']->delta)->toBe('unchanged')
+        ->and($rows['PCR']->reason)->toBeNull()
+        ->and($rows['Serology']->comparable)->toBeFalse()
+        ->and($rows['Serology']->reason)->toBe('qualitative_change')
+        ->and($rows['Serology']->delta)->toBe('not comparable');
+});
+
 it('excludes drafts foreign blood tests and cross-owner biomarker links', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();

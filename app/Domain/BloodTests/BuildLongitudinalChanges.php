@@ -163,26 +163,6 @@ class BuildLongitudinalChanges
             );
         }
 
-        $reason = $this->nonComparableReason($previous, $current);
-
-        if ($reason !== null) {
-            return new LongitudinalChange(
-                biomarker: $biomarker,
-                result: $current,
-                previousResult: $previous,
-                previousValue: $previousValue,
-                currentValue: $currentValue,
-                previousUnit: $previousUnit,
-                currentUnit: $currentUnit,
-                status: 'not comparable',
-                delta: 'not comparable',
-                changeLabel: null,
-                comparable: false,
-                reason: $reason,
-                direction: 'unknown',
-            );
-        }
-
         $qualitativeComparison = $this->qualitativeComparison($previous, $current);
 
         if ($qualitativeComparison === 'mixed') {
@@ -220,6 +200,26 @@ class BuildLongitudinalChanges
                 previousUnit: $previousUnit,
                 currentUnit: $currentUnit,
                 reason: 'qualitative_change',
+            );
+        }
+
+        $reason = $this->nonComparableReason($previous, $current);
+
+        if ($reason !== null) {
+            return new LongitudinalChange(
+                biomarker: $biomarker,
+                result: $current,
+                previousResult: $previous,
+                previousValue: $previousValue,
+                currentValue: $currentValue,
+                previousUnit: $previousUnit,
+                currentUnit: $currentUnit,
+                status: 'not comparable',
+                delta: 'not comparable',
+                changeLabel: null,
+                comparable: false,
+                reason: $reason,
+                direction: 'unknown',
             );
         }
 
