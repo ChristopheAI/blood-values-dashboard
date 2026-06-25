@@ -2,6 +2,9 @@
 
 namespace App\Domain\Intake;
 
+use App\Domain\Biomarkers\DetectionLimitValue;
+use App\Domain\Biomarkers\QualitativeLabValue;
+
 class ExtractTabularBiomarkerCandidates
 {
     private const ROW_TOLERANCE = 4.0;
@@ -355,14 +358,16 @@ class ExtractTabularBiomarkerCandidates
             return null;
         }
 
-        $value = $this->numberFrom($cells['value']);
+        $value = $this->valueFrom($cells['value']);
 
         if ($value === null) {
             return null;
         }
 
         $reference = $this->reference($cells['reference']);
-        $valueIsOneSided = str_contains($cells['value'], '<') || str_contains($cells['value'], '>');
+        $referenceQualitative = QualitativeLabValue::parseReference($cells['reference']);
+        $qualitative = QualitativeLabValue::parse($cells['value']);
+        $detectionLimit = DetectionLimitValue::parse($cells['value']);
 
         $name = $this->sanitizeName($cells['name']);
         $nameWasTruncated = $name !== $cells['name'];
@@ -371,11 +376,22 @@ class ExtractTabularBiomarkerCandidates
             return null;
         }
 
-        $hasReference = $reference['min'] !== null || $reference['max'] !== null;
+        $hasReference = $reference['min'] !== null
+            || $reference['max'] !== null
+            || $referenceQualitative instanceof QualitativeLabValue
+            || ($qualitative instanceof QualitativeLabValue && $qualitative->isPcrNegativeExpectation($cells['reference']));
 
         $confidence = match (true) {
+            $qualitative instanceof QualitativeLabValue && $referenceQualitative instanceof QualitativeLabValue
+                && $qualitative->token === $referenceQualitative->token => 0.85,
+            $qualitative instanceof QualitativeLabValue
+                && $qualitative->isPcrNegativeExpectation($cells['reference']) => 0.85,
+            $qualitative instanceof QualitativeLabValue && $referenceQualitative instanceof QualitativeLabValue => 0.75,
+            $qualitative instanceof QualitativeLabValue && ! $hasReference => 0.7,
+            $qualitative instanceof QualitativeLabValue => 0.75,
             ! $hasReference => 0.7,
-            $valueIsOneSided => 0.75,
+            $detectionLimit?->isSafeForReference($reference['min'], $reference['max']) => 0.85,
+            $detectionLimit instanceof DetectionLimitValue => 0.75,
             default => 0.85,
         };
 
@@ -383,11 +399,17 @@ class ExtractTabularBiomarkerCandidates
             $confidence = 0.85;
         }
 
+        if ($qualitative instanceof QualitativeLabValue
+            && $source === ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR
+            && ($referenceQualitative instanceof QualitativeLabValue || $qualitative->isPcrNegativeExpectation($cells['reference']))) {
+            $confidence = max($confidence, 0.85);
+        }
+
         if ($nameWasTruncated) {
             $confidence = min($confidence, 0.6);
         }
 
-        if ($cells['unit'] === '') {
+        if ($cells['unit'] === '' && ! ($qualitative instanceof QualitativeLabValue && $source === ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR && $hasReference)) {
             $confidence = min($confidence, 0.6);
         }
 
@@ -401,7 +423,19 @@ class ExtractTabularBiomarkerCandidates
             confidence: $confidence,
             sourceSnippet: $this->sourceSnippet($cells),
             source: $source,
+            referenceQualitative: $referenceQualitative?->storedValue(),
         );
+    }
+
+    private function valueFrom(string $text): ?string
+    {
+        $numeric = $this->numberFrom($text);
+
+        if ($numeric !== null) {
+            return $numeric;
+        }
+
+        return QualitativeLabValue::parse($text)?->storedValue();
     }
 
     private function numberFrom(string $text): ?string

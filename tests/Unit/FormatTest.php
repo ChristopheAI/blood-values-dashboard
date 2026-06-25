@@ -13,3 +13,8 @@ it('does not preserve reference-bound prefixes as biomarker value prefixes', fun
     expect(Format::biomarkerValue('8', 'Marker Beta 8 U/mL < 8'))->toBe('8')
         ->and(Format::biomarkerValue('5', 'Marker Gamma 5 U/L > 5'))->toBe('5');
 });
+
+it('renders qualitative biomarker values without numeric coercion', function () {
+    expect(Format::biomarkerValue('Negatief', 'T. pallidum AL* Negatief Negatief <'))->toBe('Negatief')
+        ->and(Format::biomarkerValue('Niet gedetecteerd', 'C. trachomatis DNA (PCR) Niet gedetecteerd <'))->toBe('Niet gedetecteerd');
+});

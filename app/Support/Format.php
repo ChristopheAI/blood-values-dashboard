@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Domain\Biomarkers\QualitativeLabValue;
 use Carbon\CarbonInterface;
 
 /**
@@ -43,6 +44,16 @@ class Format
     {
         if ($value === null || $value === '') {
             return '';
+        }
+
+        $qualitative = QualitativeLabValue::parse((string) $value);
+
+        if ($qualitative instanceof QualitativeLabValue) {
+            return $qualitative->storedValue();
+        }
+
+        if (! is_numeric($value)) {
+            return trim((string) $value);
         }
 
         $numericLabel = self::number((float) $value);

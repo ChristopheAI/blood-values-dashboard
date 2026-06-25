@@ -24,5 +24,6 @@ class ExtractedBiomarkerCandidate
         public readonly float $confidence,
         public readonly string $sourceSnippet,
         public readonly string $source = self::SOURCE_UNKNOWN,
+        public readonly ?string $referenceQualitative = null,
     ) {}
 }

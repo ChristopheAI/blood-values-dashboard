@@ -65,7 +65,7 @@
                             <tr class="border-t border-neutral-200 dark:border-neutral-700">
                                 <td class="p-3">{{ $result->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}</td>
                                 <td class="p-3 font-medium">{{ $result->biomarker->name }}</td>
-                                <td class="p-3 tabular-nums">{{ (float) $result->value }} {{ $result->unit }}</td>
+                                <td class="p-3 tabular-nums">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet) }} {{ $result->unit }}</td>
                                 <td class="p-3">{{ $result->status }}</td>
                                 <td class="p-3 text-neutral-600 dark:text-neutral-400">
                                     <div>{{ __('Bron: :source', ['source' => $result->bloodTest->title ?: __('Bloedtest zonder titel')]) }}</div>
@@ -117,7 +117,7 @@
                                 · {{ __('Bevestigd: :date', ['date' => $result->confirmed_at?->toDateString() ?? __('onbekend')]) }}
                             </div>
                         </div>
-                        <div class="tabular-nums">{{ (float) $result->value }} {{ $result->unit }}</div>
+                        <div class="tabular-nums">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet) }} {{ $result->unit }}</div>
                         <div class="text-neutral-600 dark:text-neutral-400">{{ $result->status }}</div>
                     </div>
                 @empty
@@ -137,10 +137,10 @@
                         <div class="font-medium">{{ $change['result']->biomarker->name }}</div>
                         <div class="text-neutral-700 dark:text-neutral-300">
                             {{ $change['previousResult']->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}
-                            {{ (float) $change['previousResult']->value }} {{ $change['previousResult']->unit }}
+                            {{ \App\Support\Format::biomarkerValue($change['previousResult']->value, $change['previousResult']->source_snippet) }} {{ $change['previousResult']->unit }}
                             ->
                             {{ $change['result']->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}
-                            {{ (float) $change['result']->value }} {{ $change['result']->unit }}
+                            {{ \App\Support\Format::biomarkerValue($change['result']->value, $change['result']->source_snippet) }} {{ $change['result']->unit }}
                             ({{ $change['changeLabel'] }})
                         </div>
                     </div>
@@ -158,7 +158,7 @@
                     <div class="text-sm">
                         {{ $result->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}
                         · {{ $result->biomarker->name }}
-                        · {{ (float) $result->value }} {{ $result->unit }}
+                        · {{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet) }} {{ $result->unit }}
                         · {{ $result->status }}
                     </div>
                 @empty

@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
@@ -119,6 +120,46 @@ it('marks unsafe pairwise comparisons with explicit reasons', function () {
         ->and($rows['TSH']->delta)->toBe('not comparable');
 });
 
+it('applies qualitative comparison before numeric and unit guards', function () {
+    $user = User::factory()->create();
+    $pcr = Biomarker::factory()->for($user)->create(['name' => 'PCR']);
+    $serology = Biomarker::factory()->for($user)->create(['name' => 'Serology']);
+    $may = BloodTest::factory()->for($user)->create(['test_date' => '2026-05-01']);
+    $june = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+
+    BiomarkerResult::factory()->for($may)->for($pcr)->create([
+        'value' => 'Niet gedetecteerd',
+        'unit' => '',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($june)->for($pcr)->create([
+        'value' => 'Niet gedetecteerd',
+        'unit' => '',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($may)->for($serology)->create([
+        'value' => 'Negatief',
+        'unit' => 'tekst',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($june)->for($serology)->create([
+        'value' => 'Positief',
+        'unit' => 'tekst',
+        'confirmed_at' => now(),
+    ]);
+
+    $rows = app(BuildLongitudinalChanges::class)->between($user, $may, $june)->keyBy('biomarker');
+
+    expect($rows['PCR']->comparable)->toBeTrue()
+        ->and($rows['PCR']->delta)->toBe('unchanged')
+        ->and($rows['PCR']->reason)->toBeNull()
+        ->and($rows['Serology']->comparable)->toBeFalse()
+        ->and($rows['Serology']->reason)->toBe('qualitative_change')
+        ->and($rows['Serology']->delta)->toBe('not comparable');
+});
+
 it('excludes drafts foreign blood tests and cross-owner biomarker links', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
@@ -204,4 +245,53 @@ it('returns no blood tests for a foreign blood test in bloodTestsUpToAndIncludin
     $foreignBloodTest = BloodTest::factory()->for($otherUser)->create(['test_date' => '2026-05-01']);
 
     expect($user->bloodTestsUpToAndIncluding($foreignBloodTest))->toBeEmpty();
+});
+
+it('preserves below-detection prefixes when formatting confirmed values', function () {
+    $user = User::factory()->create();
+    $ra = Biomarker::factory()->for($user)->create(['name' => 'RA*']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-05-19']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($ra)->create([
+        'value' => 10,
+        'unit' => 'kIU/L',
+        'status' => 'normal',
+        'confirmed_at' => '2026-05-20 09:00:00',
+        'source_snippet' => 'RA* <10 kIU/L ≤13 <',
+    ]);
+
+    $summary = app(BuildLatestUploadSummary::class)->forBloodTest($user, $bloodTest);
+
+    expect($summary['normalRows'][0]['valueLabel'])->toBe('<10 kIU/L');
+});
+
+it('treats repeated below-detection limits as unchanged rather than a zero delta', function () {
+    $user = User::factory()->create();
+    $ra = Biomarker::factory()->for($user)->create(['name' => 'RA*']);
+    $may = BloodTest::factory()->for($user)->create(['test_date' => '2026-04-22']);
+    $june = BloodTest::factory()->for($user)->create(['test_date' => '2026-05-19']);
+
+    BiomarkerResult::factory()->for($may)->for($ra)->create([
+        'value' => 10,
+        'unit' => 'kIU/L',
+        'status' => 'normal',
+        'confirmed_at' => '2026-04-23 09:00:00',
+        'source_snippet' => 'RA* <10 kIU/L ≤13 <',
+    ]);
+    BiomarkerResult::factory()->for($june)->for($ra)->create([
+        'value' => 10,
+        'unit' => 'kIU/L',
+        'status' => 'normal',
+        'confirmed_at' => '2026-05-20 09:00:00',
+        'source_snippet' => 'RA* <10 kIU/L ≤13 <',
+    ]);
+
+    $changes = app(BuildLongitudinalChanges::class)->across($user, collect([$may, $june]));
+
+    expect($changes)->toHaveCount(1)
+        ->and($changes->first()->previousValue)->toBe('<10')
+        ->and($changes->first()->currentValue)->toBe('<10')
+        ->and($changes->first()->delta)->toBe('unchanged')
+        ->and($changes->first()->direction)->toBe('unchanged')
+        ->and($changes->first()->comparable)->toBeTrue();
 });

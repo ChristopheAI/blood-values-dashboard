@@ -114,6 +114,8 @@
                 this.resetProgress();
                 this.$refs.chooseButton.disabled = true;
 
+                let redirected = false;
+
                 try {
                     const response = await fetch(form.action, {
                         method: 'POST',
@@ -142,22 +144,31 @@
                         buffer = lines.pop() ?? '';
 
                         for (const line of lines) {
-                            this.handleProgressLine(line);
+                            redirected = this.handleProgressLine(line) || redirected;
                         }
                     }
 
                     if (buffer.trim() !== '') {
-                        this.handleProgressLine(buffer);
+                        redirected = this.handleProgressLine(buffer) || redirected;
                     }
                 } catch (error) {
                     form.submit();
+                    return;
+                } finally {
+                    if (! redirected) {
+                        this.finishUpload();
+                    }
                 }
+            },
+            finishUpload() {
+                this.isUploading = false;
+                this.$refs.chooseButton.disabled = false;
             },
             handleProgressLine(line) {
                 const trimmed = line.trim();
 
                 if (trimmed === '') {
-                    return;
+                    return false;
                 }
 
                 const payload = JSON.parse(trimmed);
@@ -168,7 +179,11 @@
 
                 if (payload.redirect) {
                     window.location.href = payload.redirect;
+
+                    return true;
                 }
+
+                return false;
             },
         };
     };

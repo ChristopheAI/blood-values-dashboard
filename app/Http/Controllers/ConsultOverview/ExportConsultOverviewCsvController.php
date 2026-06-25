@@ -6,6 +6,7 @@ use App\Domain\Consult\BuildConsultOverview;
 use App\Http\Controllers\Controller;
 use App\Models\BloodTest;
 use App\Models\User;
+use App\Support\Format;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -31,7 +32,7 @@ class ExportConsultOverviewCsvController extends Controller
                 'attention',
                 $result->bloodTest->test_date?->toDateString() ?? '',
                 $result->biomarker->name,
-                (string) (float) $result->value,
+                Format::biomarkerValue($result->value, $result->source_snippet),
                 $result->unit,
                 $result->status,
                 $this->sourceLabel($result->bloodTest),
@@ -45,7 +46,7 @@ class ExportConsultOverviewCsvController extends Controller
                 'normal',
                 $result->bloodTest->test_date?->toDateString() ?? '',
                 $result->biomarker->name,
-                (string) (float) $result->value,
+                Format::biomarkerValue($result->value, $result->source_snippet),
                 $result->unit,
                 $result->status,
                 $this->sourceLabel($result->bloodTest),
@@ -62,12 +63,12 @@ class ExportConsultOverviewCsvController extends Controller
                 'change',
                 $result->bloodTest->test_date?->toDateString() ?? '',
                 $result->biomarker->name,
-                (string) (float) $result->value,
+                Format::biomarkerValue($result->value, $result->source_snippet),
                 $result->unit,
                 $result->status,
                 $this->sourceLabel($result->bloodTest),
                 $result->confirmed_at?->toDateString() ?? '',
-                'previous '.(string) (float) $previousResult->value.' '.$previousResult->unit.'; change '.$change['changeLabel'],
+                'previous '.Format::biomarkerValue($previousResult->value, $previousResult->source_snippet).' '.$previousResult->unit.'; change '.$change['changeLabel'],
             ];
         }
 
@@ -76,7 +77,7 @@ class ExportConsultOverviewCsvController extends Controller
                 'trend',
                 $result->bloodTest->test_date?->toDateString() ?? '',
                 $result->biomarker->name,
-                (string) (float) $result->value,
+                Format::biomarkerValue($result->value, $result->source_snippet),
                 $result->unit,
                 $result->status,
                 $this->sourceLabel($result->bloodTest),

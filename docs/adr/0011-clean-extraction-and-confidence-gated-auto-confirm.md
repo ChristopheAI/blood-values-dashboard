@@ -4,6 +4,22 @@
 
 Accepted (amended 2026-06-25)
 
+### Amendment 2026-06-25 — safe below-detection auto-confirm
+
+Trusted CMA tabular/layout rows whose value is a detection limit (`<10`, `<1,1`) may
+auto-confirm when the parsed bound is compatible with a one-sided reference:
+
+- below-detection (`<X`) with only a maximum reference: auto-confirm as `normal`
+  when `X <= referenceMaximum`;
+- above-detection (`>X`) with only a minimum reference: auto-confirm as `normal`
+  when `X >= referenceMinimum`;
+- when the bound crosses the incompatible side of the threshold (`<14` with max
+  `13`), confidence stays below the auto-confirm threshold and the row remains a
+  draft with `unknown` status until review.
+
+This keeps ADR-0011 conservative while removing review friction for deterministic
+negative inflammation markers such as RA and CCP on native CMA PDFs.
+
 ### Amendment 2026-06-25 — no auto-confirm of `unknown`-status values
 
 The original policy auto-confirmed trusted CMA rows that lacked parseable reference

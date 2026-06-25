@@ -21,14 +21,16 @@ class DestroyBloodTestDocumentController extends Controller
         $storageDisk = $bloodTestDocument->storage_disk;
         $storagePath = $bloodTestDocument->storage_path;
 
-        $clearsLegacyNullSnippets = $bloodTest->documents()
-            ->whereKeyNot($bloodTestDocument->id)
-            ->doesntExist();
-
         // Clear snippets before the row delete so FK nullOnDelete does not skip the
         // update, then delete the PDF inside the transaction so a file failure rolls
         // the database delete back and the record and file stay consistent.
-        DB::transaction(function () use ($bloodTest, $bloodTestDocument, $storageDisk, $storagePath, $clearsLegacyNullSnippets): void {
+        DB::transaction(function () use ($bloodTest, $bloodTestDocument, $storageDisk, $storagePath): void {
+            $bloodTest->newQuery()->whereKey($bloodTest->id)->lockForUpdate()->first();
+
+            $clearsLegacyNullSnippets = $bloodTest->documents()
+                ->whereKeyNot($bloodTestDocument->id)
+                ->doesntExist();
+
             $bloodTest->results()
                 ->where('entry_source', 'extracted')
                 ->whereNotNull('source_snippet')

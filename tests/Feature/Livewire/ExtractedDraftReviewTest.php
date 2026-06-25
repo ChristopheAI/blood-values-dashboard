@@ -979,3 +979,36 @@ it('blocks using another users extracted draft from a tampered livewire action',
         ->call('useDraft', $ownersDraft->id)
         ->assertForbidden();
 });
+
+it('confirms a below-detection draft using the prefixed value from the review form', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'RA*']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    $draft = BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 10,
+        'unit' => 'kIU/L',
+        'reference_min' => null,
+        'reference_max' => 13,
+        'reference_unit' => 'kIU/L',
+        'status' => 'unknown',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'RA*',
+        'extraction_confidence' => 0.75,
+        'source_snippet' => 'RA* <10 kIU/L ≤13 <',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('useDraft', $draft->id)
+        ->assertSet('resultForm.value', '<10')
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    $draft->refresh();
+
+    expect((float) $draft->value)->toBe(10.0)
+        ->and($draft->status)->toBe('normal')
+        ->and($draft->confirmed_at)->not->toBeNull()
+        ->and($draft->source_snippet)->toContain('<10');
+});
