@@ -48,21 +48,9 @@
 
     @if ($matchingSummary)
         <div class="p-5" data-test="dashboard-latest-confirmed-values">
-            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div class="space-y-1">
-                    <div class="text-sm font-medium text-neutral-900 dark:text-white">{{ __('Laatste bevestigde waarden') }}</div>
-                    <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('Alleen bevestigde waarden verschijnen hieronder.') }}</p>
-                </div>
-
-                <form method="POST" action="{{ route('consult-overview.index') }}" class="shrink-0">
-                    @csrf
-                    <input type="hidden" name="blood_test_ids[]" value="{{ $matchingSummary['bloodTest']->id }}">
-                    <input type="hidden" name="include_attention" value="1">
-                    <input type="hidden" name="include_normal" value="1">
-                    <input type="hidden" name="include_trends" value="1">
-                    <input type="hidden" name="include_source_documents" value="1">
-                    <flux:button type="submit" variant="primary" size="sm" data-test="latest-upload-consult-button">{{ __('Maak consultlijst') }}</flux:button>
-                </form>
+            <div class="space-y-1">
+                <div class="text-sm font-medium text-neutral-900 dark:text-white">{{ __('Laatste bevestigde waarden') }}</div>
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('Alleen bevestigde waarden verschijnen hieronder.') }}</p>
             </div>
 
             <div class="mt-4 flex flex-wrap gap-2 text-sm">

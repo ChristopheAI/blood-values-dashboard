@@ -11,10 +11,13 @@ use Illuminate\Support\Collection;
 
 class BuildDashboardOverview
 {
+    public function __construct(private readonly BuildDashboardReadiness $buildDashboardReadiness) {}
+
     /**
      * @return array{
      *     nextStep: array{kind: string, title: string, body: string, href: string, action: string},
-     *     workstand: Collection<int, array{label: string, summary: string, help: string}>,
+     *     readiness: array{headline: string, items: list<array{state: string, label: string}>, consultBloodTestId: int|null, showConsultPost: bool, selectionPills: list<string>},
+     *     workstand: Collection<int, array{key: string, label: string, count: int, summary: string, help: string, emphasis: bool}>,
      *     bloodTests: Collection<int, array{id: int, title: non-falsy-string, href: string, date: string, status: string, confirmedCount: int, draftCount: int, documentCount: int}>,
      *     reviewDraftCount: int,
      *     confirmedValueCount: int,
@@ -70,26 +73,44 @@ class BuildDashboardOverview
 
         return [
             'nextStep' => $this->nextStep($timeline, $reviewDraftCount, $confirmedValueCount, $firstReviewBloodTest),
+            'readiness' => ($this->buildDashboardReadiness)(
+                $user,
+                $timeline,
+                $reviewDraftCount,
+                $confirmedValueCount,
+            ),
             'workstand' => collect([
                 [
+                    'key' => 'blood-tests',
                     'label' => 'Bloedtesten',
+                    'count' => $bloodTestCount,
                     'summary' => $this->countLabel($bloodTestCount, 'bloedtest', 'bloedtesten'),
                     'help' => 'Eigen uploads in deze werkruimte.',
+                    'emphasis' => false,
                 ],
                 [
-                    'label' => 'Bevestigde waarden',
+                    'key' => 'confirmed',
+                    'label' => 'Bevestigd',
+                    'count' => $confirmedValueCount,
                     'summary' => $this->countLabel($confirmedValueCount, 'bevestigde waarde', 'bevestigde waarden'),
                     'help' => 'Alleen waarden voorbij de confirmatiepoort.',
+                    'emphasis' => false,
                 ],
                 [
-                    'label' => 'Reviewpunten',
+                    'key' => 'review',
+                    'label' => 'Review',
+                    'count' => $reviewDraftCount,
                     'summary' => $this->countLabel($reviewDraftCount, 'reviewpunt', 'reviewpunten'),
                     'help' => 'Extracties die nog niet downstream mogen.',
+                    'emphasis' => $reviewDraftCount > 0,
                 ],
                 [
-                    'label' => 'Bronbestanden',
+                    'key' => 'sources',
+                    'label' => 'Bron-PDF',
+                    'count' => $sourceDocumentCount,
                     'summary' => $this->countLabel($sourceDocumentCount, 'bronbestand', 'bronbestanden'),
                     'help' => 'Lokale documenten bij eigen bloedtesten.',
+                    'emphasis' => false,
                 ],
             ]),
             'bloodTests' => $timeline,
@@ -140,7 +161,7 @@ class BuildDashboardOverview
                 'title' => 'Consultlijst voorbereiden',
                 'body' => 'Gebruik alleen bevestigde waarden, bronbestanden en context voor een compact overzicht.',
                 'href' => route('consult-overview.index'),
-                'action' => 'Consultlijst openen',
+                'action' => 'Consultlijst maken',
             ];
         }
 

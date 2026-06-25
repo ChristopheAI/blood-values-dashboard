@@ -195,7 +195,7 @@ test('synthetic qa scenario proves the full multi blood test follow up flow', fu
             ->visit('/dashboard')
             ->assertPathIs('/dashboard')
             ->assertAuthenticated()
-            ->assertSee('Dossierstatus')
+            ->assertPresent('[data-test="dashboard-metrics"]')
             ->assertSee('Laatste bloedtest')
             ->assertSee('Laatste bevestigde waarden')
             ->assertPresent('[data-test="dashboard-latest-blood-test"]')

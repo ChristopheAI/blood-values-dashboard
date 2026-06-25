@@ -1,12 +1,15 @@
 <x-layouts::app :title="__('Dashboard')">
     <section class="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        @include('dashboard._next-step', ['nextStep' => $dashboardOverview['nextStep']])
+        @include('dashboard._next-step', [
+            'nextStep' => $dashboardOverview['nextStep'],
+            'readiness' => $dashboardOverview['readiness'],
+        ])
 
         @if ($recentBloodTests->isEmpty())
             @include('blood-tests._upload-dropzone')
         @endif
 
-        @include('dashboard._workstand-summary', ['statusLabel' => $dashboardOverview['dossierStatusLabel']])
+        @include('dashboard._workstand-summary', ['workstand' => $dashboardOverview['workstand']])
 
         @if (! $recentBloodTests->isEmpty())
             <div class="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(20rem,0.95fr)] lg:items-start">
@@ -60,7 +63,9 @@
                     <flux:button :href="route('blood-tests.index')" variant="primary">{{ __('Lab-PDF uploaden') }}</flux:button>
                     <flux:button :href="route('context-notes.index')" variant="outline">{{ __('Contextnotitie toevoegen') }}</flux:button>
                     <flux:button :href="route('reminders.index')" variant="outline">{{ __('Herinnering toevoegen') }}</flux:button>
-                    <flux:button :href="route('consult-overview.index')" variant="outline">{{ __('Consultlijst voorbereiden') }}</flux:button>
+                    <flux:text class="text-sm text-neutral-600 dark:text-neutral-400">
+                        {{ __('Consultlijst start via de banner bovenaan zodra je bevestigde waarden hebt.') }}
+                    </flux:text>
                 </div>
             </section>
         </div>
