@@ -7,7 +7,7 @@ use App\Domain\BloodTests\LongitudinalChange;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\User;
-use Carbon\CarbonInterface;
+use App\Support\Format;
 use Illuminate\Support\Collection;
 
 class BuildLatestUploadSummary
@@ -21,8 +21,6 @@ class BuildLatestUploadSummary
      *     confirmedLabel: string,
      *     normalCount: int,
      *     normalSummaryLabel: string,
-     *     newCount: int,
-     *     changedCount: int,
      *     attentionCount: int,
      *     attentionSummaryLabel: string,
      *     attentionHeading: string,
@@ -32,8 +30,7 @@ class BuildLatestUploadSummary
      *     attentionRows: Collection<int, mixed>,
      *     featuredAttentionRows: Collection<int, mixed>,
      *     reviewRows: Collection<int, mixed>,
-     *     normalRows: Collection<int, mixed>,
-     *     rangeRows: Collection<int, mixed>
+     *     normalRows: Collection<int, mixed>
      * }|null
      */
     public function __invoke(User $user): ?array
@@ -60,8 +57,6 @@ class BuildLatestUploadSummary
      *     confirmedLabel: string,
      *     normalCount: int,
      *     normalSummaryLabel: string,
-     *     newCount: int,
-     *     changedCount: int,
      *     attentionCount: int,
      *     attentionSummaryLabel: string,
      *     attentionHeading: string,
@@ -71,8 +66,7 @@ class BuildLatestUploadSummary
      *     attentionRows: Collection<int, mixed>,
      *     featuredAttentionRows: Collection<int, mixed>,
      *     reviewRows: Collection<int, mixed>,
-     *     normalRows: Collection<int, mixed>,
-     *     rangeRows: Collection<int, mixed>
+     *     normalRows: Collection<int, mixed>
      * }|null
      */
     public function forBloodTest(User $user, BloodTest $bloodTest): ?array
@@ -82,12 +76,7 @@ class BuildLatestUploadSummary
         }
 
         $changesByResultId = $this->buildLongitudinalChanges
-            ->across(
-                $user,
-                BloodTest::query()
-                    ->where('user_id', $user->id)
-                    ->get(),
-            )
+            ->across($user, $this->bloodTestsUpToAndIncluding($user, $bloodTest))
             ->mapWithKeys(function (LongitudinalChange $change) use ($bloodTest): array {
                 if (! $change->result instanceof BiomarkerResult) {
                     return [];
@@ -135,8 +124,6 @@ class BuildLatestUploadSummary
             'confirmedLabel' => $this->confirmedLabel($rows->count()),
             'normalCount' => $normalRows->count(),
             'normalSummaryLabel' => $this->normalSummaryLabel($normalRows->count(), $rows->count()),
-            'newCount' => $rows->where('trendKind', 'new')->count(),
-            'changedCount' => $rows->where('trendKind', 'changed')->count(),
             'attentionCount' => $attentionRows->count(),
             'attentionSummaryLabel' => $this->attentionSummaryLabel($attentionRows->count()),
             'attentionHeading' => $attentionRows->count() === 1
@@ -151,11 +138,29 @@ class BuildLatestUploadSummary
             'featuredAttentionRows' => $featuredAttentionRows,
             'reviewRows' => $reviewRows,
             'normalRows' => $normalRows,
-            'rangeRows' => $rows
-                ->filter(fn (array $row) => $row['range']['available'])
-                ->take(5)
-                ->values(),
         ];
+    }
+
+    /**
+     * The target test plus every test collected on or before it: those are the only
+     * tests that can hold a prior measurement for the target's biomarkers, so we never
+     * load the whole dossier (later tests can never be a "previous" for this one).
+     *
+     * @return Collection<int, BloodTest>
+     */
+    private function bloodTestsUpToAndIncluding(User $user, BloodTest $bloodTest): Collection
+    {
+        $query = BloodTest::query()->where('user_id', $user->id);
+
+        if ($bloodTest->test_date !== null) {
+            $query->where(function ($query) use ($bloodTest): void {
+                $query
+                    ->whereDate('test_date', '<=', $bloodTest->test_date->toDateString())
+                    ->orWhere($bloodTest->getKeyName(), $bloodTest->id);
+            });
+        }
+
+        return $query->get();
     }
 
     /**
@@ -164,14 +169,13 @@ class BuildLatestUploadSummary
     private function summarizeResult(BiomarkerResult $result, ?LongitudinalChange $change): array
     {
         $trend = $this->buildTrend($change);
-        $valueLabel = $this->formatNumber((float) $result->value).' '.$result->unit;
+        $valueLabel = Format::number((float) $result->value).' '.$result->unit;
 
         return [
             'name' => $result->biomarker->name,
             'valueLabel' => $valueLabel,
             'status' => $result->status,
             'statusLabel' => $this->statusLabel($result->status),
-            'statusSummary' => $this->statusSummary($result->status),
             'takeaway' => $this->takeaway($result->status),
             'needsAttention' => in_array($result->status, ['low', 'high', 'unknown'], true),
             'trendKind' => $trend['kind'],
@@ -267,7 +271,7 @@ class BuildLatestUploadSummary
                 normalEndValue: $max,
                 scaleMin: $scaleMin,
                 scaleMax: $scaleMax,
-                label: 'Normaal: '.$this->formatNumber($min).' - '.$this->formatNumber($max).' '.$result->unit,
+                label: 'Normaal: '.Format::number($min).' - '.Format::number($max).' '.$result->unit,
             );
         }
 
@@ -281,7 +285,7 @@ class BuildLatestUploadSummary
                 normalEndValue: $scaleMax,
                 scaleMin: $scaleMin,
                 scaleMax: $scaleMax,
-                label: 'Normaal: vanaf '.$this->formatNumber($min).' '.$result->unit,
+                label: 'Normaal: vanaf '.Format::number($min).' '.$result->unit,
             );
         }
 
@@ -294,7 +298,7 @@ class BuildLatestUploadSummary
             normalEndValue: $max,
             scaleMin: $scaleMin,
             scaleMax: $scaleMax,
-            label: 'Normaal: onder '.$this->formatNumber($max).' '.$result->unit,
+            label: 'Normaal: onder '.Format::number($max).' '.$result->unit,
         );
     }
 
@@ -329,11 +333,6 @@ class BuildLatestUploadSummary
         return (float) str_replace(',', '.', $value);
     }
 
-    private function formatNumber(float $value): string
-    {
-        return rtrim(rtrim(number_format($value, 4, '.', ''), '0'), '.');
-    }
-
     private function confirmedLabel(int $count): string
     {
         return $count.' '.($count === 1 ? 'bevestigde waarde' : 'bevestigde waarden');
@@ -361,27 +360,7 @@ class BuildLatestUploadSummary
             return 'Afname zonder datum';
         }
 
-        return 'Afname '.$this->formatDutchDate($bloodTest->test_date);
-    }
-
-    private function formatDutchDate(CarbonInterface $date): string
-    {
-        $months = [
-            1 => 'januari',
-            2 => 'februari',
-            3 => 'maart',
-            4 => 'april',
-            5 => 'mei',
-            6 => 'juni',
-            7 => 'juli',
-            8 => 'augustus',
-            9 => 'september',
-            10 => 'oktober',
-            11 => 'november',
-            12 => 'december',
-        ];
-
-        return $date->day.' '.$months[$date->month].' '.$date->year;
+        return 'Afname '.Format::dutchDate($bloodTest->test_date);
     }
 
     private function statusLabel(string $status): string
@@ -390,16 +369,6 @@ class BuildLatestUploadSummary
             'normal' => 'In orde',
             'high', 'low' => 'Aandacht',
             default => 'Controle nodig',
-        };
-    }
-
-    private function statusSummary(string $status): string
-    {
-        return match ($status) {
-            'normal' => 'Binnen de opgegeven referentie.',
-            'high' => 'Boven de opgegeven referentie.',
-            'low' => 'Onder de opgegeven referentie.',
-            default => 'Geen betrouwbare referentie om status te bepalen.',
         };
     }
 

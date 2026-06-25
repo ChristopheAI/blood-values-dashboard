@@ -21,6 +21,9 @@ class DestroyBloodTestDocumentController extends Controller
         $storageDisk = $bloodTestDocument->storage_disk;
         $storagePath = $bloodTestDocument->storage_path;
 
+        // Delete the single private PDF inside the transaction, after the database
+        // delete: a file-delete failure rolls the row delete back, so the record and
+        // its file stay consistent (never a record without its file, never a leak).
         DB::transaction(function () use ($bloodTest, $bloodTestDocument, $storageDisk, $storagePath): void {
             $bloodTestDocument->delete();
             $bloodTest->results()

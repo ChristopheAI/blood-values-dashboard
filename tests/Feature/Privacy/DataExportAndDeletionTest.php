@@ -392,6 +392,35 @@ it('keeps owned health data records when delete all cannot remove a private docu
         ->and(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
 });
 
+it('keeps all owned health data when delete all cannot remove every private document', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $firstDocument = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => 'blood-test-documents/delete-all-multi-first.pdf',
+    ]);
+    $secondDocument = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => 'blood-test-documents/delete-all-multi-second.pdf',
+    ]);
+    $disk = Mockery::mock(Filesystem::class);
+
+    // First file deletes, second fails: the whole transaction rolls back, so every
+    // owned health record is preserved for a safe retry rather than partially lost.
+    $disk->shouldReceive('delete')->with($firstDocument->storage_path)->andReturnTrue();
+    $disk->shouldReceive('delete')->with($secondDocument->storage_path)->andReturnFalse();
+    Storage::shouldReceive('disk')->with('local')->andReturn($disk);
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->delete(route('data.destroy'), ['confirmation' => 'DELETE ALL'])
+        ->assertServerError();
+
+    expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue()
+        ->and(BloodTestDocument::query()->whereKey($firstDocument->id)->exists())->toBeTrue()
+        ->and(BloodTestDocument::query()->whereKey($secondDocument->id)->exists())->toBeTrue();
+});
+
 it('requires explicit typed confirmation before delete all removes health data', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create();

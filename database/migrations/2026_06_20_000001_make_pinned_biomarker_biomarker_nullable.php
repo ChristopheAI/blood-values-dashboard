@@ -16,6 +16,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Restoring the NOT NULL constraint requires removing every null-biomarker pin.
+        // DESTRUCTIVE: this also deletes any pin whose biomarker link was nulled by a
+        // privacy deletion (DeleteAllHealthData detaches a cross-owner pin rather than
+        // deleting it). Only run this rollback when that data loss is acceptable.
         DB::table('pinned_biomarkers')->whereNull('biomarker_id')->delete();
 
         Schema::table('pinned_biomarkers', function (Blueprint $table): void {

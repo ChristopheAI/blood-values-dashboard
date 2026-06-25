@@ -6,7 +6,7 @@ use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
 use App\Models\User;
-use Carbon\CarbonInterface;
+use App\Support\Format;
 use Illuminate\Support\Collection;
 
 class BuildDashboardOverview
@@ -50,7 +50,7 @@ class BuildDashboardOverview
             'title' => $bloodTest->title ?: 'Bloedtest zonder titel',
             'href' => route('blood-tests.show', $bloodTest),
             'date' => $bloodTest->test_date
-                ? $this->formatDutchDate($bloodTest->test_date)
+                ? Format::dutchDate($bloodTest->test_date)
                 : 'Geen datum',
             'status' => $bloodTest->status,
             'confirmedCount' => (int) $bloodTest->getAttribute('confirmed_results_count'),
@@ -186,25 +186,5 @@ class BuildDashboardOverview
     private function countLabel(int $count, string $singular, string $plural): string
     {
         return $count.' '.($count === 1 ? $singular : $plural);
-    }
-
-    private function formatDutchDate(CarbonInterface $date): string
-    {
-        $months = [
-            1 => 'januari',
-            2 => 'februari',
-            3 => 'maart',
-            4 => 'april',
-            5 => 'mei',
-            6 => 'juni',
-            7 => 'juli',
-            8 => 'augustus',
-            9 => 'september',
-            10 => 'oktober',
-            11 => 'november',
-            12 => 'december',
-        ];
-
-        return $date->day.' '.$months[$date->month].' '.$date->year;
     }
 }

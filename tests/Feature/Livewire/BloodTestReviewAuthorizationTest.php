@@ -34,21 +34,31 @@ it('user cannot confirm values for another users blood test', function () {
     expect(BiomarkerResult::query()->where('blood_test_id', $ownersBloodTest->id)->exists())->toBeFalse();
 });
 
-it('tampered livewire action parameter cannot confirm another users blood test', function () {
+it('tampered draft id cannot confirm another users extracted draft', function () {
     $owner = User::factory()->create();
     $otherUser = User::factory()->create();
-    $ownersBloodTest = BloodTest::factory()->for($owner)->create();
-    $otherUsersBloodTest = BloodTest::factory()->for($otherUser)->create();
+    $biomarker = Biomarker::factory()->for($owner)->create(['name' => 'Ferritin']);
+    $ownersBloodTest = BloodTest::factory()->for($owner)->create(['status' => 'reviewing']);
+    $otherUsersBloodTest = BloodTest::factory()->for($otherUser)->create(['status' => 'reviewing']);
+    $ownersDraft = BiomarkerResult::factory()->for($ownersBloodTest)->for($biomarker)->create([
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Ferritin',
+        'value' => 42,
+        'unit' => 'ug/L',
+    ]);
 
     Livewire::actingAs($otherUser)
         ->test(ReviewBloodTest::class, ['bloodTest' => $otherUsersBloodTest])
-        ->set('resultForm.name', 'Ferritin')
-        ->set('resultForm.value', '42')
+        ->set('draftResultId', $ownersDraft->id)
+        ->set('resultForm.value', '99')
         ->set('resultForm.unit', 'ug/L')
-        ->call('confirmResult', $ownersBloodTest->id)
+        ->call('confirmResult')
         ->assertForbidden();
 
-    expect(BiomarkerResult::query()->where('blood_test_id', $ownersBloodTest->id)->exists())->toBeFalse();
+    expect($ownersDraft->refresh()->confirmed_at)->toBeNull()
+        ->and($ownersDraft->entry_source)->toBe('extracted')
+        ->and((float) $ownersDraft->value)->toBe(42.0);
 });
 
 it('tampered livewire public property cannot switch owner context', function () {
@@ -121,7 +131,9 @@ it('tampered livewire action cannot edit another users confirmed result', functi
     Livewire::actingAs($otherUser)
         ->test(ReviewBloodTest::class, ['bloodTest' => $otherUsersBloodTest])
         ->call('editConfirmedResult', $ownersResult->id)
-        ->assertForbidden();
+        ->assertForbidden()
+        ->assertSet('editingResultId', null)
+        ->assertSet('resultForm.value', '');
 });
 
 it('tampered livewire action cannot delete another users confirmed result', function () {

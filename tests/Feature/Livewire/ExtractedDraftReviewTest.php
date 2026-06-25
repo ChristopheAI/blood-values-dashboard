@@ -48,6 +48,48 @@ it('shows extracted drafts and lets the owner confirm a draft through the review
         ->and($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
+it('confirms a null-biomarker extracted draft by creating the biomarker through the review form', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'reviewing']);
+    $draft = BiomarkerResult::factory()->for($bloodTest)->create([
+        'biomarker_id' => null,
+        'value' => 42,
+        'unit' => 'ug/L',
+        'reference_min' => 30,
+        'reference_max' => 150,
+        'reference_unit' => 'ug/L',
+        'status' => 'unknown',
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'extracted_name' => 'Magnesium',
+        'extraction_confidence' => 0.84,
+        'source_snippet' => 'Magnesium 42 ug/L ref 30-150 ug/L',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('useDraft', $draft->id)
+        ->assertSet('draftResultId', $draft->id)
+        ->assertSet('resultForm.biomarker_id', null)
+        ->assertSet('resultForm.name', 'Magnesium')
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    $draft->refresh();
+    $biomarker = Biomarker::query()
+        ->where('user_id', $user->id)
+        ->where('name', 'Magnesium')
+        ->first();
+
+    expect($biomarker)->not->toBeNull()
+        ->and($draft->biomarker_id)->toBe($biomarker->id)
+        ->and($draft->entry_source)->toBe('pdf_reviewed')
+        ->and($draft->confirmed_at)->not->toBeNull()
+        ->and($draft->status)->toBe('normal')
+        ->and($draft->extracted_name)->toBe('Magnesium')
+        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+});
+
 it('normalizes unicode whitespace from extracted drafts before confirming through the review form', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);

@@ -154,7 +154,7 @@ class BuildConsultOverview
     {
         return $this->buildLongitudinalChanges
             ->across($user, $bloodTests)
-            ->filter(fn (LongitudinalChange $change): bool => $change->comparable)
+            ->filter(fn (LongitudinalChange $change): bool => $change->comparable && $change->direction !== 'unchanged')
             ->map(fn (LongitudinalChange $change): array => [
                 'result' => $change->result,
                 'previousResult' => $change->previousResult,
