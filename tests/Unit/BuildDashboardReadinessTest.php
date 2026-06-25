@@ -84,6 +84,45 @@ class BuildDashboardReadinessTest extends TestCase
         $this->assertFalse($readiness['showConsultPost']);
     }
 
+    public function test_readiness_blocks_consult_post_when_review_drafts_remain_alongside_confirmed_values(): void
+    {
+        $user = User::factory()->create();
+        $bloodTest = BloodTest::factory()->for($user)->create(['title' => 'Mixed review test']);
+        $confirmedMarker = Biomarker::factory()->for($user)->create(['name' => 'Confirmed marker']);
+        $draftMarker = Biomarker::factory()->for($user)->create(['name' => 'Draft marker']);
+
+        BiomarkerResult::factory()->for($bloodTest)->for($confirmedMarker)->create([
+            'confirmed_at' => now(),
+        ]);
+        BiomarkerResult::factory()->for($bloodTest)->for($draftMarker)->create([
+            'entry_source' => 'extracted',
+            'confirmed_at' => null,
+        ]);
+
+        $timeline = collect([[
+            'id' => $bloodTest->id,
+            'title' => 'Mixed review test',
+            'href' => route('blood-tests.show', $bloodTest),
+            'date' => 'Geen datum',
+            'status' => 'reviewing',
+            'confirmedCount' => 1,
+            'draftCount' => 1,
+            'documentCount' => 0,
+        ]]);
+
+        $readiness = app(BuildDashboardReadiness::class)(
+            $user,
+            $timeline,
+            reviewDraftCount: 1,
+            confirmedValueCount: 1,
+        );
+
+        $this->assertSame('Eerst review afronden', $readiness['headline']);
+        $this->assertFalse($readiness['showConsultPost']);
+        $this->assertSame('1 waarde wacht op review en blijft buiten consult.', $readiness['items'][0]['label']);
+        $this->assertSame('1 bevestigde waarde blijft beschikbaar', $readiness['items'][1]['label']);
+    }
+
     public function test_readiness_uses_most_recent_confirmed_blood_test_outside_timeline_slice(): void
     {
         $user = User::factory()->create();

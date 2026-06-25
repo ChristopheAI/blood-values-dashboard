@@ -138,10 +138,10 @@ class BuildDashboardReadiness
             'consultBloodTestId' => $latestBloodTest?->id,
             'showConsultPost' => $latestBloodTest !== null,
             'selectionPills' => [
-                __('aandacht'),
-                __('normaal'),
-                __('wijzigingen'),
-                __('bron'),
+                'aandacht',
+                'normaal',
+                'wijzigingen',
+                'bron',
             ],
         ];
     }

@@ -25,8 +25,11 @@
     <div class="space-y-4">
         <div class="space-y-2">
             <flux:heading size="lg">{{ $readiness['headline'] }}</flux:heading>
-            <div class="text-xl font-semibold text-neutral-900 dark:text-white">{{ __($nextStep['title']) }}</div>
-            <flux:text>{{ __($nextStep['body']) }}</flux:text>
+
+            @unless ($readiness['showConsultPost'])
+                <div class="text-xl font-semibold text-neutral-900 dark:text-white" data-test="dashboard-next-step-title">{{ __($nextStep['title']) }}</div>
+                <flux:text data-test="dashboard-next-step-body">{{ __($nextStep['body']) }}</flux:text>
+            @endunless
         </div>
 
         <ul class="space-y-2 text-sm" data-test="dashboard-readiness-checklist">

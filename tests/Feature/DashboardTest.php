@@ -498,6 +498,9 @@ class DashboardTest extends TestCase
             ->assertSee('Ligt boven de opgegeven referentie.')
             ->assertSee('data-test="dashboard-consult-handoff-form"', false)
             ->assertSee('Consultlijst maken')
+            ->assertSee('Klaar voor je consult?')
+            ->assertDontSee('data-test="dashboard-next-step-title"', false)
+            ->assertDontSee('Consultlijst voorbereiden')
             ->assertDontSee('data-test="latest-upload-consult-button"', false)
             ->assertDontSee('Latest upload')
             ->assertDontSee('What changed')
@@ -606,5 +609,36 @@ class DashboardTest extends TestCase
             ->assertDontSee('Later open reminder')
             ->assertDontSee('Completed reminder')
             ->assertDontSee('Other user reminder');
+    }
+
+    public function test_dashboard_consult_handoff_posts_default_selection_to_consult_overview(): void
+    {
+        $user = User::factory()->create();
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+        $bloodTest = BloodTest::factory()->for($user)->create([
+            'title' => 'Consult handoff test',
+            'test_date' => '2026-06-15',
+        ]);
+
+        BiomarkerResult::factory()->for($bloodTest)->for($marker)->create([
+            'value' => 18,
+            'unit' => 'ug/L',
+            'status' => 'low',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('consult-overview.index'), [
+                'blood_test_ids' => [$bloodTest->id],
+                'include_attention' => '1',
+                'include_normal' => '1',
+                'include_trends' => '1',
+                'include_source_documents' => '1',
+            ])
+            ->assertOk()
+            ->assertSee('data-test="consult-pack"', false)
+            ->assertSee('Ferritine')
+            ->assertSee('18')
+            ->assertSee('Consult handoff test');
     }
 }
