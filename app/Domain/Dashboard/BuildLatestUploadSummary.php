@@ -76,7 +76,10 @@ class BuildLatestUploadSummary
         }
 
         $changesByResultId = $this->buildLongitudinalChanges
-            ->across($user, $this->bloodTestsUpToAndIncluding($user, $bloodTest))
+            ->across(
+                $user,
+                $user->bloodTestsUpToAndIncluding($bloodTest),
+            )
             ->mapWithKeys(function (LongitudinalChange $change) use ($bloodTest): array {
                 if (! $change->result instanceof BiomarkerResult) {
                     return [];
@@ -139,28 +142,6 @@ class BuildLatestUploadSummary
             'reviewRows' => $reviewRows,
             'normalRows' => $normalRows,
         ];
-    }
-
-    /**
-     * The target test plus every test collected on or before it: those are the only
-     * tests that can hold a prior measurement for the target's biomarkers, so we never
-     * load the whole dossier (later tests can never be a "previous" for this one).
-     *
-     * @return Collection<int, BloodTest>
-     */
-    private function bloodTestsUpToAndIncluding(User $user, BloodTest $bloodTest): Collection
-    {
-        $query = BloodTest::query()->where('user_id', $user->id);
-
-        if ($bloodTest->test_date !== null) {
-            $query->where(function ($query) use ($bloodTest): void {
-                $query
-                    ->whereDate('test_date', '<=', $bloodTest->test_date->toDateString())
-                    ->orWhere($bloodTest->getKeyName(), $bloodTest->id);
-            });
-        }
-
-        return $query->get();
     }
 
     /**

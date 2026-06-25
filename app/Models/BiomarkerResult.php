@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $blood_test_id
+ * @property int|null $blood_test_document_id
  * @property int|null $biomarker_id
  * @property string|null $extracted_name
  * @property string $value
@@ -31,6 +32,7 @@ use Illuminate\Support\Carbon;
  */
 #[Fillable([
     'blood_test_id',
+    'blood_test_document_id',
     'biomarker_id',
     'extracted_name',
     'value',
@@ -66,6 +68,14 @@ class BiomarkerResult extends Model
     public function bloodTest(): BelongsTo
     {
         return $this->belongsTo(BloodTest::class);
+    }
+
+    /**
+     * @return BelongsTo<BloodTestDocument, $this>
+     */
+    public function bloodTestDocument(): BelongsTo
+    {
+        return $this->belongsTo(BloodTestDocument::class);
     }
 
     /**

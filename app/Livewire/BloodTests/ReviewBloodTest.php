@@ -261,9 +261,7 @@ class ReviewBloodTest extends Component
         $changesByResultId = $buildLongitudinalChanges
             ->across(
                 Auth::user(),
-                BloodTest::query()
-                    ->where('user_id', $bloodTest->user_id)
-                    ->get(),
+                Auth::user()->bloodTestsUpToAndIncluding($bloodTest),
             )
             ->filter(fn (LongitudinalChange $change): bool => $change->result?->blood_test_id === $bloodTest->id)
             ->keyBy(fn (LongitudinalChange $change): int => (int) $change->result?->id);

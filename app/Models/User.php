@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
@@ -67,6 +68,38 @@ class User extends Authenticatable implements PasskeyUser
     public function bloodTests(): HasMany
     {
         return $this->hasMany(BloodTest::class);
+    }
+
+    /**
+     * @return Collection<int, BloodTest>
+     */
+    public function bloodTestsUpToAndIncluding(BloodTest $bloodTest): Collection
+    {
+        if ((int) $bloodTest->user_id !== $this->id) {
+            return collect();
+        }
+
+        $query = $this->bloodTests();
+
+        if ($bloodTest->test_date === null) {
+            return $query
+                ->where('id', '<=', $bloodTest->id)
+                ->get();
+        }
+
+        return $query
+            ->where(function ($query) use ($bloodTest): void {
+                $query->where(function ($query) use ($bloodTest): void {
+                    $query
+                        ->whereNotNull('test_date')
+                        ->whereDate('test_date', '<', $bloodTest->test_date);
+                })->orWhere(function ($query) use ($bloodTest): void {
+                    $query
+                        ->whereDate('test_date', $bloodTest->test_date)
+                        ->where('id', '<=', $bloodTest->id);
+                });
+            })
+            ->get();
     }
 
     /**
