@@ -46,6 +46,88 @@ class ExtractCmaLayoutBiomarkerCandidates
         return $candidates;
     }
 
+    private function candidate(string $line, int $valueStart, int $unitStart, int $referenceStart): ?ExtractedBiomarkerCandidate
+    {
+        $fromFixedColumns = $this->candidateFromFixedColumns($line, $valueStart, $unitStart, $referenceStart);
+
+        if ($fromFixedColumns !== null) {
+            return $fromFixedColumns;
+        }
+
+        return $this->candidateFromCollapsedLine($line);
+    }
+
+    private function candidateFromFixedColumns(string $line, int $valueStart, int $unitStart, int $referenceStart): ?ExtractedBiomarkerCandidate
+    {
+        $name = $this->cleanName(substr($line, 0, $valueStart));
+        $value = $this->numberFrom($this->cell($line, $valueStart, $unitStart));
+        $unit = $this->cleanText($this->cell($line, $unitStart, $referenceStart));
+
+        if ($name === '' || $value === null || ! $this->looksLikeUnit($unit)) {
+            return null;
+        }
+
+        $reference = $this->reference($this->cleanText(substr($line, $referenceStart)));
+
+        if (! $reference->hasBoundary()) {
+            return null;
+        }
+
+        return $this->makeCandidate($name, $value, $unit, $reference);
+    }
+
+    private function candidateFromCollapsedLine(string $line): ?ExtractedBiomarkerCandidate
+    {
+        if (! str_contains($line, '°')) {
+            return null;
+        }
+
+        $collapsed = $this->cleanText($line);
+
+        if (! preg_match(
+            '/^(?<name>[\p{L}0-9][\p{L}0-9\s\-()%*+°]+?)\s+(?<value>(?:\+\s*)?\d+(?:[,.]\d+)?)\s+(?<unit>[\p{L}μµ%°]+(?:\/[\p{L}\d,.²³0-9]+)?)\s+(?<reference>.+?)\s*(?:<)?\s*$/u',
+            $collapsed,
+            $match,
+        )) {
+            return null;
+        }
+
+        $name = $this->cleanName($match['name']);
+        $value = $this->numberFrom($match['value']);
+        $unit = $this->cleanText($match['unit']);
+
+        if ($name === '' || $value === null || ! $this->looksLikeUnit($unit)) {
+            return null;
+        }
+
+        $reference = $this->reference($this->cleanText($match['reference']));
+
+        if (! $reference->hasBoundary()) {
+            return null;
+        }
+
+        return $this->makeCandidate($name, $value, $unit, $reference);
+    }
+
+    private function makeCandidate(string $name, string $value, string $unit, CmaReference $reference): ExtractedBiomarkerCandidate
+    {
+        $confidence = $reference->isRange()
+            ? self::CONFIDENCE_WITH_RANGE
+            : self::CONFIDENCE_WITH_ONE_SIDED_REFERENCE;
+
+        return new ExtractedBiomarkerCandidate(
+            extractedName: $name,
+            value: $value,
+            unit: $unit,
+            referenceMin: $reference->min,
+            referenceMax: $reference->max,
+            referenceUnit: $reference->unit ?? $unit,
+            confidence: $confidence,
+            sourceSnippet: $this->sourceSnippet($name, $value, $unit, $reference),
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_LAYOUT,
+        );
+    }
+
     /**
      * @param  list<string>  $lines
      */
@@ -110,39 +192,6 @@ class ExtractCmaLayoutBiomarkerCandidates
         }
 
         return $starts === [] ? null : min($starts);
-    }
-
-    private function candidate(string $line, int $valueStart, int $unitStart, int $referenceStart): ?ExtractedBiomarkerCandidate
-    {
-        $name = $this->cleanName(substr($line, 0, $valueStart));
-        $value = $this->numberFrom($this->cell($line, $valueStart, $unitStart));
-        $unit = $this->cleanText($this->cell($line, $unitStart, $referenceStart));
-
-        if ($name === '' || $value === null || ! $this->looksLikeUnit($unit)) {
-            return null;
-        }
-
-        $reference = $this->reference($this->cleanText(substr($line, $referenceStart)));
-
-        if (! $reference->hasBoundary()) {
-            return null;
-        }
-
-        $confidence = $reference->isRange()
-            ? self::CONFIDENCE_WITH_RANGE
-            : self::CONFIDENCE_WITH_ONE_SIDED_REFERENCE;
-
-        return new ExtractedBiomarkerCandidate(
-            extractedName: $name,
-            value: $value,
-            unit: $unit,
-            referenceMin: $reference->min,
-            referenceMax: $reference->max,
-            referenceUnit: $reference->unit ?? $unit,
-            confidence: $confidence,
-            sourceSnippet: $this->sourceSnippet($name, $value, $unit, $reference),
-            source: ExtractedBiomarkerCandidate::SOURCE_CMA_LAYOUT,
-        );
     }
 
     private function cell(string $line, int $start, int $end): string
