@@ -116,7 +116,9 @@ class ReviewBloodTest extends Component
             $payload['entry_source'] = 'pdf_reviewed';
             $payload['extracted_name'] = null;
 
-            $bloodTest->results()->updateOrCreate(['biomarker_id' => $biomarker->id], $payload);
+            // hasOtherResultForBiomarker() above guarantees no existing row for this
+            // biomarker, so this is always an insert.
+            $bloodTest->results()->create($payload);
         }
 
         $bloodTest->recalculateStatusFromResults();
