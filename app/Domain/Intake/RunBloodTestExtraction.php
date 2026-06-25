@@ -674,10 +674,11 @@ class RunBloodTestExtraction
     }
 
     /**
-     * A single dotted group of exactly three digits ("1.234") is ambiguous between a
-     * decimal value (1.234) and a European thousands separator (1234), which the
-     * parser would silently resolve to the fractional reading. Rather than lock in a
-     * possibly wrong value, keep such rows as a review draft so a human decides.
+     * A single dotted group of exactly three digits ("1.234", including detection
+     * limit forms like "<1.234") is ambiguous between a decimal value (1.234) and
+     * a European thousands separator (1234), which the parser would silently
+     * resolve to the fractional reading. Rather than lock in a possibly wrong
+     * value, keep such rows as a review draft so a human decides.
      */
     private function hasUnambiguousNumericFormat(ExtractedBiomarkerCandidate $candidate): bool
     {
@@ -688,7 +689,7 @@ class RunBloodTestExtraction
 
             $trimmed = trim(preg_replace('/\s+/u', '', $raw) ?? $raw);
 
-            if (preg_match('/^[+-]?\d{1,3}\.\d{3}$/', $trimmed) === 1) {
+            if (preg_match('/^(?:<=|>=|≤|≥|<|>)?[+-]?\d{1,3}\.\d{3}$/u', $trimmed) === 1) {
                 return false;
             }
         }
