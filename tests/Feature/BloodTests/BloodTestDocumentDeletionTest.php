@@ -184,7 +184,7 @@ it('clears extracted source snippets when deleting a source document', function 
         ->and(BiomarkerResult::query()->whereKey($draft->id)->exists())->toBeTrue();
 });
 
-it('keeps source snippets for remaining documents when deleting one of multiple pdfs', function () {
+it('keeps source snippets for confirmed and draft rows from remaining documents', function () {
     Storage::fake('local');
 
     $user = User::factory()->create();
@@ -207,6 +207,12 @@ it('keeps source snippets for remaining documents when deleting one of multiple 
         'confirmed_at' => now(),
         'source_snippet' => 'Synthetic evidence from remaining PDF',
     ]);
+    $remainingDraft = BiomarkerResult::factory()->for($bloodTest)->create([
+        'blood_test_document_id' => $remainingDocument->id,
+        'entry_source' => 'extracted',
+        'confirmed_at' => null,
+        'source_snippet' => 'Synthetic draft evidence from remaining PDF',
+    ]);
 
     Storage::disk('local')->put($deletedDocument->storage_path, 'pdf bytes');
     Storage::disk('local')->put($remainingDocument->storage_path, 'pdf bytes');
@@ -216,7 +222,8 @@ it('keeps source snippets for remaining documents when deleting one of multiple 
         ->assertRedirect(route('blood-tests.show', $bloodTest));
 
     expect($deletedResult->refresh()->source_snippet)->toBeNull()
-        ->and($remainingResult->refresh()->source_snippet)->toBe('Synthetic evidence from remaining PDF');
+        ->and($remainingResult->refresh()->source_snippet)->toBe('Synthetic evidence from remaining PDF')
+        ->and($remainingDraft->refresh()->source_snippet)->toBe('Synthetic draft evidence from remaining PDF');
 });
 
 it('rolls back snippet clearing when deleting one pdf of a multi-document blood test fails', function () {
