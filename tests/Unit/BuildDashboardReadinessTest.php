@@ -83,4 +83,53 @@ class BuildDashboardReadinessTest extends TestCase
         $this->assertSame('Eerst review afronden', $readiness['headline']);
         $this->assertFalse($readiness['showConsultPost']);
     }
+
+    public function test_readiness_uses_most_recent_confirmed_blood_test_outside_timeline_slice(): void
+    {
+        $user = User::factory()->create();
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+
+        foreach (range(1, 5) as $day) {
+            BloodTest::factory()->for($user)->create([
+                'title' => 'Recent unconfirmed '.$day,
+                'test_date' => sprintf('2026-06-%02d', $day),
+            ]);
+        }
+
+        $confirmedBloodTest = BloodTest::factory()->for($user)->create([
+            'title' => 'Older confirmed test',
+            'test_date' => '2026-01-15',
+        ]);
+
+        BiomarkerResult::factory()->for($confirmedBloodTest)->for($marker)->create([
+            'confirmed_at' => now()->subMonths(2),
+        ]);
+
+        $timeline = BloodTest::query()
+            ->where('user_id', $user->id)
+            ->recentFirst()
+            ->limit(5)
+            ->get()
+            ->map(fn (BloodTest $bloodTest): array => [
+                'id' => $bloodTest->id,
+                'title' => $bloodTest->title ?: 'Bloedtest zonder titel',
+                'href' => route('blood-tests.show', $bloodTest),
+                'date' => $bloodTest->test_date?->toDateString() ?? 'Geen datum',
+                'status' => $bloodTest->status,
+                'confirmedCount' => 0,
+                'draftCount' => 0,
+                'documentCount' => 0,
+            ]);
+
+        $readiness = app(BuildDashboardReadiness::class)(
+            $user,
+            $timeline,
+            reviewDraftCount: 0,
+            confirmedValueCount: 1,
+        );
+
+        $this->assertTrue($readiness['showConsultPost']);
+        $this->assertSame($confirmedBloodTest->id, $readiness['consultBloodTestId']);
+        $this->assertStringContainsString('15 januari 2026', $readiness['items'][0]['label']);
+    }
 }

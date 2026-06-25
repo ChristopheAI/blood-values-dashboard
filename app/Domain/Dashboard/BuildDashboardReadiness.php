@@ -5,6 +5,7 @@ namespace App\Domain\Dashboard;
 use App\Models\BloodTest;
 use App\Models\ContextNote;
 use App\Models\User;
+use App\Support\Format;
 use Illuminate\Support\Collection;
 
 class BuildDashboardReadiness
@@ -84,9 +85,11 @@ class BuildDashboardReadiness
             ];
         }
 
-        $latestBloodTest = $this->latestConsultBloodTest($user, $bloodTests);
-        $latestTimeline = $bloodTests->firstWhere('id', $latestBloodTest?->id)
-            ?? $bloodTests->first();
+        $latestBloodTest = $this->latestConsultBloodTest($user);
+        $latestTimeline = $latestBloodTest === null
+            ? $bloodTests->first()
+            : ($bloodTests->firstWhere('id', $latestBloodTest->id)
+                ?? $this->timelineRowForBloodTest($latestBloodTest));
         $contextNoteCount = $latestBloodTest
             ? ContextNote::query()
                 ->where('user_id', $user->id)
@@ -143,21 +146,37 @@ class BuildDashboardReadiness
         ];
     }
 
-    /**
-     * @param  Collection<int, array{id: int, title: non-falsy-string, href: string, date: string, status: string, confirmedCount: int, draftCount: int, documentCount: int}>  $bloodTests
-     */
-    private function latestConsultBloodTest(User $user, Collection $bloodTests): ?BloodTest
+    private function latestConsultBloodTest(User $user): ?BloodTest
     {
-        $timelineMatch = $bloodTests->first(fn (array $bloodTest): bool => $bloodTest['confirmedCount'] > 0);
-
-        if ($timelineMatch === null) {
-            return null;
-        }
-
         return BloodTest::query()
             ->where('user_id', $user->id)
-            ->whereKey($timelineMatch['id'])
+            ->withCount([
+                'documents',
+                'results as confirmed_results_count' => fn ($query) => $query
+                    ->whereNotNull('confirmed_at')
+                    ->whereHas('biomarker', fn ($query) => $query->where('user_id', $user->id)),
+            ])
+            ->whereHas('results', fn ($query) => $query
+                ->whereNotNull('confirmed_at')
+                ->whereHas('biomarker', fn ($query) => $query->where('user_id', $user->id)))
+            ->recentFirst()
             ->first();
+    }
+
+    /**
+     * @return array{id: int, title: non-falsy-string, date: string, confirmedCount: int, documentCount: int}
+     */
+    private function timelineRowForBloodTest(BloodTest $bloodTest): array
+    {
+        return [
+            'id' => $bloodTest->id,
+            'title' => $bloodTest->title ?: 'Bloedtest zonder titel',
+            'date' => $bloodTest->test_date
+                ? Format::dutchDate($bloodTest->test_date)
+                : 'Geen datum',
+            'confirmedCount' => (int) $bloodTest->getAttribute('confirmed_results_count'),
+            'documentCount' => (int) $bloodTest->getAttribute('documents_count'),
+        ];
     }
 
     private function countLabel(int $count, string $singular, string $plural): string
