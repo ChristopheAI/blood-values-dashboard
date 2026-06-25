@@ -16,8 +16,8 @@ class BuildDashboardOverview
     /**
      * @return array{
      *     nextStep: array{kind: string, title: string, body: string, href: string, action: string},
-     *     readiness: array{headline: string, items: list<array{state: string, label: string}>, consultBloodTestId: int|null, showConsultPost: bool, selectionPills: list<string>},
-     *     workstand: Collection<int, array{key: string, label: string, count: int, summary: string, help: string, emphasis: bool}>,
+     *     readiness: array{headline: string, variant: string, items: list<array{state: string, label: string}>, consultBloodTestId: int|null, showConsultPost: bool, selectionPills: list<array{key: string, label: string, count: int, tone: string}>},
+     *     workstand: Collection<int, array{key: string, label: string, count: int, summary: string, help: string, emphasis: bool, icon: string, tone: string}>,
      *     bloodTests: Collection<int, array{id: int, title: non-falsy-string, href: string, date: string, status: string, confirmedCount: int, draftCount: int, documentCount: int}>,
      *     reviewDraftCount: int,
      *     confirmedValueCount: int,
@@ -86,6 +86,8 @@ class BuildDashboardOverview
                     'summary' => $this->countLabel($bloodTestCount, 'bloedtest', 'bloedtesten'),
                     'help' => 'Eigen uploads in deze werkruimte.',
                     'emphasis' => false,
+                    'icon' => 'droplet',
+                    'tone' => 'rose',
                 ],
                 [
                     'key' => 'confirmed',
@@ -94,14 +96,18 @@ class BuildDashboardOverview
                     'summary' => $this->countLabel($confirmedValueCount, 'bevestigde waarde', 'bevestigde waarden'),
                     'help' => 'Alleen waarden voorbij de confirmatiepoort.',
                     'emphasis' => false,
+                    'icon' => 'check-badge',
+                    'tone' => 'amber',
                 ],
                 [
                     'key' => 'review',
-                    'label' => 'Review',
+                    'label' => 'In review',
                     'count' => $reviewDraftCount,
                     'summary' => $this->countLabel($reviewDraftCount, 'reviewpunt', 'reviewpunten'),
                     'help' => 'Extracties die nog niet downstream mogen.',
                     'emphasis' => $reviewDraftCount > 0,
+                    'icon' => 'clipboard',
+                    'tone' => 'sky',
                 ],
                 [
                     'key' => 'sources',
@@ -110,6 +116,8 @@ class BuildDashboardOverview
                     'summary' => $this->countLabel($sourceDocumentCount, 'bronbestand', 'bronbestanden'),
                     'help' => 'Lokale documenten bij eigen bloedtesten.',
                     'emphasis' => false,
+                    'icon' => 'document',
+                    'tone' => 'emerald',
                 ],
             ]),
             'bloodTests' => $timeline,

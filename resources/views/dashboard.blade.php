@@ -1,5 +1,7 @@
 <x-layouts::app :title="__('Dashboard')">
     <section class="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        @include('dashboard._workstand-summary', ['workstand' => $dashboardOverview['workstand']])
+
         @include('dashboard._next-step', [
             'nextStep' => $dashboardOverview['nextStep'],
             'readiness' => $dashboardOverview['readiness'],
@@ -9,17 +11,13 @@
             @include('blood-tests._upload-dropzone')
         @endif
 
-        @include('dashboard._workstand-summary', ['workstand' => $dashboardOverview['workstand']])
-
         @if (! $recentBloodTests->isEmpty())
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(20rem,0.95fr)] lg:items-start">
-                @include('dashboard._latest-blood-test', [
-                    'bloodTests' => $dashboardOverview['bloodTests'],
-                    'latestUploadSummary' => $latestUploadSummary,
-                ])
+            @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])
 
-                @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])
-            </div>
+            @include('dashboard._latest-blood-test', [
+                'bloodTests' => $dashboardOverview['bloodTests'],
+                'latestUploadSummary' => $latestUploadSummary,
+            ])
         @else
             @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])
         @endif

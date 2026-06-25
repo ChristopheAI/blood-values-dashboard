@@ -2,6 +2,9 @@
 
 namespace App\Domain\Dashboard;
 
+use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\BloodTests\LongitudinalChange;
+use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\ContextNote;
 use App\Models\User;
@@ -10,14 +13,20 @@ use Illuminate\Support\Collection;
 
 class BuildDashboardReadiness
 {
+    public function __construct(
+        private readonly BuildLatestUploadSummary $buildLatestUploadSummary,
+        private readonly BuildLongitudinalChanges $buildLongitudinalChanges,
+    ) {}
+
     /**
      * @param  Collection<int, array{id: int, title: non-falsy-string, href: string, date: string, status: string, confirmedCount: int, draftCount: int, documentCount: int}>  $bloodTests
      * @return array{
      *     headline: string,
+     *     variant: string,
      *     items: list<array{state: string, label: string}>,
      *     consultBloodTestId: int|null,
      *     showConsultPost: bool,
-     *     selectionPills: list<string>
+     *     selectionPills: list<array{key: string, label: string, count: int, tone: string}>
      * }
      */
     public function __invoke(
@@ -29,6 +38,7 @@ class BuildDashboardReadiness
         if ($bloodTests->isEmpty()) {
             return [
                 'headline' => 'Start je dossier',
+                'variant' => 'default',
                 'items' => [
                     [
                         'state' => 'pending',
@@ -48,6 +58,7 @@ class BuildDashboardReadiness
 
             return [
                 'headline' => 'Eerst review afronden',
+                'variant' => 'review',
                 'items' => [
                     [
                         'state' => 'blocked',
@@ -69,6 +80,7 @@ class BuildDashboardReadiness
 
             return [
                 'headline' => 'Bevestig waarden',
+                'variant' => 'default',
                 'items' => [
                     [
                         'state' => 'pending',
@@ -103,47 +115,102 @@ class BuildDashboardReadiness
                 ->whereHas('biomarker', fn ($query) => $query->where('user_id', $user->id)))
             ->count() >= 2;
 
+        $summary = $latestBloodTest
+            ? $this->buildLatestUploadSummary->forBloodTest($user, $latestBloodTest)
+            : null;
+        $changeCount = $latestBloodTest
+            ? $this->comparableChangeCount($user, $latestBloodTest)
+            : 0;
+
         $items = [
             [
                 'state' => 'ok',
-                'label' => $this->countLabel(
-                    (int) $latestTimeline['confirmedCount'],
-                    'bevestigde waarde',
-                    'bevestigde waarden',
-                ).' ('.$latestTimeline['date'].')',
+                'label' => 'Bloedtesten bevestigd',
             ],
             [
                 'state' => $latestTimeline['documentCount'] > 0 ? 'ok' : 'optional',
                 'label' => $latestTimeline['documentCount'] > 0
-                    ? $this->countLabel((int) $latestTimeline['documentCount'], 'bron-PDF gekoppeld', 'bron-PDF\'s gekoppeld')
+                    ? 'Bron-PDF\'s beschikbaar'
                     : 'Geen bron-PDF gekoppeld (optioneel)',
             ],
             [
                 'state' => $hasComparableHistory ? 'ok' : 'optional',
                 'label' => $hasComparableHistory
-                    ? 'Wijzigingen t.o.v. eerdere test beschikbaar'
+                    ? 'Wijzigingen zichtbaar'
                     : 'Nog geen eerdere test om mee te vergelijken',
             ],
             [
                 'state' => 'optional',
                 'label' => $contextNoteCount === 0
-                    ? 'Geen contextnotities (optioneel)'
+                    ? 'Contextnotities (optioneel)'
                     : $this->countLabel($contextNoteCount, 'contextnotitie gekoppeld', 'contextnotities gekoppeld'),
             ],
         ];
 
         return [
             'headline' => 'Klaar voor je consult?',
+            'variant' => 'success',
             'items' => $items,
             'consultBloodTestId' => $latestBloodTest?->id,
             'showConsultPost' => $latestBloodTest !== null,
-            'selectionPills' => [
-                'aandacht',
-                'normaal',
-                'wijzigingen',
-                'bron',
+            'selectionPills' => $this->selectionPills(
+                summary: $summary,
+                documentCount: (int) $latestTimeline['documentCount'],
+                changeCount: $changeCount,
+            ),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $summary
+     * @return list<array{key: string, label: string, count: int, tone: string}>
+     */
+    private function selectionPills(?array $summary, int $documentCount, int $changeCount): array
+    {
+        return [
+            [
+                'key' => 'attention',
+                'label' => 'Aandacht',
+                'count' => $summary ? (int) $summary['attentionCount'] : 0,
+                'tone' => 'rose',
+            ],
+            [
+                'key' => 'normal',
+                'label' => 'Normaal',
+                'count' => $summary ? (int) $summary['normalCount'] : 0,
+                'tone' => 'emerald',
+            ],
+            [
+                'key' => 'changes',
+                'label' => 'Wijzigingen',
+                'count' => $changeCount,
+                'tone' => 'amber',
+            ],
+            [
+                'key' => 'sources',
+                'label' => 'Bron-PDF',
+                'count' => $documentCount,
+                'tone' => 'sky',
             ],
         ];
+    }
+
+    private function comparableChangeCount(User $user, BloodTest $bloodTest): int
+    {
+        return $this->buildLongitudinalChanges
+            ->across($user, $user->bloodTestsUpToAndIncluding($bloodTest))
+            ->filter(function (LongitudinalChange $change) use ($bloodTest): bool {
+                if (! $change->result instanceof BiomarkerResult) {
+                    return false;
+                }
+
+                if ((int) $change->result->blood_test_id !== (int) $bloodTest->id) {
+                    return false;
+                }
+
+                return $change->comparable && $change->direction !== 'unchanged';
+            })
+            ->count();
     }
 
     private function latestConsultBloodTest(User $user): ?BloodTest
