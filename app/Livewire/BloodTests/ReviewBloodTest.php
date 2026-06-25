@@ -512,7 +512,7 @@ class ReviewBloodTest extends Component
 
     private function qualitativeStatus(QualitativeLabValue $qualitative, ?BiomarkerResult $draft): BiomarkerStatus
     {
-        $sourceSnippet = (string) ($draft?->source_snippet ?? '');
+        $sourceSnippet = $draft === null ? '' : (string) ($draft->source_snippet ?? '');
         $referenceQualitative = null;
 
         if ($sourceSnippet !== '' && preg_match('/\s'.preg_quote($qualitative->storedValue(), '/').'\s+(?<reference>[A-Za-z ]+?)\s*</u', $sourceSnippet, $match)) {
