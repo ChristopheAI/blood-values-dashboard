@@ -7,3 +7,8 @@ it('preserves below-detection prefixes when rendering biomarker values', functio
         ->and(Format::biomarkerValue('1.1', 'CCP antilichamen* <1,1 U/mL ≤6,9 <'))->toBe('<1.1')
         ->and(Format::biomarkerValue('12.4', 'Marker Alpha 12,4 mg/L 10 - 20'))->toBe('12.4');
 });
+
+it('renders qualitative biomarker values without numeric coercion', function () {
+    expect(Format::biomarkerValue('Negatief', 'T. pallidum AL* Negatief Negatief <'))->toBe('Negatief')
+        ->and(Format::biomarkerValue('Niet gedetecteerd', 'C. trachomatis DNA (PCR) Niet gedetecteerd <'))->toBe('Niet gedetecteerd');
+});
