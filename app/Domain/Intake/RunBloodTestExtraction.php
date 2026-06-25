@@ -2,6 +2,7 @@
 
 namespace App\Domain\Intake;
 
+use App\Domain\Biomarkers\DetectionLimitValue;
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
 use App\Enums\BiomarkerStatus;
 use App\Models\Biomarker;
@@ -703,13 +704,7 @@ class RunBloodTestExtraction
      */
     private function autoConfirmYieldsConclusiveStatus(ExtractedBiomarkerCandidate $candidate): bool
     {
-        return $this->status(
-            $this->normalizedUnit($candidate->unit),
-            $this->normalizedNullableUnit($candidate->referenceUnit),
-            $this->normalizedNumber($candidate->value),
-            $this->normalizedNullableNumber($candidate->referenceMin),
-            $this->normalizedNullableNumber($candidate->referenceMax),
-        ) !== BiomarkerStatus::Unknown;
+        return $this->statusForCandidate($candidate) !== BiomarkerStatus::Unknown;
     }
 
     private function hasParseableReferenceEvidence(ExtractedBiomarkerCandidate $candidate): bool
@@ -797,12 +792,36 @@ class RunBloodTestExtraction
 
     private function status(string $unit, ?string $referenceUnit, string $value, ?string $referenceMin, ?string $referenceMax): BiomarkerStatus
     {
-        return (new DetermineBiomarkerStatus)(
-            value: (float) $value,
+        $calculator = new DetermineBiomarkerStatus;
+        $detectionLimit = DetectionLimitValue::parse($value);
+
+        if ($detectionLimit instanceof DetectionLimitValue) {
+            return $calculator->forDetectionLimit(
+                detectionLimit: $detectionLimit,
+                valueUnit: $unit,
+                referenceMinimum: $referenceMin === null ? null : (float) $referenceMin,
+                referenceMaximum: $referenceMax === null ? null : (float) $referenceMax,
+                referenceUnit: $referenceUnit ?: $unit,
+            );
+        }
+
+        return $calculator(
+            value: (float) $this->normalizedNumber($value),
             valueUnit: $unit,
             referenceMinimum: $referenceMin === null ? null : (float) $referenceMin,
             referenceMaximum: $referenceMax === null ? null : (float) $referenceMax,
             referenceUnit: $referenceUnit ?: $unit,
+        );
+    }
+
+    private function statusForCandidate(ExtractedBiomarkerCandidate $candidate): BiomarkerStatus
+    {
+        return $this->status(
+            $this->normalizedUnit($candidate->unit),
+            $this->normalizedNullableUnit($candidate->referenceUnit),
+            $candidate->value,
+            $this->normalizedNullableNumber($candidate->referenceMin),
+            $this->normalizedNullableNumber($candidate->referenceMax),
         );
     }
 

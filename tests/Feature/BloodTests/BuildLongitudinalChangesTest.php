@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
@@ -204,4 +205,22 @@ it('returns no blood tests for a foreign blood test in bloodTestsUpToAndIncludin
     $foreignBloodTest = BloodTest::factory()->for($otherUser)->create(['test_date' => '2026-05-01']);
 
     expect($user->bloodTestsUpToAndIncluding($foreignBloodTest))->toBeEmpty();
+});
+
+it('preserves below-detection prefixes when formatting confirmed values', function () {
+    $user = User::factory()->create();
+    $ra = Biomarker::factory()->for($user)->create(['name' => 'RA*']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-05-19']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($ra)->create([
+        'value' => 10,
+        'unit' => 'kIU/L',
+        'status' => 'normal',
+        'confirmed_at' => '2026-05-20 09:00:00',
+        'source_snippet' => 'RA* <10 kIU/L ≤13 <',
+    ]);
+
+    $summary = app(BuildLatestUploadSummary::class)->forBloodTest($user, $bloodTest);
+
+    expect($summary['normalRows'][0]['valueLabel'])->toBe('<10 kIU/L');
 });

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\BloodTests;
 
+use App\Domain\Biomarkers\DetectionLimitValue;
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
 use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Domain\BloodTests\LongitudinalChange;
@@ -57,7 +58,7 @@ class ReviewBloodTest extends Component
         $validated = $this->validate([
             'resultForm.biomarker_id' => ['nullable', 'integer', 'min:1'],
             'resultForm.name' => ['required_without:resultForm.biomarker_id', 'nullable', 'string', 'max:255'],
-            'resultForm.value' => ['required', 'numeric'],
+            'resultForm.value' => ['required', 'string', 'max:50'],
             'resultForm.unit' => ['required', 'string', 'max:50'],
             'resultForm.reference_min' => ['nullable', 'numeric'],
             'resultForm.reference_max' => ['nullable', 'numeric'],
@@ -66,6 +67,15 @@ class ReviewBloodTest extends Component
         ]);
 
         $form = $this->normalizeResultForm($validated['resultForm']);
+        $storedValue = DetectionLimitValue::numericFromInput((string) $form['value']);
+
+        if ($storedValue === null) {
+            $this->addError('resultForm.value', 'The value must be a number or a detection-limit value such as <10.');
+
+            return;
+        }
+
+        $form['value'] = $storedValue;
         $biomarker = $this->ownedBiomarker($form);
 
         if (! $biomarker instanceof Biomarker) {
@@ -83,13 +93,27 @@ class ReviewBloodTest extends Component
             return;
         }
 
-        $status = (new DetermineBiomarkerStatus)(
-            value: (float) $form['value'],
-            valueUnit: $form['unit'],
-            referenceMinimum: $form['reference_min'] === null ? null : (float) $form['reference_min'],
-            referenceMaximum: $form['reference_max'] === null ? null : (float) $form['reference_max'],
-            referenceUnit: $form['reference_unit'] ?: $form['unit'],
-        );
+        $statusCalculator = new DetermineBiomarkerStatus;
+        $detectionLimit = DetectionLimitValue::parse((string) $validated['resultForm']['value']);
+        $referenceMinimum = $form['reference_min'] === null ? null : (float) $form['reference_min'];
+        $referenceMaximum = $form['reference_max'] === null ? null : (float) $form['reference_max'];
+        $referenceUnit = $form['reference_unit'] ?: $form['unit'];
+
+        $status = $detectionLimit instanceof DetectionLimitValue
+            ? $statusCalculator->forDetectionLimit(
+                detectionLimit: $detectionLimit,
+                valueUnit: $form['unit'],
+                referenceMinimum: $referenceMinimum,
+                referenceMaximum: $referenceMaximum,
+                referenceUnit: $referenceUnit,
+            )
+            : $statusCalculator(
+                value: (float) $form['value'],
+                valueUnit: $form['unit'],
+                referenceMinimum: $referenceMinimum,
+                referenceMaximum: $referenceMaximum,
+                referenceUnit: $referenceUnit,
+            );
 
         $payload = [
             'biomarker_id' => $biomarker->id,
@@ -138,7 +162,7 @@ class ReviewBloodTest extends Component
         $this->resultForm = [
             'biomarker_id' => $result->biomarker_id,
             'name' => $result->biomarker->name,
-            'value' => $this->formatDecimal($result->value),
+            'value' => Format::biomarkerValue($result->value, $result->source_snippet),
             'unit' => $result->unit,
             'reference_min' => $this->formatDecimal($result->reference_min),
             'reference_max' => $this->formatDecimal($result->reference_max),

@@ -2,6 +2,8 @@
 
 namespace App\Domain\Intake;
 
+use App\Domain\Biomarkers\DetectionLimitValue;
+
 class ExtractTabularBiomarkerCandidates
 {
     private const ROW_TOLERANCE = 4.0;
@@ -362,7 +364,7 @@ class ExtractTabularBiomarkerCandidates
         }
 
         $reference = $this->reference($cells['reference']);
-        $valueIsOneSided = str_contains($cells['value'], '<') || str_contains($cells['value'], '>');
+        $detectionLimit = DetectionLimitValue::parse($cells['value']);
 
         $name = $this->sanitizeName($cells['name']);
         $nameWasTruncated = $name !== $cells['name'];
@@ -375,7 +377,8 @@ class ExtractTabularBiomarkerCandidates
 
         $confidence = match (true) {
             ! $hasReference => 0.7,
-            $valueIsOneSided => 0.75,
+            $detectionLimit?->isSafeForReference($reference['min'], $reference['max']) => 0.85,
+            $detectionLimit instanceof DetectionLimitValue => 0.75,
             default => 0.85,
         };
 

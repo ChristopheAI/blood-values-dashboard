@@ -137,10 +137,10 @@ class BuildLongitudinalChanges
         $previousUnit = $previous instanceof BiomarkerResult ? (string) $previous->unit : '';
         $currentUnit = $current instanceof BiomarkerResult ? (string) $current->unit : '';
         $previousValue = $previous instanceof BiomarkerResult
-            ? $this->formatValue($previous->value)
+            ? $this->formatValue($previous)
             : 'not measured';
         $currentValue = $current instanceof BiomarkerResult
-            ? $this->formatValue($current->value)
+            ? $this->formatValue($current)
             : 'not measured';
 
         if (! $previous instanceof BiomarkerResult || ! $current instanceof BiomarkerResult) {
@@ -221,13 +221,13 @@ class BuildLongitudinalChanges
         return null;
     }
 
-    private function formatValue(mixed $value): string
+    private function formatValue(BiomarkerResult $result): string
     {
-        if (! is_numeric($value)) {
-            return trim((string) $value);
+        if (! is_numeric($result->value)) {
+            return trim((string) $result->value);
         }
 
-        return Format::number((float) $value);
+        return Format::biomarkerValue($result->value, $result->source_snippet);
     }
 
     private function direction(float $difference): string

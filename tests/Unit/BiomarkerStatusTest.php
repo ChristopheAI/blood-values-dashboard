@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Biomarkers\DetectionLimitValue;
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
 
 it('determines biomarker status from value unit and reference range', function () {
@@ -23,6 +24,33 @@ it('determines biomarker status from value unit and reference range', function (
     foreach ($cases as $label => [$value, $valueUnit, $minimum, $maximum, $rangeUnit, $expectedStatus]) {
         $status = $calculator(
             value: $value,
+            valueUnit: $valueUnit,
+            referenceMinimum: $minimum,
+            referenceMaximum: $maximum,
+            referenceUnit: $rangeUnit,
+        );
+
+        expect($status->value)->toBe($expectedStatus, $label);
+    }
+});
+
+it('classifies safe detection limits against one-sided references', function () {
+    $calculator = new DetermineBiomarkerStatus;
+
+    $cases = [
+        'below detection limit within maximum returns normal' => ['<10', 'kIU/L', null, 13.0, 'kIU/L', 'normal'],
+        'below detection limit above maximum returns unknown' => ['<14', 'kIU/L', null, 13.0, 'kIU/L', 'unknown'],
+        'above detection limit within minimum returns normal' => ['>40', 'mg/dL', 40.0, null, 'mg/dL', 'normal'],
+        'above detection limit below minimum returns unknown' => ['>35', 'mg/dL', 40.0, null, 'mg/dL', 'unknown'],
+    ];
+
+    foreach ($cases as $label => [$rawValue, $valueUnit, $minimum, $maximum, $rangeUnit, $expectedStatus]) {
+        $detectionLimit = DetectionLimitValue::parse($rawValue);
+
+        expect($detectionLimit)->not->toBeNull($label);
+
+        $status = $calculator->forDetectionLimit(
+            detectionLimit: $detectionLimit,
             valueUnit: $valueUnit,
             referenceMinimum: $minimum,
             referenceMaximum: $maximum,
