@@ -32,6 +32,25 @@ class RunBloodTestExtraction
      */
     private array $confirmedBiomarkerIdsByBloodTestId = [];
 
+    /**
+     * Biomarkers created during the current run via trusted auto-import. They must
+     * not act as catalog *prefix* anchors for later, genuinely different candidates,
+     * which would silently fold a distinct analyte into the wrong biomarker.
+     *
+     * @var array<int, true>
+     */
+    private array $biomarkerIdsCreatedThisRun = [];
+
+    /**
+     * Biomarkers already written as a result row during the current run. A second
+     * candidate resolving to one of these is kept as an unanchored draft rather than
+     * overwriting the first row via updateOrCreate (the same protection that
+     * duplicateMatchedBiomarkerIds gives pre-existing catalog biomarkers).
+     *
+     * @var array<int, true>
+     */
+    private array $writtenBiomarkerIdsThisRun = [];
+
     public function __construct(private readonly ExtractBiomarkerDrafts $extractBiomarkerDrafts) {}
 
     /**
@@ -41,6 +60,8 @@ class RunBloodTestExtraction
     {
         $this->biomarkersByUserId = [];
         $this->confirmedBiomarkerIdsByBloodTestId = [];
+        $this->biomarkerIdsCreatedThisRun = [];
+        $this->writtenBiomarkerIdsThisRun = [];
 
         $bloodTest = $document->bloodTest;
         $run = $bloodTest->extractionRuns()->create([
@@ -138,6 +159,14 @@ class RunBloodTestExtraction
                 $biomarker = null;
             }
 
+            // A second candidate that resolves to a biomarker already written in this
+            // same run is kept as an unanchored draft, so it never overwrites the first
+            // candidate's row (a biomarker auto-imported earlier in the loop is invisible
+            // to the pre-loop duplicate scan).
+            if ($matchedBiomarker instanceof Biomarker && isset($this->writtenBiomarkerIdsThisRun[$matchedBiomarker->id])) {
+                $biomarker = null;
+            }
+
             if (! $matchedBiomarker instanceof Biomarker) {
                 $biomarker = $this->trustedAutoImportBiomarker(
                     $document,
@@ -198,6 +227,7 @@ class RunBloodTestExtraction
             }
 
             BiomarkerResult::query()->updateOrCreate($attributes, $values);
+            $this->writtenBiomarkerIdsThisRun[$biomarker->id] = true;
 
             if ($autoConfirm) {
                 $this->rememberConfirmedBiomarkerValue($bloodTest->id, $biomarker->id);
@@ -386,6 +416,14 @@ class RunBloodTestExtraction
         $strongestLength = 0;
 
         foreach ($biomarkers as $biomarker) {
+            // A biomarker auto-imported earlier in this same run must not act as a
+            // prefix anchor for a later, genuinely different candidate; that would
+            // fold a distinct analyte into the wrong biomarker. A literal exact match
+            // (handled above) against such a biomarker is still allowed.
+            if (isset($this->biomarkerIdsCreatedThisRun[$biomarker->id])) {
+                continue;
+            }
+
             $prefixLength = $this->catalogPrefixLength($name, $biomarker);
 
             if ($prefixLength === 0) {
@@ -440,6 +478,7 @@ class RunBloodTestExtraction
         ]);
 
         $this->rememberBiomarker($biomarker);
+        $this->biomarkerIdsCreatedThisRun[$biomarker->id] = true;
 
         return $biomarker;
     }
@@ -627,7 +666,31 @@ class RunBloodTestExtraction
             && $this->normalizedUnit($candidate->unit) !== ''
             && $this->hasParseableReferenceEvidence($candidate)
             && $this->hasCompatibleReferenceUnit($candidate)
+            && $this->hasUnambiguousNumericFormat($candidate)
             && $this->autoConfirmYieldsConclusiveStatus($candidate);
+    }
+
+    /**
+     * A single dotted group of exactly three digits ("1.234") is ambiguous between a
+     * decimal value (1.234) and a European thousands separator (1234), which the
+     * parser would silently resolve to the fractional reading. Rather than lock in a
+     * possibly wrong value, keep such rows as a review draft so a human decides.
+     */
+    private function hasUnambiguousNumericFormat(ExtractedBiomarkerCandidate $candidate): bool
+    {
+        foreach ([$candidate->value, $candidate->referenceMin, $candidate->referenceMax] as $raw) {
+            if ($raw === null) {
+                continue;
+            }
+
+            $trimmed = trim(preg_replace('/\s+/u', '', $raw) ?? $raw);
+
+            if (preg_match('/^[+-]?\d{1,3}\.\d{3}$/', $trimmed) === 1) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

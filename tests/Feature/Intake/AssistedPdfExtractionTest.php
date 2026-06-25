@@ -830,6 +830,94 @@ it('keeps a high-confidence catalog-matched value without a reference range as a
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
+it('does not fold a different analyte into a biomarker auto-imported earlier in the same run', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    // "Glucose" is auto-imported (unit but no reference range, so created yet not
+    // auto-confirmed). "Glucose nuchter" is a genuinely different analyte whose name
+    // has the just-created biomarker as a catalog prefix: it must not be folded into
+    // "Glucose" (overwriting its value and losing its own identity).
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Glucose',
+            value: '5.1',
+            unit: 'mmol/L',
+            referenceMin: null,
+            referenceMax: null,
+            referenceUnit: 'mmol/L',
+            confidence: 0.85,
+            sourceSnippet: 'synthetic CMA glucose row',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Glucose nuchter',
+            value: '4.8',
+            unit: 'mmol/L',
+            referenceMin: null,
+            referenceMax: null,
+            referenceUnit: 'mmol/L',
+            confidence: 0.85,
+            sourceSnippet: 'synthetic CMA fasting glucose row',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+    ]);
+
+    $glucose = Biomarker::query()
+        ->where('user_id', $user->id)
+        ->where('name', 'Glucose')
+        ->firstOrFail();
+    $glucoseResult = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->where('biomarker_id', $glucose->id)
+        ->firstOrFail();
+    $unanchoredDraft = BiomarkerResult::query()
+        ->where('blood_test_id', $bloodTest->id)
+        ->whereNull('biomarker_id')
+        ->firstOrFail();
+
+    expect(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->count())->toBe(2)
+        ->and(Biomarker::query()->where('user_id', $user->id)->where('name', 'Glucose nuchter')->exists())->toBeFalse()
+        ->and((float) $glucoseResult->value)->toBe(5.1)
+        ->and($unanchoredDraft->extracted_name)->toBe('Glucose nuchter')
+        ->and((float) $unanchoredDraft->value)->toBe(4.8)
+        ->and($unanchoredDraft->confirmed_at)->toBeNull();
+});
+
+it('routes an ambiguous dotted-thousands value to review instead of auto-confirming a possible misparse', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha', 'default_unit' => 'mg/L']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    // "1.234" is ambiguous: a decimal (1.234) or a European thousands group (1234).
+    // The literal catalog match, unit and full reference range would otherwise
+    // auto-confirm it, so the ambiguous numeric format alone must keep it in review.
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '1.234',
+            unit: 'mg/L',
+            referenceMin: '1',
+            referenceMax: '2000',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic ambiguous thousands row',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($result->confirmed_at)->toBeNull()
+        ->and($result->status)->toBe('unknown')
+        ->and((float) $result->extraction_confidence)->toBe(0.84)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('drops trusted CMA candidates without a unit or reference instead of creating review friction', function () {
     Storage::fake('local');
 
