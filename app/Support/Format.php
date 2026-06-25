@@ -81,7 +81,7 @@ class Format
 
     private static function looksLikeUnitToken(string $token): bool
     {
-        $token = trim($token, "()[]{}.,;:");
+        $token = trim($token, '()[]{}.,;:');
 
         return str_contains($token, '/')
             || str_contains($token, '%')
