@@ -20,10 +20,10 @@ class ExportConsultOverviewCsvController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $overview = $buildConsultOverview($user, $filters);
-        $rows = [['section', 'date', 'biomarker', 'value', 'unit', 'status', 'note']];
+        $rows = [['section', 'date', 'biomarker', 'value', 'unit', 'status', 'source', 'confirmed_at', 'note']];
 
         foreach ($overview['pinnedBiomarkers'] as $pin) {
-            $rows[] = ['pinned', '', $pin->biomarker->name, '', '', '', $pin->note ?? ''];
+            $rows[] = ['pinned', '', $pin->biomarker->name, '', '', '', '', '', $pin->note ?? ''];
         }
 
         foreach ($overview['attentionResults'] as $result) {
@@ -34,6 +34,8 @@ class ExportConsultOverviewCsvController extends Controller
                 (string) (float) $result->value,
                 $result->unit,
                 $result->status,
+                $this->sourceLabel($result->bloodTest),
+                $result->confirmed_at?->toDateString() ?? '',
                 $result->note ?? '',
             ];
         }
@@ -46,6 +48,8 @@ class ExportConsultOverviewCsvController extends Controller
                 (string) (float) $result->value,
                 $result->unit,
                 $result->status,
+                $this->sourceLabel($result->bloodTest),
+                $result->confirmed_at?->toDateString() ?? '',
                 $result->note ?? '',
             ];
         }
@@ -61,6 +65,8 @@ class ExportConsultOverviewCsvController extends Controller
                 (string) (float) $result->value,
                 $result->unit,
                 $result->status,
+                $this->sourceLabel($result->bloodTest),
+                $result->confirmed_at?->toDateString() ?? '',
                 'previous '.(string) (float) $previousResult->value.' '.$previousResult->unit.'; change '.$change['changeLabel'],
             ];
         }
@@ -73,6 +79,8 @@ class ExportConsultOverviewCsvController extends Controller
                 (string) (float) $result->value,
                 $result->unit,
                 $result->status,
+                $this->sourceLabel($result->bloodTest),
+                $result->confirmed_at?->toDateString() ?? '',
                 $result->note ?? '',
             ];
         }
@@ -85,7 +93,9 @@ class ExportConsultOverviewCsvController extends Controller
                 '',
                 '',
                 '',
-                $document->bloodTest->title ?? '',
+                $this->sourceLabel($document->bloodTest),
+                '',
+                '',
             ];
         }
 
@@ -94,6 +104,8 @@ class ExportConsultOverviewCsvController extends Controller
                 'context',
                 $note->note_date->toDateString(),
                 ucfirst($note->category->value),
+                '',
+                '',
                 '',
                 '',
                 '',
@@ -108,7 +120,7 @@ class ExportConsultOverviewCsvController extends Controller
         }
 
         foreach ($rows as $row) {
-            fputcsv($handle, $this->escapeSpreadsheetFormulas($row));
+            fputcsv($handle, $this->escapeSpreadsheetFormulas($row), ',', '"', '\\');
         }
 
         rewind($handle);
@@ -130,6 +142,11 @@ class ExportConsultOverviewCsvController extends Controller
         return array_map(function (string $cell): string {
             return preg_match('/^\s*[=+\-@\t\r]/', $cell) === 1 ? "'".$cell : $cell;
         }, $row);
+    }
+
+    private function sourceLabel(BloodTest $bloodTest): string
+    {
+        return $bloodTest->title ?: __('Bloedtest zonder titel');
     }
 
     /**

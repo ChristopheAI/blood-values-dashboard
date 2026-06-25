@@ -191,13 +191,13 @@ it('exports the consult overview structured rows as csv', function () {
     $user = User::factory()->create();
     $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
     $draft = Biomarker::factory()->for($user)->create(['name' => 'Draft marker']);
-    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01', 'title' => 'June test']);
 
     BiomarkerResult::factory()->for($bloodTest)->for($ferritin)->create([
         'value' => 18,
         'unit' => 'ug/L',
         'status' => 'low',
-        'confirmed_at' => now(),
+        'confirmed_at' => '2026-06-02 09:00:00',
     ]);
     BiomarkerResult::factory()->for($bloodTest)->for($draft)->create([
         'value' => 999,
@@ -206,16 +206,26 @@ it('exports the consult overview structured rows as csv', function () {
         'confirmed_at' => null,
     ]);
 
-    $this->actingAs($user)
+    $response = $this->actingAs($user)
         ->post(route('consult-overview.csv'), [
             'from' => '2026-06-01',
             'to' => '2026-06-01',
             'include_attention' => '1',
         ])
         ->assertOk()
-        ->assertHeader('content-type', 'text/csv; charset=UTF-8')
-        ->assertSee('section,date,biomarker,value,unit,status,note', false)
-        ->assertSee('attention,2026-06-01,Ferritin,18,ug/L,low,', false)
+        ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+    $rows = array_map(
+        fn (string $line): array => str_getcsv(rtrim($line, "\r")),
+        array_filter(explode("\n", trim($response->getContent()))),
+    );
+
+    expect($rows)->toContain(
+        ['section', 'date', 'biomarker', 'value', 'unit', 'status', 'source', 'confirmed_at', 'note'],
+        ['attention', '2026-06-01', 'Ferritin', '18', 'ug/L', 'low', 'June test', '2026-06-02', ''],
+    );
+
+    $response
         ->assertDontSee('Draft marker')
         ->assertDontSee('999');
 });
@@ -223,13 +233,13 @@ it('exports the consult overview structured rows as csv', function () {
 it('escapes spreadsheet formulas in consult csv export cells', function () {
     $user = User::factory()->create();
     $dangerousMarker = Biomarker::factory()->for($user)->create(['name' => '=Ferritin']);
-    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01', 'title' => '=June test']);
 
     BiomarkerResult::factory()->for($bloodTest)->for($dangerousMarker)->create([
         'value' => 18,
         'unit' => 'ug/L',
         'status' => 'low',
-        'confirmed_at' => now(),
+        'confirmed_at' => '2026-06-02 09:00:00',
         'note' => '+review note',
     ]);
     PinnedBiomarker::factory()->for($user)->for($dangerousMarker)->create(['note' => '@pin note']);
@@ -250,13 +260,13 @@ it('escapes spreadsheet formulas in consult csv export cells', function () {
         ->assertOk();
 
     $rows = array_map(
-        fn (string $line): array => str_getcsv($line),
+        fn (string $line): array => str_getcsv(rtrim($line, "\r")),
         array_filter(explode("\n", trim($response->getContent()))),
     );
 
     expect($rows)->toContain(
-        ['pinned', '', "'=Ferritin", '', '', '', "'@pin note"],
-        ['attention', '2026-06-01', "'=Ferritin", '18', 'ug/L', 'low', "'+review note"],
-        ['context', '2026-06-01', 'Sleep', '', '', '', "'-context note"],
+        ['pinned', '', "'=Ferritin", '', '', '', '', '', "'@pin note"],
+        ['attention', '2026-06-01', "'=Ferritin", '18', 'ug/L', 'low', "'=June test", '2026-06-02', "'+review note"],
+        ['context', '2026-06-01', 'Sleep', '', '', '', '', '', "'-context note"],
     );
 });

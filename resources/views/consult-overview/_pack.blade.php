@@ -57,6 +57,7 @@
                             <th class="p-3">{{ __('Biomarker') }}</th>
                             <th class="p-3">{{ __('Waarde') }}</th>
                             <th class="p-3">{{ __('Status') }}</th>
+                            <th class="p-3">{{ __('Herkomst') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -66,10 +67,14 @@
                                 <td class="p-3 font-medium">{{ $result->biomarker->name }}</td>
                                 <td class="p-3 tabular-nums">{{ (float) $result->value }} {{ $result->unit }}</td>
                                 <td class="p-3">{{ $result->status }}</td>
+                                <td class="p-3 text-neutral-600 dark:text-neutral-400">
+                                    <div>{{ __('Bron: :source', ['source' => $result->bloodTest->title ?: __('Bloedtest zonder titel')]) }}</div>
+                                    <div>{{ __('Bevestigd: :date', ['date' => $result->confirmed_at?->toDateString() ?? __('onbekend')]) }}</div>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('Geen passende bevestigde waarden.') }}</td>
+                                <td colspan="5" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('Geen passende bevestigde waarden.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -106,7 +111,11 @@
                     <div class="grid gap-2 border-t border-neutral-200 p-3 text-sm first:border-t-0 dark:border-neutral-700 sm:grid-cols-[1fr_auto_auto] sm:items-center">
                         <div>
                             <div class="font-medium">{{ $result->biomarker->name }}</div>
-                            <div class="text-neutral-500 dark:text-neutral-400">{{ $result->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}</div>
+                            <div class="text-neutral-500 dark:text-neutral-400">
+                                {{ $result->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}
+                                · {{ __('Bron: :source', ['source' => $result->bloodTest->title ?: __('Bloedtest zonder titel')]) }}
+                                · {{ __('Bevestigd: :date', ['date' => $result->confirmed_at?->toDateString() ?? __('onbekend')]) }}
+                            </div>
                         </div>
                         <div class="tabular-nums">{{ (float) $result->value }} {{ $result->unit }}</div>
                         <div class="text-neutral-600 dark:text-neutral-400">{{ $result->status }}</div>

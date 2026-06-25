@@ -16,6 +16,7 @@ it('builds a print ready consult pack from selected owned confirmed values and s
 
     $april = BloodTest::factory()->for($user)->create(['test_date' => '2026-04-01', 'title' => 'April test']);
     $june = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01', 'title' => 'June test']);
+    $july = BloodTest::factory()->for($user)->create(['test_date' => '2026-07-01', 'title' => 'July test']);
     $otherBloodTest = BloodTest::factory()->for($otherUser)->create(['test_date' => '2026-06-01']);
 
     BloodTestDocument::factory()->for($april)->create(['original_filename' => 'april-lab.pdf']);
@@ -26,19 +27,19 @@ it('builds a print ready consult pack from selected owned confirmed values and s
         'value' => 42,
         'unit' => 'ug/L',
         'status' => 'normal',
-        'confirmed_at' => now(),
+        'confirmed_at' => '2026-04-02 09:00:00',
     ]);
     BiomarkerResult::factory()->for($june)->for($ferritin)->create([
         'value' => 55,
         'unit' => 'ug/L',
         'status' => 'high',
-        'confirmed_at' => now(),
+        'confirmed_at' => '2026-06-02 09:00:00',
     ]);
-    BiomarkerResult::factory()->for($june)->for($hemoglobin)->create([
+    BiomarkerResult::factory()->for($july)->for($hemoglobin)->create([
         'value' => 14,
         'unit' => 'g/dL',
         'status' => 'normal',
-        'confirmed_at' => now(),
+        'confirmed_at' => '2026-07-02 10:00:00',
     ]);
     BiomarkerResult::factory()->for($june)->for($draft)->create([
         'value' => 999,
@@ -55,7 +56,7 @@ it('builds a print ready consult pack from selected owned confirmed values and s
 
     $response = $this->actingAs($user)
         ->post(route('consult-overview.index'), [
-            'blood_test_ids' => [$april->id, $june->id],
+            'blood_test_ids' => [$april->id, $june->id, $july->id],
             'include_attention' => '1',
             'include_normal' => '1',
             'include_trends' => '1',
@@ -69,11 +70,9 @@ it('builds a print ready consult pack from selected owned confirmed values and s
         ->assertSee('data-test="consult-normal-values"', false)
         ->assertSee('data-test="consult-trend-changes"', false)
         ->assertSee('data-test="consult-source-documents"', false)
-        ->assertSee('Ferritin')
-        ->assertSee('55 ug/L')
+        ->assertSeeInOrder(['2026-06-01', 'Ferritin', '55 ug/L', 'high', 'Bron: June test', 'Bevestigd: 2026-06-02'])
         ->assertSee('+13 ug/L')
-        ->assertSee('Hemoglobin')
-        ->assertSee('14 g/dL')
+        ->assertSeeInOrder(['Hemoglobin', '2026-07-01', 'Bron: July test', 'Bevestigd: 2026-07-02', '14 g/dL', 'normal'])
         ->assertSee('april-lab.pdf')
         ->assertSee('june-lab.pdf')
         ->assertDontSee('Draft marker')
@@ -145,19 +144,19 @@ it('exports consult pack normal values changes and source documents as csv', fun
         'value' => 42,
         'unit' => 'ug/L',
         'status' => 'normal',
-        'confirmed_at' => now(),
+        'confirmed_at' => '2026-04-02 09:00:00',
     ]);
     BiomarkerResult::factory()->for($june)->for($ferritin)->create([
         'value' => 55,
         'unit' => 'ug/L',
         'status' => 'high',
-        'confirmed_at' => now(),
+        'confirmed_at' => '2026-06-02 09:00:00',
     ]);
     BiomarkerResult::factory()->for($june)->for($hemoglobin)->create([
         'value' => 14,
         'unit' => 'g/dL',
         'status' => 'normal',
-        'confirmed_at' => now(),
+        'confirmed_at' => '2026-06-02 10:00:00',
     ]);
     BiomarkerResult::factory()->for($june)->for($draft)->create([
         'value' => 999,
@@ -172,18 +171,29 @@ it('exports consult pack normal values changes and source documents as csv', fun
         'confirmed_at' => now(),
     ]);
 
-    $this->actingAs($user)
+    $response = $this->actingAs($user)
         ->post(route('consult-overview.csv'), [
             'blood_test_ids' => [$april->id, $june->id],
             'include_normal' => '1',
             'include_trends' => '1',
             'include_source_documents' => '1',
         ])
-        ->assertOk()
-        ->assertSee('normal,2026-04-01,Ferritin,42,ug/L,normal,', false)
-        ->assertSee('normal,2026-06-01,Hemoglobin,14,g/dL,normal,', false)
-        ->assertSee('change,2026-06-01,Ferritin,55,ug/L,high,"previous 42 ug/L; change +13 ug/L"', false)
-        ->assertSee('source_document,2026-06-01,june-lab.pdf,,,,"June test"', false)
+        ->assertOk();
+
+    $rows = array_map(
+        fn (string $line): array => str_getcsv(rtrim($line, "\r")),
+        array_filter(explode("\n", trim($response->getContent()))),
+    );
+
+    expect($rows)->toContain(
+        ['section', 'date', 'biomarker', 'value', 'unit', 'status', 'source', 'confirmed_at', 'note'],
+        ['normal', '2026-04-01', 'Ferritin', '42', 'ug/L', 'normal', 'April test', '2026-04-02', ''],
+        ['normal', '2026-06-01', 'Hemoglobin', '14', 'g/dL', 'normal', 'June test', '2026-06-02', ''],
+        ['change', '2026-06-01', 'Ferritin', '55', 'ug/L', 'high', 'June test', '2026-06-02', 'previous 42 ug/L; change +13 ug/L'],
+        ['source_document', '2026-06-01', 'june-lab.pdf', '', '', '', 'June test', '', ''],
+    );
+
+    $response
         ->assertDontSee('Draft marker')
         ->assertDontSee('999')
         ->assertDontSee('Other marker')
