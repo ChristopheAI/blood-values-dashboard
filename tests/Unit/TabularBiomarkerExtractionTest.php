@@ -38,10 +38,47 @@ it('extracts candidates from positioned tabular fragments', function () {
         ->and($candidates[0]->source)->toBe(ExtractedBiomarkerCandidate::SOURCE_TABULAR);
 
     expect($candidates[1]->extractedName)->toBe('Marker Beta')
-        ->and($candidates[1]->value)->toBe('5')
+        ->and($candidates[1]->value)->toBe('<5')
         ->and($candidates[1]->unit)->toBe('U/mL')
         ->and($candidates[1]->referenceMin)->toBeNull()
         ->and($candidates[1]->referenceMax)->toBe('8')
+        ->and($candidates[1]->referenceUnit)->toBe('U/mL')
+        ->and($candidates[1]->confidence)->toBe(0.75);
+});
+
+it('preserves below-detection value prefixes from tabular value cells', function () {
+    $extract = new ExtractTabularBiomarkerCandidates;
+
+    $candidates = $extract([
+        new PositionedTextFragment('Analyse', 40, 700),
+        new PositionedTextFragment('Eenheid', 300, 700),
+        new PositionedTextFragment('Referentie', 390, 700),
+        new PositionedTextFragment('RA*', 40, 680),
+        new PositionedTextFragment('<10', 210, 680),
+        new PositionedTextFragment('kIU/L', 300, 680),
+        new PositionedTextFragment('≤13', 390, 680),
+        new PositionedTextFragment('CCP antilichamen*', 40, 660),
+        new PositionedTextFragment('<1,1', 210, 660),
+        new PositionedTextFragment('U/mL', 300, 660),
+        new PositionedTextFragment('≤6,9', 390, 660),
+    ]);
+
+    expect($candidates)->toHaveCount(2);
+
+    expect($candidates[0]->extractedName)->toBe('RA*')
+        ->and($candidates[0]->value)->toBe('<10')
+        ->and($candidates[0]->unit)->toBe('kIU/L')
+        ->and($candidates[0]->referenceMin)->toBeNull()
+        ->and($candidates[0]->referenceMax)->toBe('13')
+        ->and($candidates[0]->referenceUnit)->toBe('kIU/L')
+        ->and($candidates[0]->confidence)->toBe(0.75)
+        ->and($candidates[0]->source)->toBe(ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR);
+
+    expect($candidates[1]->extractedName)->toBe('CCP antilichamen*')
+        ->and($candidates[1]->value)->toBe('<1.1')
+        ->and($candidates[1]->unit)->toBe('U/mL')
+        ->and($candidates[1]->referenceMin)->toBeNull()
+        ->and($candidates[1]->referenceMax)->toBe('6.9')
         ->and($candidates[1]->referenceUnit)->toBe('U/mL')
         ->and($candidates[1]->confidence)->toBe(0.75);
 });
