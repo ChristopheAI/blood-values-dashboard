@@ -265,6 +265,24 @@ it('preserves below-detection prefixes when formatting confirmed values', functi
     expect($summary['normalRows'][0]['valueLabel'])->toBe('<10 kIU/L');
 });
 
+it('does not treat reference-bound comparators as biomarker value prefixes when formatting confirmed values', function () {
+    $user = User::factory()->create();
+    $marker = Biomarker::factory()->for($user)->create(['name' => 'Marker Beta']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-05-19']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($marker)->create([
+        'value' => 8,
+        'unit' => 'U/mL',
+        'status' => 'normal',
+        'confirmed_at' => '2026-05-20 09:00:00',
+        'source_snippet' => 'Marker Beta 8 U/mL < 8',
+    ]);
+
+    $summary = app(BuildLatestUploadSummary::class)->forBloodTest($user, $bloodTest);
+
+    expect($summary['normalRows'][0]['valueLabel'])->toBe('8 U/mL');
+});
+
 it('treats repeated below-detection limits as unchanged rather than a zero delta', function () {
     $user = User::factory()->create();
     $ra = Biomarker::factory()->for($user)->create(['name' => 'RA*']);
