@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
@@ -219,7 +220,7 @@ it('preserves below-detection prefixes when formatting confirmed values', functi
         'source_snippet' => 'RA* <10 kIU/L ≤13 <',
     ]);
 
-    $summary = app(\App\Domain\Dashboard\BuildLatestUploadSummary::class)->forBloodTest($user, $bloodTest);
+    $summary = app(BuildLatestUploadSummary::class)->forBloodTest($user, $bloodTest);
 
     expect($summary['normalRows'][0]['valueLabel'])->toBe('<10 kIU/L');
 });

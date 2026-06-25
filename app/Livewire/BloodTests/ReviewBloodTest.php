@@ -8,6 +8,7 @@ use App\Domain\Biomarkers\QualitativeLabValue;
 use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Domain\BloodTests\LongitudinalChange;
 use App\Domain\Dashboard\BuildLatestUploadSummary;
+use App\Enums\BiomarkerStatus;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
@@ -509,7 +510,7 @@ class ReviewBloodTest extends Component
         return $result->biomarker?->user_id === Auth::id();
     }
 
-    private function qualitativeStatus(QualitativeLabValue $qualitative, ?BiomarkerResult $draft): \App\Enums\BiomarkerStatus
+    private function qualitativeStatus(QualitativeLabValue $qualitative, ?BiomarkerResult $draft): BiomarkerStatus
     {
         $sourceSnippet = (string) ($draft?->source_snippet ?? '');
         $referenceQualitative = null;

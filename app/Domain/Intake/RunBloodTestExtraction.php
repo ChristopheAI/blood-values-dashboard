@@ -3,8 +3,8 @@
 namespace App\Domain\Intake;
 
 use App\Domain\Biomarkers\DetectionLimitValue;
-use App\Domain\Biomarkers\QualitativeLabValue;
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
+use App\Domain\Biomarkers\QualitativeLabValue;
 use App\Enums\BiomarkerStatus;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;

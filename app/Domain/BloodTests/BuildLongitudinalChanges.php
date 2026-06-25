@@ -2,11 +2,11 @@
 
 namespace App\Domain\BloodTests;
 
+use App\Domain\Biomarkers\DetectionLimitValue;
+use App\Domain\Biomarkers\QualitativeLabValue;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\User;
-use App\Domain\Biomarkers\DetectionLimitValue;
-use App\Domain\Biomarkers\QualitativeLabValue;
 use App\Support\Format;
 use Illuminate\Support\Collection;
 
