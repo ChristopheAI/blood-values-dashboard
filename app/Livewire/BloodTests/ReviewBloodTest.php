@@ -9,6 +9,7 @@ use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
+use App\Support\Format;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -174,7 +175,7 @@ class ReviewBloodTest extends Component
         $this->resultForm = [
             'biomarker_id' => $draft->biomarker_id,
             'name' => $biomarkerName ?? $draft->extracted_name ?? '',
-            'value' => $this->formatDecimal($draft->value),
+            'value' => Format::biomarkerValue($draft->value, $draft->source_snippet),
             'unit' => $draft->unit,
             'reference_min' => $this->formatDecimal($draft->reference_min),
             'reference_max' => $this->formatDecimal($draft->reference_max),

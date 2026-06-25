@@ -207,6 +207,18 @@ class ExtractCmaLayoutBiomarkerCandidates
 
     private function numberFrom(string $text): ?string
     {
+        $text = trim($text);
+
+        if (preg_match('/^(?<prefix><=|>=|≤|≥|<|>)\s*(?<number>[+-]?\s*\d+(?:[,.]\d+)?)/u', $text, $match)) {
+            $prefix = match ($match['prefix']) {
+                '<=', '≤' => '<',
+                '>=', '≥' => '>',
+                default => $match['prefix'],
+            };
+
+            return $prefix.$this->cleanNumber($match['number']);
+        }
+
         if (! preg_match('/[+-]?\s*\d+(?:[,.]\d+)?/u', $text, $match)) {
             return null;
         }

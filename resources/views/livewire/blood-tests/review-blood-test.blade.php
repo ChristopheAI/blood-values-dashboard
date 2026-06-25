@@ -99,7 +99,7 @@
 
                         <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="confirmed-value-row">
                             <td class="p-3">{{ $result->biomarker->name }}</td>
-                            <td class="p-3">{{ (float) $result->value }} {{ $result->unit }}</td>
+                            <td class="p-3">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet) }} {{ $result->unit }}</td>
                             <td class="p-3">
                                 <div class="flex flex-col gap-1">
                                     <span>{{ $result->status }}</span>
@@ -204,7 +204,7 @@
 
                             <div data-test="draft-value">
                                 <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Waarde') }}</div>
-                                <div class="font-medium text-neutral-900 dark:text-white">{{ (float) $draft->value }} {{ $draft->unit }}</div>
+                                <div class="font-medium text-neutral-900 dark:text-white">{{ \App\Support\Format::biomarkerValue($draft->value, $draft->source_snippet) }} {{ $draft->unit }}</div>
                             </div>
 
                             <div data-test="draft-reference">

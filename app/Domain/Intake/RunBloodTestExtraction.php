@@ -809,8 +809,13 @@ class RunBloodTestExtraction
     private function normalizedNumber(string $number): string
     {
         $number = preg_replace('/\s+/u', ' ', $number) ?? $number;
+        $number = str_replace(',', '.', trim($number));
 
-        return str_replace(',', '.', trim($number));
+        if (preg_match('/^(?:<=|>=|≤|≥|<|>)(?<num>-?\d+(?:\.\d+)?)/u', $number, $match)) {
+            return $match['num'];
+        }
+
+        return $number;
     }
 
     private function normalizedNullableNumber(?string $number): ?string
