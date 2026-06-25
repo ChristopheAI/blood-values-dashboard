@@ -5,6 +5,7 @@ namespace App\Domain\BloodTests;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\User;
+use App\Support\Format;
 use Illuminate\Support\Collection;
 
 class BuildLongitudinalChanges
@@ -181,7 +182,7 @@ class BuildLongitudinalChanges
         }
 
         $difference = (float) $current->value - (float) $previous->value;
-        $delta = ($difference > 0 ? '+' : '').$this->formatNumber($difference);
+        $delta = ($difference > 0 ? '+' : '').Format::number($difference);
 
         return new LongitudinalChange(
             biomarker: $biomarker,
@@ -226,12 +227,7 @@ class BuildLongitudinalChanges
             return trim((string) $value);
         }
 
-        return $this->formatNumber((float) $value);
-    }
-
-    private function formatNumber(float $value): string
-    {
-        return rtrim(rtrim(number_format($value, 4, '.', ''), '0'), '.');
+        return Format::number((float) $value);
     }
 
     private function direction(float $difference): string
