@@ -1018,6 +1018,38 @@ it('routes an ambiguous dotted-thousands value to review instead of auto-confirm
         ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
+it('routes prefixed ambiguous dotted-thousands values to review instead of auto-confirming a possible misparse', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha', 'default_unit' => 'mg/L']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    // "<1.234" is still ambiguous: the numeric part may be a decimal (1.234) or
+    // a European thousands group (1234). Safe one-sided detection limits would
+    // otherwise auto-confirm, so the ambiguous numeric format must keep it in review.
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '<1.234',
+            unit: 'mg/L',
+            referenceMin: null,
+            referenceMax: '2000',
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic ambiguous below-detection thousands row',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    expect($result->confirmed_at)->toBeNull()
+        ->and($result->status)->toBe('unknown')
+        ->and((float) $result->extraction_confidence)->toBe(0.84)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
 it('drops trusted CMA candidates without a unit or reference instead of creating review friction', function () {
     Storage::fake('local');
 
