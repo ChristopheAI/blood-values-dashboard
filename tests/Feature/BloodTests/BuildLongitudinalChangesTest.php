@@ -224,3 +224,34 @@ it('preserves below-detection prefixes when formatting confirmed values', functi
 
     expect($summary['normalRows'][0]['valueLabel'])->toBe('<10 kIU/L');
 });
+
+it('treats repeated below-detection limits as unchanged rather than a zero delta', function () {
+    $user = User::factory()->create();
+    $ra = Biomarker::factory()->for($user)->create(['name' => 'RA*']);
+    $may = BloodTest::factory()->for($user)->create(['test_date' => '2026-04-22']);
+    $june = BloodTest::factory()->for($user)->create(['test_date' => '2026-05-19']);
+
+    BiomarkerResult::factory()->for($may)->for($ra)->create([
+        'value' => 10,
+        'unit' => 'kIU/L',
+        'status' => 'normal',
+        'confirmed_at' => '2026-04-23 09:00:00',
+        'source_snippet' => 'RA* <10 kIU/L ≤13 <',
+    ]);
+    BiomarkerResult::factory()->for($june)->for($ra)->create([
+        'value' => 10,
+        'unit' => 'kIU/L',
+        'status' => 'normal',
+        'confirmed_at' => '2026-05-20 09:00:00',
+        'source_snippet' => 'RA* <10 kIU/L ≤13 <',
+    ]);
+
+    $changes = app(BuildLongitudinalChanges::class)->across($user, collect([$may, $june]));
+
+    expect($changes)->toHaveCount(1)
+        ->and($changes->first()->previousValue)->toBe('<10')
+        ->and($changes->first()->currentValue)->toBe('<10')
+        ->and($changes->first()->delta)->toBe('unchanged')
+        ->and($changes->first()->direction)->toBe('unchanged')
+        ->and($changes->first()->comparable)->toBeTrue();
+});

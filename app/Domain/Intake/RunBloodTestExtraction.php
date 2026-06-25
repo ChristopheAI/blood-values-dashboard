@@ -4,6 +4,7 @@ namespace App\Domain\Intake;
 
 use App\Domain\Biomarkers\DetectionLimitValue;
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
+use App\Domain\Biomarkers\QualitativeLabValue;
 use App\Enums\BiomarkerStatus;
 use App\Models\Biomarker;
 use App\Models\BiomarkerResult;
@@ -139,9 +140,9 @@ class RunBloodTestExtraction
         $stored = 0;
 
         foreach ($candidates as $candidate) {
-            $value = $this->normalizedNumber($candidate->value);
+            $storedValue = $this->normalizedStoredValue($candidate);
 
-            if (! is_numeric($value)) {
+            if ($storedValue === null) {
                 continue;
             }
 
@@ -197,7 +198,7 @@ class RunBloodTestExtraction
             } else {
                 $attributes['biomarker_id'] = null;
                 $attributes['extracted_name'] = $extractedName;
-                $attributes['value'] = $value;
+                $attributes['value'] = $storedValue;
                 $attributes['unit'] = $unit;
                 $attributes['reference_min'] = $referenceMin;
                 $attributes['reference_max'] = $referenceMax;
@@ -210,12 +211,12 @@ class RunBloodTestExtraction
                 'blood_test_document_id' => $document->id,
                 'biomarker_id' => $biomarker?->id,
                 'extracted_name' => $extractedName,
-                'value' => $value,
+                'value' => $storedValue,
                 'unit' => $unit,
                 'reference_min' => $referenceMin,
                 'reference_max' => $referenceMax,
                 'reference_unit' => $referenceUnit,
-                'status' => $autoConfirm ? $this->status($unit, $referenceUnit, $value, $referenceMin, $referenceMax)->value : 'unknown',
+                'status' => $autoConfirm ? $this->statusForCandidate($candidate)->value : 'unknown',
                 'entry_source' => 'extracted',
                 'confirmed_at' => $confirmedAt,
                 'extraction_confidence' => $confidence,
@@ -387,10 +388,26 @@ class RunBloodTestExtraction
 
     private function shouldDiscardNonActionableTrustedCmaCandidate(ExtractedBiomarkerCandidate $candidate): bool
     {
-        return $this->isTrustedCmaSource($candidate)
-            && $this->normalizedUnit($candidate->unit) === ''
-            && $candidate->referenceMin === null
-            && $candidate->referenceMax === null;
+        if (! $this->isTrustedCmaSource($candidate)) {
+            return false;
+        }
+
+        if ($this->normalizedUnit($candidate->unit) !== '') {
+            return false;
+        }
+
+        if ($candidate->referenceMin !== null || $candidate->referenceMax !== null) {
+            return false;
+        }
+
+        if ($candidate->referenceQualitative !== null) {
+            return false;
+        }
+
+        $qualitative = QualitativeLabValue::parse($candidate->value);
+
+        return ! ($qualitative instanceof QualitativeLabValue
+            && $qualitative->isPcrNegativeExpectation($this->qualitativeReferenceHint($candidate)));
     }
 
     private function sourceSnippet(ExtractedBiomarkerCandidate $candidate): string
@@ -491,6 +508,18 @@ class RunBloodTestExtraction
         ExtractedBiomarkerCandidate $candidate,
         string $name,
     ): bool {
+        $qualitative = QualitativeLabValue::parse($candidate->value);
+
+        if ($qualitative instanceof QualitativeLabValue) {
+            return $this->isTrustedCmaSource($candidate)
+                && $candidate->confidence >= self::AUTO_CONFIRM_CONFIDENCE_THRESHOLD
+                && $name !== ''
+                && $this->containsLetter($name)
+                && $this->hasQualitativeReferenceEvidence($candidate)
+                && $this->autoConfirmYieldsConclusiveStatus($candidate)
+                && ! $this->hasPotentialCatalogMatch($document, $candidate);
+        }
+
         return $this->isTrustedCmaSource($candidate)
             && $candidate->confidence >= self::AUTO_CONFIRM_CONFIDENCE_THRESHOLD
             && $name !== ''
@@ -663,6 +692,16 @@ class RunBloodTestExtraction
 
     private function canAutoConfirm(BloodTestDocument $document, ExtractedBiomarkerCandidate $candidate, ?Biomarker $biomarker): bool
     {
+        $qualitative = QualitativeLabValue::parse($candidate->value);
+
+        if ($qualitative instanceof QualitativeLabValue) {
+            return $biomarker instanceof Biomarker
+                && $this->hasUnambiguousLiteralCatalogMatch($document, $candidate, $biomarker)
+                && $this->isTrustedCmaSource($candidate)
+                && $this->hasQualitativeReferenceEvidence($candidate)
+                && $this->autoConfirmYieldsConclusiveStatus($candidate);
+        }
+
         return $biomarker instanceof Biomarker
             && $this->hasUnambiguousLiteralCatalogMatch($document, $candidate, $biomarker)
             && is_numeric($this->normalizedNumber($candidate->value))
@@ -671,6 +710,27 @@ class RunBloodTestExtraction
             && $this->hasCompatibleReferenceUnit($candidate)
             && $this->hasUnambiguousNumericFormat($candidate)
             && $this->autoConfirmYieldsConclusiveStatus($candidate);
+    }
+
+    private function hasQualitativeReferenceEvidence(ExtractedBiomarkerCandidate $candidate): bool
+    {
+        if ($candidate->referenceQualitative !== null) {
+            return true;
+        }
+
+        $qualitative = QualitativeLabValue::parse($candidate->value);
+
+        return $qualitative instanceof QualitativeLabValue
+            && $qualitative->isPcrNegativeExpectation($this->qualitativeReferenceHint($candidate));
+    }
+
+    private function qualitativeReferenceHint(ExtractedBiomarkerCandidate $candidate): string
+    {
+        if (str_ends_with(trim($candidate->sourceSnippet), '<')) {
+            return '<';
+        }
+
+        return '';
     }
 
     /**
@@ -816,6 +876,18 @@ class RunBloodTestExtraction
 
     private function statusForCandidate(ExtractedBiomarkerCandidate $candidate): BiomarkerStatus
     {
+        $qualitative = QualitativeLabValue::parse($candidate->value);
+
+        if ($qualitative instanceof QualitativeLabValue) {
+            $referenceQualitative = $candidate->referenceQualitative === null
+                ? null
+                : QualitativeLabValue::parse($candidate->referenceQualitative);
+            $pcrBelowMarker = $referenceQualitative === null
+                && $qualitative->isPcrNegativeExpectation($this->qualitativeReferenceHint($candidate));
+
+            return $qualitative->statusAgainstReference($referenceQualitative, $pcrBelowMarker);
+        }
+
         return $this->status(
             $this->normalizedUnit($candidate->unit),
             $this->normalizedNullableUnit($candidate->referenceUnit),
@@ -823,6 +895,17 @@ class RunBloodTestExtraction
             $this->normalizedNullableNumber($candidate->referenceMin),
             $this->normalizedNullableNumber($candidate->referenceMax),
         );
+    }
+
+    private function normalizedStoredValue(ExtractedBiomarkerCandidate $candidate): ?string
+    {
+        $numeric = $this->normalizedNumber($candidate->value);
+
+        if (is_numeric($numeric)) {
+            return $numeric;
+        }
+
+        return QualitativeLabValue::parse($candidate->value)?->storedValue();
     }
 
     private function normalizedNumber(string $number): string

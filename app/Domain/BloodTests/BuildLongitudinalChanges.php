@@ -2,6 +2,8 @@
 
 namespace App\Domain\BloodTests;
 
+use App\Domain\Biomarkers\DetectionLimitValue;
+use App\Domain\Biomarkers\QualitativeLabValue;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\User;
@@ -181,6 +183,86 @@ class BuildLongitudinalChanges
             );
         }
 
+        $qualitativeComparison = $this->qualitativeComparison($previous, $current);
+
+        if ($qualitativeComparison === 'mixed') {
+            return $this->notComparableChange(
+                biomarker: $biomarker,
+                previous: $previous,
+                current: $current,
+                previousValue: $previousValue,
+                currentValue: $currentValue,
+                previousUnit: $previousUnit,
+                currentUnit: $currentUnit,
+                reason: 'qualitative_mismatch',
+            );
+        }
+
+        if ($qualitativeComparison === 'same') {
+            return $this->unchangedChange(
+                biomarker: $biomarker,
+                previous: $previous,
+                current: $current,
+                previousValue: $previousValue,
+                currentValue: $currentValue,
+                previousUnit: $previousUnit,
+                currentUnit: $currentUnit,
+            );
+        }
+
+        if ($qualitativeComparison === 'different') {
+            return $this->notComparableChange(
+                biomarker: $biomarker,
+                previous: $previous,
+                current: $current,
+                previousValue: $previousValue,
+                currentValue: $currentValue,
+                previousUnit: $previousUnit,
+                currentUnit: $currentUnit,
+                reason: 'qualitative_change',
+            );
+        }
+
+        $detectionComparison = $this->detectionLimitComparison($previous, $current);
+
+        if ($detectionComparison === 'mixed') {
+            return $this->notComparableChange(
+                biomarker: $biomarker,
+                previous: $previous,
+                current: $current,
+                previousValue: $previousValue,
+                currentValue: $currentValue,
+                previousUnit: $previousUnit,
+                currentUnit: $currentUnit,
+                reason: 'detection_limit_mismatch',
+            );
+        }
+
+        if ($detectionComparison === 'same') {
+            return $this->unchangedChange(
+                biomarker: $biomarker,
+                previous: $previous,
+                current: $current,
+                previousValue: $previousValue,
+                currentValue: $currentValue,
+                previousUnit: $previousUnit,
+                currentUnit: $currentUnit,
+            );
+        }
+
+        if ($detectionComparison === 'different') {
+            return $this->notComparableChange(
+                biomarker: $biomarker,
+                previous: $previous,
+                current: $current,
+                previousValue: $previousValue,
+                currentValue: $currentValue,
+                previousUnit: $previousUnit,
+                currentUnit: $currentUnit,
+                reason: 'detection_limit_bounds',
+            );
+        }
+
         $difference = (float) $current->value - (float) $previous->value;
         $delta = ($difference > 0 ? '+' : '').Format::number($difference);
 
@@ -223,11 +305,111 @@ class BuildLongitudinalChanges
 
     private function formatValue(BiomarkerResult $result): string
     {
+        $qualitative = QualitativeLabValue::fromResult($result);
+
+        if ($qualitative instanceof QualitativeLabValue) {
+            return $qualitative->storedValue();
+        }
+
         if (! is_numeric($result->value)) {
             return trim((string) $result->value);
         }
 
         return Format::biomarkerValue($result->value, $result->source_snippet);
+    }
+
+    private function qualitativeComparison(BiomarkerResult $previous, BiomarkerResult $current): ?string
+    {
+        $previousQualitative = QualitativeLabValue::fromResult($previous);
+        $currentQualitative = QualitativeLabValue::fromResult($current);
+
+        if ($previousQualitative === null && $currentQualitative === null) {
+            return null;
+        }
+
+        if ($previousQualitative === null || $currentQualitative === null) {
+            return 'mixed';
+        }
+
+        if ($previousQualitative->token === $currentQualitative->token) {
+            return 'same';
+        }
+
+        return 'different';
+    }
+
+    private function detectionLimitComparison(BiomarkerResult $previous, BiomarkerResult $current): ?string
+    {
+        $previousLimit = DetectionLimitValue::fromStoredResult($previous);
+        $currentLimit = DetectionLimitValue::fromStoredResult($current);
+
+        if ($previousLimit === null && $currentLimit === null) {
+            return null;
+        }
+
+        if ($previousLimit === null || $currentLimit === null) {
+            return 'mixed';
+        }
+
+        if ($previousLimit->boundForStatus() === $currentLimit->boundForStatus()
+            && $previousLimit->numericForStatus() === $currentLimit->numericForStatus()) {
+            return 'same';
+        }
+
+        return 'different';
+    }
+
+    private function unchangedChange(
+        string $biomarker,
+        BiomarkerResult $previous,
+        BiomarkerResult $current,
+        string $previousValue,
+        string $currentValue,
+        string $previousUnit,
+        string $currentUnit,
+    ): LongitudinalChange {
+        return new LongitudinalChange(
+            biomarker: $biomarker,
+            result: $current,
+            previousResult: $previous,
+            previousValue: $previousValue,
+            currentValue: $currentValue,
+            previousUnit: $previousUnit,
+            currentUnit: $currentUnit,
+            status: $current->status,
+            delta: 'unchanged',
+            changeLabel: null,
+            comparable: true,
+            reason: null,
+            direction: 'unchanged',
+        );
+    }
+
+    private function notComparableChange(
+        string $biomarker,
+        BiomarkerResult $previous,
+        BiomarkerResult $current,
+        string $previousValue,
+        string $currentValue,
+        string $previousUnit,
+        string $currentUnit,
+        string $reason,
+    ): LongitudinalChange {
+        return new LongitudinalChange(
+            biomarker: $biomarker,
+            result: $current,
+            previousResult: $previous,
+            previousValue: $previousValue,
+            currentValue: $currentValue,
+            previousUnit: $previousUnit,
+            currentUnit: $currentUnit,
+            status: 'not comparable',
+            delta: 'not comparable',
+            changeLabel: null,
+            comparable: false,
+            reason: $reason,
+            direction: 'unknown',
+        );
     }
 
     private function direction(float $difference): string
