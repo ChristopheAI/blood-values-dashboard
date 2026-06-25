@@ -626,7 +626,25 @@ class RunBloodTestExtraction
             && is_numeric($this->normalizedNumber($candidate->value))
             && $this->normalizedUnit($candidate->unit) !== ''
             && $this->hasParseableReferenceEvidence($candidate)
-            && $this->hasCompatibleReferenceUnit($candidate);
+            && $this->hasCompatibleReferenceUnit($candidate)
+            && $this->autoConfirmYieldsConclusiveStatus($candidate);
+    }
+
+    /**
+     * Only auto-confirm values the system can actually classify. Without a usable
+     * reference range the status resolves to "unknown"; locking such a value in
+     * would bypass the human review the confidence gate exists to guarantee, so we
+     * route it to manual review (kept as an unconfirmed draft) instead.
+     */
+    private function autoConfirmYieldsConclusiveStatus(ExtractedBiomarkerCandidate $candidate): bool
+    {
+        return $this->status(
+            $this->normalizedUnit($candidate->unit),
+            $this->normalizedNullableUnit($candidate->referenceUnit),
+            $this->normalizedNumber($candidate->value),
+            $this->normalizedNullableNumber($candidate->referenceMin),
+            $this->normalizedNullableNumber($candidate->referenceMax),
+        ) !== BiomarkerStatus::Unknown;
     }
 
     private function hasParseableReferenceEvidence(ExtractedBiomarkerCandidate $candidate): bool

@@ -2,7 +2,21 @@
 
 ## Status
 
-Accepted
+Accepted (amended 2026-06-25)
+
+### Amendment 2026-06-25 — no auto-confirm of `unknown`-status values
+
+The original policy auto-confirmed trusted CMA rows that lacked parseable reference
+bounds, recording them with `unknown` status. This amendment narrows that: a value the
+system cannot classify (no usable reference range, so status resolves to `unknown`) is no
+longer auto-confirmed. It is still auto-imported — the owner-scoped biomarker is created
+and the value is stored — but as an unconfirmed draft routed to review, so the owner
+eyeballs an unclassifiable value before it becomes tracked data. Rows with a one-sided or
+full reference range are unaffected and still auto-confirm. This tightens, never relaxes,
+the trust boundary, so it stays within the accepted policy. Enforced by
+`RunBloodTestExtraction::autoConfirmYieldsConclusiveStatus`.
+
+
 
 The auto-confirm policy relaxes the confirmed-only trust boundary set in ADR-0005
 and ADR-0009, so it is recorded explicitly. The implementation has been validated
@@ -92,7 +106,8 @@ the backstop.
 - Do not auto-create catalog entries from generic extracted names. The only exception
   is trusted CMA auto-import after deterministic source, duplicate, catalog conflict,
   value, and unit checks pass. If reference bounds are missing, status must remain
-  `unknown`.
+  `unknown`, and the value is routed to review rather than auto-confirmed (2026-06-25
+  amendment).
 - No OCR, AI/LLM, external service, network call, or new package.
 - Determinism and synthetic-only testing; never commit a real PDF or log values.
 - If a clean, confident result cannot be produced deterministically for a layout, the
@@ -223,7 +238,9 @@ the backstop.
   does not leak to generic inline or tabular extraction.
 - Trusted CMA rows may auto-create owner-scoped biomarkers with default unit and any
   available reference metadata, then auto-confirm the result in the same local
-  transaction. Rows without reference bounds are confirmed with `unknown` status.
+  transaction. Rows without parseable reference bounds resolve to `unknown` status and are
+  routed to review (auto-imported as an unconfirmed draft), never auto-confirmed — see the
+  2026-06-25 amendment.
 - Catalog anchoring must be unambiguous. Ambiguous exact aliases or equal-length prefix
   matches stay as drafts instead of becoming auto-confirmed values.
 - Duplicate CMA names in the same extraction stay as drafts instead of being collapsed

@@ -505,10 +505,10 @@ it('auto-imports trusted CMA standard CRP separately from high-sensitivity CRP c
     expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(2)
         ->and($standardCrp->is($highSensitivityCrp))->toBeFalse()
         ->and($result->biomarker_id)->toBe($standardCrp->id)
-        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->confirmed_at)->toBeNull()
         ->and($result->status)->toBe('unknown')
-        ->and((float) $result->extraction_confidence)->toBe(0.85)
-        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+        ->and((float) $result->extraction_confidence)->toBe(0.84)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
 it('keeps non-curated same-unit trusted CMA prefix siblings in review', function () {
@@ -760,7 +760,7 @@ it('auto-imports clean CMA-style inferred-value tabular rows when the catalog is
         ->and($bloodTest->refresh()->status)->toBe('confirmed');
 });
 
-it('auto-imports trusted CMA values without references as confirmed unknown-status results', function () {
+it('routes trusted CMA values without references to review instead of auto-confirming an unclassifiable value', function () {
     Storage::fake('local');
 
     $user = User::factory()->create();
@@ -792,11 +792,42 @@ it('auto-imports trusted CMA values without references as confirmed unknown-stat
     expect($biomarker->default_unit)->toBe('mg/L')
         ->and($biomarker->reference_min)->toBeNull()
         ->and($biomarker->reference_max)->toBeNull()
-        ->and($result->confirmed_at)->not->toBeNull()
+        ->and($result->confirmed_at)->toBeNull()
         ->and($result->status)->toBe('unknown')
-        ->and((float) $result->extraction_confidence)->toBe(0.85)
-        ->and(BiomarkerResult::query()->whereNull('confirmed_at')->count())->toBe(0)
-        ->and($bloodTest->refresh()->status)->toBe('confirmed');
+        ->and((float) $result->extraction_confidence)->toBe(0.84)
+        ->and(BiomarkerResult::query()->whereNull('confirmed_at')->count())->toBe(1)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+});
+
+it('keeps a high-confidence catalog-matched value without a reference range as a review draft', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    Biomarker::factory()->for($user)->create(['name' => 'Marker Alpha', 'default_unit' => 'mg/L']);
+    $bloodTest = bloodTestWithStoredDocument($user);
+
+    runExtractionWithCandidates($bloodTest->documents()->firstOrFail(), [
+        new ExtractedBiomarkerCandidate(
+            extractedName: 'Marker Alpha',
+            value: '12.4',
+            unit: 'mg/L',
+            referenceMin: null,
+            referenceMax: null,
+            referenceUnit: 'mg/L',
+            confidence: 0.95,
+            sourceSnippet: 'synthetic catalog match without reference',
+            source: ExtractedBiomarkerCandidate::SOURCE_CMA_TABULAR,
+        ),
+    ]);
+
+    $result = BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->firstOrFail();
+
+    // No reference range means the status is "unknown"; an unclassifiable value
+    // must not be auto-confirmed even at high confidence, so it stays a draft.
+    expect($result->confirmed_at)->toBeNull()
+        ->and($result->status)->toBe('unknown')
+        ->and((float) $result->extraction_confidence)->toBe(0.84)
+        ->and($bloodTest->refresh()->status)->toBe('reviewing');
 });
 
 it('drops trusted CMA candidates without a unit or reference instead of creating review friction', function () {
