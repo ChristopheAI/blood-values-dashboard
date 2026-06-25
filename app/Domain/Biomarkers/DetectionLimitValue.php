@@ -24,6 +24,21 @@ final class DetectionLimitValue
         return null;
     }
 
+    public static function numericFromInput(string $value): ?string
+    {
+        $value = trim(str_replace(',', '.', $value));
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            return $value;
+        }
+
+        return self::parse($value)?->numeric;
+    }
+
     public function isSafeForReference(?string $referenceMin, ?string $referenceMax): bool
     {
         if ($this->bound === 'lt') {

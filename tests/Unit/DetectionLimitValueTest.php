@@ -19,3 +19,10 @@ it('detects safe above-detection limits against one-sided minimum references', f
         ->and($aboveLimit->isSafeForReference('40', null))->toBeTrue()
         ->and($aboveLimit->isSafeForReference('50', null))->toBeFalse();
 });
+
+it('normalizes numeric and detection-limit inputs for storage', function () {
+    expect(DetectionLimitValue::numericFromInput('12.4'))->toBe('12.4')
+        ->and(DetectionLimitValue::numericFromInput('<10'))->toBe('10')
+        ->and(DetectionLimitValue::numericFromInput('<1,1'))->toBe('1.1')
+        ->and(DetectionLimitValue::numericFromInput('not-a-value'))->toBeNull();
+});
