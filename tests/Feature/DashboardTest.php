@@ -98,6 +98,7 @@ class DashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('data-test="dashboard-blood-test-timeline"', false)
+            ->assertSee('Laatste bloedtesten')
             ->assertSee('Owned timeline test')
             ->assertDontSee('Foreign timeline test');
     }
@@ -145,7 +146,7 @@ class DashboardTest extends TestCase
             ->assertSee('Documented blood test')
             ->assertSee('15 juni 2026')
             ->assertSee('1 bevestigd')
-            ->assertSee('1 bronbestand');
+            ->assertSee('1 PDF');
     }
 
     public function test_dashboard_workstand_summarizes_owned_follow_up_state(): void
@@ -197,7 +198,7 @@ class DashboardTest extends TestCase
             ->assertSee('data-test="dashboard-metric-sources"', false)
             ->assertSee('Bloedtesten')
             ->assertSee('Bevestigd')
-            ->assertSee('Review')
+            ->assertSee('In review')
             ->assertSee('Bron-PDF')
             ->assertSee('Extracties die nog niet downstream mogen.')
             ->assertDontSee('Werkstand')
@@ -499,6 +500,11 @@ class DashboardTest extends TestCase
             ->assertSee('data-test="dashboard-consult-handoff-form"', false)
             ->assertSee('Consultlijst maken')
             ->assertSee('Klaar voor je consult?')
+            ->assertSee('Jouw selectie')
+            ->assertSee('data-test="dashboard-selection-pill-attention"', false)
+            ->assertSee('data-test="dashboard-selection-pill-normal"', false)
+            ->assertSee('data-test="dashboard-selection-pill-changes"', false)
+            ->assertSee('data-test="dashboard-selection-pill-sources"', false)
             ->assertDontSee('data-test="dashboard-next-step-title"', false)
             ->assertDontSee('Consultlijst voorbereiden')
             ->assertDontSee('data-test="latest-upload-consult-button"', false)

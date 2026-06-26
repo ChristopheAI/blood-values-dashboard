@@ -12,17 +12,28 @@
         'optional' => 'text-neutral-500 dark:text-neutral-400',
         default => 'text-neutral-700 dark:text-neutral-300',
     };
+
+    $pillToneClass = fn (string $tone): string => match ($tone) {
+        'rose' => 'bg-rose-100 text-rose-800 ring-rose-200 dark:bg-rose-950/50 dark:text-rose-100 dark:ring-rose-900/60',
+        'emerald' => 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-100 dark:ring-emerald-900/60',
+        'amber' => 'bg-amber-100 text-amber-800 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:ring-amber-900/60',
+        'sky' => 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-950/50 dark:text-sky-100 dark:ring-sky-900/60',
+        default => 'bg-neutral-100 text-neutral-800 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-100 dark:ring-neutral-700',
+    };
+
+    $variant = $readiness['variant'] ?? 'default';
 @endphp
 
 <section
     @class([
-        'rounded-lg border bg-white p-5 shadow-xs dark:bg-neutral-900',
-        'border-amber-300 dark:border-amber-800' => $nextStep['kind'] === 'review',
-        'border-neutral-200 dark:border-neutral-700' => $nextStep['kind'] !== 'review',
+        'rounded-xl border p-5 shadow-xs',
+        'border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30' => $variant === 'success',
+        'border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20' => $variant === 'review',
+        'border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900' => ! in_array($variant, ['success', 'review'], true),
     ])
     data-test="dashboard-next-step"
 >
-    <div class="space-y-4">
+    <div class="space-y-5">
         <div class="space-y-2">
             <flux:heading size="lg">{{ $readiness['headline'] }}</flux:heading>
 
@@ -42,34 +53,39 @@
         </ul>
 
         @if ($readiness['showConsultPost'] && $readiness['consultBloodTestId'])
-            <div class="flex flex-wrap gap-2 text-xs" data-test="dashboard-consult-selection-pills">
-                @foreach ($readiness['selectionPills'] as $pill)
-                    <span class="rounded-md bg-neutral-100 px-2 py-1 font-medium text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100">
-                        {{ $pill }}
-                    </span>
-                @endforeach
+            <div class="space-y-3" data-test="dashboard-consult-selection">
+                <div class="text-sm font-semibold text-neutral-900 dark:text-white">{{ __('Jouw selectie') }}</div>
+
+                <div class="flex flex-wrap gap-2" data-test="dashboard-consult-selection-pills">
+                    @foreach ($readiness['selectionPills'] as $pill)
+                        <span @class(['inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1', $pillToneClass($pill['tone'])]) data-test="dashboard-selection-pill-{{ $pill['key'] }}">
+                            <span>{{ $pill['label'] }}</span>
+                            <span class="tabular-nums">{{ $pill['count'] }}</span>
+                        </span>
+                    @endforeach
+                </div>
             </div>
         @endif
 
-        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-stretch">
             @if ($readiness['showConsultPost'] && $readiness['consultBloodTestId'])
-                <form method="POST" action="{{ route('consult-overview.index') }}" class="shrink-0" data-test="dashboard-consult-handoff-form">
+                <form method="POST" action="{{ route('consult-overview.index') }}" class="w-full sm:min-w-[14rem] sm:flex-1" data-test="dashboard-consult-handoff-form">
                     @csrf
                     <input type="hidden" name="blood_test_ids[]" value="{{ $readiness['consultBloodTestId'] }}">
                     <input type="hidden" name="include_attention" value="1">
                     <input type="hidden" name="include_normal" value="1">
                     <input type="hidden" name="include_trends" value="1">
                     <input type="hidden" name="include_source_documents" value="1">
-                    <flux:button type="submit" variant="primary" data-test="dashboard-consult-handoff-button">
+                    <flux:button type="submit" variant="primary" class="w-full" data-test="dashboard-consult-handoff-button">
                         {{ __('Consultlijst maken') }}
                     </flux:button>
                 </form>
 
-                <flux:button :href="route('consult-overview.index')" variant="outline" class="shrink-0" data-test="dashboard-consult-customize-button">
+                <flux:button :href="route('consult-overview.index')" variant="outline" class="w-full sm:w-auto sm:shrink-0" data-test="dashboard-consult-customize-button">
                     {{ __('Selectie aanpassen') }}
                 </flux:button>
             @else
-                <flux:button :href="$nextStep['href']" variant="primary" class="shrink-0" data-test="dashboard-next-step-button">
+                <flux:button :href="$nextStep['href']" variant="primary" class="w-full sm:w-auto sm:shrink-0" data-test="dashboard-next-step-button">
                     {{ __($nextStep['action']) }}
                 </flux:button>
             @endif

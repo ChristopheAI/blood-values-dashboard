@@ -47,8 +47,14 @@ class BuildDashboardReadinessTest extends TestCase
         );
 
         $this->assertSame('Klaar voor je consult?', $readiness['headline']);
+        $this->assertSame('success', $readiness['variant']);
         $this->assertTrue($readiness['showConsultPost']);
         $this->assertSame($bloodTest->id, $readiness['consultBloodTestId']);
+        $this->assertCount(4, $readiness['selectionPills']);
+        $this->assertSame('attention', $readiness['selectionPills'][0]['key']);
+        $this->assertSame('Aandacht', $readiness['selectionPills'][0]['label']);
+        $this->assertSame('sources', $readiness['selectionPills'][3]['key']);
+        $this->assertSame(1, $readiness['selectionPills'][3]['count']);
     }
 
     public function test_readiness_blocks_consult_post_when_review_drafts_remain(): void
@@ -169,6 +175,7 @@ class BuildDashboardReadinessTest extends TestCase
 
         $this->assertTrue($readiness['showConsultPost']);
         $this->assertSame($confirmedBloodTest->id, $readiness['consultBloodTestId']);
-        $this->assertStringContainsString('15 januari 2026', $readiness['items'][0]['label']);
+        $this->assertSame('success', $readiness['variant']);
+        $this->assertSame('Bloedtesten bevestigd', $readiness['items'][0]['label']);
     }
 }
