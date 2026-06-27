@@ -63,13 +63,13 @@
                     <tbody>
                         @forelse ($overview['attentionResults'] as $result)
                             <tr class="border-t border-neutral-200 dark:border-neutral-700">
-                                <td class="p-3">{{ $result->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}</td>
+                                <td class="p-3">{{ $result->bloodTest->test_date ? \App\Support\Format::dutchDate($result->bloodTest->test_date) : __('Geen datum') }}</td>
                                 <td class="p-3 font-medium">{{ $result->biomarker->name }}</td>
                                 <td class="p-3 tabular-nums">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet) }} {{ $result->unit }}</td>
                                 <td class="p-3">{{ $result->status }}</td>
                                 <td class="p-3 text-neutral-600 dark:text-neutral-400">
                                     <div>{{ __('Bron: :source', ['source' => $result->bloodTest->title ?: __('Bloedtest zonder titel')]) }}</div>
-                                    <div>{{ __('Bevestigd: :date', ['date' => $result->confirmed_at?->toDateString() ?? __('onbekend')]) }}</div>
+                                    <div>{{ __('Bevestigd: :date', ['date' => $result->confirmed_at ? \App\Support\Format::dutchDate($result->confirmed_at) : __('onbekend')]) }}</div>
                                 </td>
                             </tr>
                         @empty
@@ -112,9 +112,9 @@
                         <div>
                             <div class="font-medium">{{ $result->biomarker->name }}</div>
                             <div class="text-neutral-500 dark:text-neutral-400">
-                                {{ $result->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}
+                                {{ $result->bloodTest->test_date ? \App\Support\Format::dutchDate($result->bloodTest->test_date) : __('Geen datum') }}
                                 · {{ __('Bron: :source', ['source' => $result->bloodTest->title ?: __('Bloedtest zonder titel')]) }}
-                                · {{ __('Bevestigd: :date', ['date' => $result->confirmed_at?->toDateString() ?? __('onbekend')]) }}
+                                · {{ __('Bevestigd: :date', ['date' => $result->confirmed_at ? \App\Support\Format::dutchDate($result->confirmed_at) : __('onbekend')]) }}
                             </div>
                         </div>
                         <div class="tabular-nums">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet) }} {{ $result->unit }}</div>
@@ -136,10 +136,10 @@
                     <div class="rounded-lg border border-neutral-200 p-3 text-sm dark:border-neutral-700">
                         <div class="font-medium">{{ $change['result']->biomarker->name }}</div>
                         <div class="text-neutral-700 dark:text-neutral-300">
-                            {{ $change['previousResult']->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}
+                            {{ $change['previousResult']->bloodTest->test_date ? \App\Support\Format::dutchDate($change['previousResult']->bloodTest->test_date) : __('Geen datum') }}
                             {{ \App\Support\Format::biomarkerValue($change['previousResult']->value, $change['previousResult']->source_snippet) }} {{ $change['previousResult']->unit }}
                             ->
-                            {{ $change['result']->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}
+                            {{ $change['result']->bloodTest->test_date ? \App\Support\Format::dutchDate($change['result']->bloodTest->test_date) : __('Geen datum') }}
                             {{ \App\Support\Format::biomarkerValue($change['result']->value, $change['result']->source_snippet) }} {{ $change['result']->unit }}
                             ({{ $change['changeLabel'] }})
                         </div>
@@ -156,7 +156,7 @@
             <div class="space-y-2">
                 @forelse ($overview['trendResults'] as $result)
                     <div class="text-sm">
-                        {{ $result->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}
+                        {{ $result->bloodTest->test_date ? \App\Support\Format::dutchDate($result->bloodTest->test_date) : __('Geen datum') }}
                         · {{ $result->biomarker->name }}
                         · {{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet) }} {{ $result->unit }}
                         · {{ $result->status }}
@@ -177,7 +177,7 @@
                     <div class="text-sm">
                         <a href="{{ route('blood-test-documents.download', $document) }}" class="font-medium text-blue-700 underline dark:text-blue-300">{{ $document->original_filename }}</a>
                         <span class="text-neutral-500 dark:text-neutral-400">
-                            · {{ $document->bloodTest->test_date?->toDateString() ?? __('Geen datum') }}
+                            · {{ $document->bloodTest->test_date ? \App\Support\Format::dutchDate($document->bloodTest->test_date) : __('Geen datum') }}
                             · {{ $document->bloodTest->title ?: __('Bloedtest zonder titel') }}
                         </span>
                     </div>
@@ -193,7 +193,7 @@
 
         <div class="space-y-2">
             @forelse ($overview['bloodTests'] as $bloodTest)
-                <div class="text-sm">{{ $bloodTest->test_date?->toDateString() ?? __('Geen datum') }} · {{ $bloodTest->title ?: __('Bloedtest zonder titel') }}</div>
+                <div class="text-sm">{{ $bloodTest->test_date ? \App\Support\Format::dutchDate($bloodTest->test_date) : __('Geen datum') }} · {{ $bloodTest->title ?: __('Bloedtest zonder titel') }}</div>
             @empty
                 <flux:text>{{ __('Geen bloedtesten geselecteerd voor dit overzicht.') }}</flux:text>
             @endforelse
@@ -207,7 +207,7 @@
             <div class="space-y-3">
                 @forelse ($overview['contextNotes'] as $note)
                     <article class="text-sm">
-                        <div class="font-medium">{{ $note->note_date->toDateString() }} · {{ ucfirst($note->category->value) }}</div>
+                        <div class="font-medium">{{ \App\Support\Format::dutchDate($note->note_date) }} · {{ ucfirst($note->category->value) }}</div>
                         <p class="mt-1 text-neutral-700 dark:text-neutral-300">{{ $note->body }}</p>
                     </article>
                 @empty

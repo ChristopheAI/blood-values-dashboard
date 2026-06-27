@@ -20,7 +20,7 @@
                 <flux:select name="blood_test_id" :label="__('Bloedtest')" data-test="context-note-blood-test-select">
                     <option value="">{{ __('Geen gekoppelde bloedtest') }}</option>
                     @foreach ($bloodTests as $bloodTest)
-                        <option value="{{ $bloodTest->id }}">{{ $bloodTest->title ?: $bloodTest->test_date?->toDateString() ?? __('Bloedtest zonder titel') }}</option>
+                        <option value="{{ $bloodTest->id }}">{{ $bloodTest->title ?: ($bloodTest->test_date ? \App\Support\Format::dutchDate($bloodTest->test_date) : __('Bloedtest zonder titel')) }}</option>
                     @endforeach
                 </flux:select>
             </div>
@@ -36,7 +36,7 @@
                 @forelse ($contextNotes as $note)
                     <article class="rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="context-note-row">
                         <div class="font-medium">
-                            {{ $note->note_date->toDateString() }} · {{ ucfirst($note->category->value) }}
+                            {{ \App\Support\Format::dutchDate($note->note_date) }} · {{ ucfirst($note->category->value) }}
                         </div>
                         <p class="mt-2 text-neutral-700 dark:text-neutral-300">{{ $note->body }}</p>
 

@@ -48,7 +48,7 @@
         <header class="flex flex-col gap-2">
             <flux:heading size="xl">{{ $bloodTest->title ?: __('Resultaat') }}</flux:heading>
             <flux:text>
-                {{ $bloodTest->test_date?->toDateString() ?? __('Nog geen datum') }}
+                {{ $bloodTest->test_date ? \App\Support\Format::dutchDate($bloodTest->test_date) : __('Nog geen datum') }}
                 · {{ $bloodTest->lab_name ?: __('Onbekend labo') }}
                 · {{ $bloodTest->status }}
             </flux:text>
@@ -315,7 +315,7 @@
         <div class="space-y-3">
             @forelse ($bloodTest->contextNotes as $note)
                 <article class="rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="blood-test-context-note-row">
-                    <div class="font-medium">{{ $note->note_date->toDateString() }} · {{ ucfirst($note->category->value) }}</div>
+                    <div class="font-medium">{{ \App\Support\Format::dutchDate($note->note_date) }} · {{ ucfirst($note->category->value) }}</div>
                     <p class="mt-2 text-neutral-700 dark:text-neutral-300">{{ $note->body }}</p>
                 </article>
             @empty

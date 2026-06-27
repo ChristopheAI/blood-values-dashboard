@@ -35,7 +35,7 @@
                 <tbody>
                     @forelse ($results as $result)
                         <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="biomarker-history-row">
-                            <td class="p-3">{{ $result->bloodTest->test_date?->toDateString() ?? __('No date') }}</td>
+                            <td class="p-3">{{ $result->bloodTest->test_date ? \App\Support\Format::dutchDate($result->bloodTest->test_date) : __('No date') }}</td>
                             <td class="p-3">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet) }} {{ $result->unit }}</td>
                             <td class="p-3">{{ $result->status }}</td>
                         </tr>

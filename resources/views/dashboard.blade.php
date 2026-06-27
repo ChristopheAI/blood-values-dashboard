@@ -43,7 +43,7 @@
                 @if ($nextReminder)
                     <div class="space-y-2 text-sm">
                         <div class="font-medium">{{ $nextReminder->title }}</div>
-                        <div class="text-neutral-600 dark:text-neutral-400">{{ $nextReminder->due_date->toDateString() }}</div>
+                        <div class="text-neutral-600 dark:text-neutral-400">{{ \App\Support\Format::dutchDate($nextReminder->due_date) }}</div>
 
                         @if ($nextReminder->note)
                             <p class="text-neutral-700 dark:text-neutral-300">{{ $nextReminder->note }}</p>

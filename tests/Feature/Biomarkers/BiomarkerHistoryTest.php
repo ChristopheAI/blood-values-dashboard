@@ -32,6 +32,6 @@ it('biomarker history uses confirmed values only and orders by test date', funct
     $this->actingAs($user)
         ->get(route('biomarkers.show', $biomarker))
         ->assertOk()
-        ->assertSeeInOrder(['2025-05-19', '35', '2026-05-19', '42'])
+        ->assertSeeInOrder(['19 mei 2025', '35', '19 mei 2026', '42'])
         ->assertDontSeeText('999');
 });

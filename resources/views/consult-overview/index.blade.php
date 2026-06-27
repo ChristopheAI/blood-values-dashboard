@@ -35,7 +35,7 @@
                                     @checked(in_array($bloodTest->id, $filters['blood_test_ids'], true))
                                     data-test="consult-blood-test-checkbox"
                                 >
-                                <span>{{ $bloodTest->title ?: $bloodTest->test_date?->toDateString() ?? __('Bloedtest zonder titel') }}</span>
+                                <span>{{ $bloodTest->title ?: ($bloodTest->test_date ? \App\Support\Format::dutchDate($bloodTest->test_date) : __('Bloedtest zonder titel')) }}</span>
                             </label>
                         @empty
                             <flux:text>{{ __('Nog geen bloedtesten beschikbaar.') }}</flux:text>

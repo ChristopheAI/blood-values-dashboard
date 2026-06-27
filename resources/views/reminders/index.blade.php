@@ -23,7 +23,7 @@
             <div class="space-y-3" data-test="open-reminder-list">
                 @forelse ($openReminders as $reminder)
                     <article class="rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="open-reminder-row">
-                        <div class="font-medium">{{ $reminder->due_date->toDateString() }} · {{ $reminder->title }}</div>
+                        <div class="font-medium">{{ \App\Support\Format::dutchDate($reminder->due_date) }} · {{ $reminder->title }}</div>
 
                         @if ($reminder->note)
                             <p class="mt-2 text-neutral-700 dark:text-neutral-300">{{ $reminder->note }}</p>
@@ -85,7 +85,7 @@
             <div class="space-y-3" data-test="completed-reminder-list">
                 @forelse ($completedReminders as $reminder)
                     <article class="rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="completed-reminder-row">
-                        <div class="font-medium">{{ $reminder->due_date->toDateString() }} · {{ $reminder->title }}</div>
+                        <div class="font-medium">{{ \App\Support\Format::dutchDate($reminder->due_date) }} · {{ $reminder->title }}</div>
 
                         @if ($reminder->note)
                             <p class="mt-2 text-neutral-700 dark:text-neutral-300">{{ $reminder->note }}</p>

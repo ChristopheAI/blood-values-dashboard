@@ -650,7 +650,7 @@ it('shows context notes for the selected blood test only', function () {
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertSee('data-test="blood-test-context-note-row"', false)
         ->assertSee('Selected blood-test context note')
-        ->assertSee('2026-06-02')
+        ->assertSee('2 juni 2026')
         ->assertSee('Other')
         ->assertDontSee('Other owned blood-test note')
         ->assertDontSee('Foreign corrupted context note');

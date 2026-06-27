@@ -14,7 +14,7 @@
                 <a href="{{ route('blood-tests.show', $bloodTest) }}" class="block rounded-lg border border-neutral-200 p-4 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-900" data-test="blood-test-link">
                     <div class="font-medium">{{ $bloodTest->title ?: __('Bloedtest zonder titel') }}</div>
                     <div class="text-sm text-neutral-600 dark:text-neutral-400">
-                        {{ $bloodTest->test_date?->toDateString() ?? __('Nog geen datum') }}
+                        {{ $bloodTest->test_date ? \App\Support\Format::dutchDate($bloodTest->test_date) : __('Nog geen datum') }}
                         · {{ $bloodTest->lab_name ?: __('Onbekend labo') }}
                         · {{ $bloodTest->status }}
                     </div>

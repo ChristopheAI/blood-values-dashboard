@@ -3,9 +3,9 @@
         <header>
             <flux:heading size="xl">{{ __('Compare blood tests') }}</flux:heading>
             <flux:text>
-                {{ $first->test_date?->toDateString() ?? __('First test') }}
+                {{ $first->test_date ? \App\Support\Format::dutchDate($first->test_date) : __('First test') }}
                 ·
-                {{ $second->test_date?->toDateString() ?? __('Second test') }}
+                {{ $second->test_date ? \App\Support\Format::dutchDate($second->test_date) : __('Second test') }}
             </flux:text>
         </header>
 

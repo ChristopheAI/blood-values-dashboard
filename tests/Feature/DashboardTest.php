@@ -610,7 +610,7 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Volgende herinnering')
             ->assertSee('Next open reminder')
-            ->assertSee('2026-07-01')
+            ->assertSee('1 juli 2026')
             ->assertSee('Plan the next blood test.')
             ->assertDontSee('Later open reminder')
             ->assertDontSee('Completed reminder')
