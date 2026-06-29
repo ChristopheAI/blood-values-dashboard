@@ -82,7 +82,7 @@
                     </flux:button>
                 </form>
 
-                <flux:button :href="route('consult-overview.index')" variant="outline" class="w-full sm:w-auto sm:shrink-0" data-test="dashboard-consult-customize-button">
+                <flux:button :href="route('consult-overview.index', $readiness['consultHandoffQuery'])" variant="outline" class="w-full sm:w-auto sm:shrink-0" data-test="dashboard-consult-customize-button">
                     {{ __('Selectie aanpassen') }}
                 </flux:button>
             @else

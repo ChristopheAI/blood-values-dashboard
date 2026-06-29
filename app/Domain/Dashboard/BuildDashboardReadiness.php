@@ -26,7 +26,8 @@ class BuildDashboardReadiness
      *     items: list<array{state: string, label: string}>,
      *     consultBloodTestId: int|null,
      *     showConsultPost: bool,
-     *     selectionPills: list<array{key: string, label: string, count: int, tone: string}>
+     *     selectionPills: list<array{key: string, label: string, count: int, tone: string}>,
+     *     consultHandoffQuery: array{blood_test_ids: list<int>, include_attention: int, include_normal: int, include_trends: int, include_source_documents: int}
      * }
      */
     public function __invoke(
@@ -48,6 +49,7 @@ class BuildDashboardReadiness
                 'consultBloodTestId' => null,
                 'showConsultPost' => false,
                 'selectionPills' => [],
+                'consultHandoffQuery' => [],
             ];
         }
 
@@ -72,6 +74,7 @@ class BuildDashboardReadiness
                 'consultBloodTestId' => null,
                 'showConsultPost' => false,
                 'selectionPills' => [],
+                'consultHandoffQuery' => [],
             ];
         }
 
@@ -94,6 +97,7 @@ class BuildDashboardReadiness
                 'consultBloodTestId' => null,
                 'showConsultPost' => false,
                 'selectionPills' => [],
+                'consultHandoffQuery' => [],
             ];
         }
 
@@ -158,6 +162,21 @@ class BuildDashboardReadiness
                 documentCount: (int) $latestTimeline['documentCount'],
                 changeCount: $changeCount,
             ),
+            'consultHandoffQuery' => $this->consultHandoffQuery($latestBloodTest->id),
+        ];
+    }
+
+    /**
+     * @return array{blood_test_ids: list<int>, include_attention: int, include_normal: int, include_trends: int, include_source_documents: int}
+     */
+    private function consultHandoffQuery(int $bloodTestId): array
+    {
+        return [
+            'blood_test_ids' => [$bloodTestId],
+            'include_attention' => 1,
+            'include_normal' => 1,
+            'include_trends' => 1,
+            'include_source_documents' => 1,
         ];
     }
 
