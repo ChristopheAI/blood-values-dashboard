@@ -144,11 +144,17 @@ comparison -> context -> consult/export.
 
 ## Active Next Move
 
-Intent-layer hardening now records the live gate. The next product work should be
-issue #16: Consult Pack
-reconciliation and hardening, not a blind rebuild. Issue #15 is implemented on
-this branch, and Consult Pack already exists, so start by comparing the
-PRD/issue acceptance criteria with current code and tests.
+Dashboard PR A/B merged to `main` (2026-06-26). NL market research recorded in
+`docs/research/2026-06-27-nl-market-research-dashboard-positioning.md`: stay in
+lane E (private PDF dossier + confirmed-only + consult export), not test-selling
+or cloud-AI interpretation.
+
+The next product work remains issue #16 / PR C: Consult Pack document mode
+(print header, print CSS, output-first polish) plus consult handoff parity
+(`Selectie aanpassen` pre-fill). Complete the owner checklist in
+`docs/research/2026-06-27-market-research-owner-checklist.md` (Trends AI,
+Keyword Planner, Ads Library) without putting private health data into external
+tools.
 
 Before changing consult code, read:
 

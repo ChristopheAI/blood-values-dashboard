@@ -69,6 +69,19 @@ Do not collapse these categories.
   without broadening into AI interpretation, unreviewed OCR, wearables, provider
   integrations, or medical advice.
 
+### NL Market Research Dashboard Positioning
+
+- Source: `docs/research/2026-06-27-nl-market-research-dashboard-positioning.md`
+- Claim type: inference
+- Summary: Public NL/adjacent competitor review (Levenswijs, Vitasure, MedGemak,
+  FitReelix, SnapLabs, manual trackers) supports lane E: private dossier from
+  existing PDFs with owner confirmation and consult export, not test ordering or
+  cloud-AI interpretation. Product actions prioritize PR C consult document mode,
+  consult handoff parity, and dossier messaging; owner checklist covers Trends,
+  Keyword Planner, and Meta Ads Library runs without private health data.
+- Related: `docs/research/2026-06-27-market-research-owner-checklist.md`,
+  `docs/research/2026-06-27-interview-protocol-consult-workflow.md`
+
 ### Exa And Firecrawl Research Boundary
 
 - Source: `docs/adr/0006-use-exa-and-firecrawl-as-public-research-tools.md`
