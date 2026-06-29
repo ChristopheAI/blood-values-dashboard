@@ -57,6 +57,7 @@ class BuildDashboardReadinessTest extends TestCase
         $this->assertSame(1, $readiness['selectionPills'][3]['count']);
         $this->assertSame([$bloodTest->id], $readiness['consultHandoffQuery']['blood_test_ids']);
         $this->assertSame(1, $readiness['consultHandoffQuery']['include_attention']);
+        $this->assertSame(1, $readiness['consultHandoffQuery']['include_themes']);
     }
 
     public function test_readiness_blocks_consult_post_when_review_drafts_remain(): void

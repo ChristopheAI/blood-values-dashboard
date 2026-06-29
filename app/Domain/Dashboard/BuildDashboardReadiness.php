@@ -27,7 +27,7 @@ class BuildDashboardReadiness
      *     consultBloodTestId: int|null,
      *     showConsultPost: bool,
      *     selectionPills: list<array{key: string, label: string, count: int, tone: string}>,
-     *     consultHandoffQuery: array{blood_test_ids: list<int>, include_attention: int, include_normal: int, include_trends: int, include_source_documents: int}
+     *     consultHandoffQuery: array{blood_test_ids: list<int>, include_attention: int, include_normal: int, include_trends: int, include_themes: int, include_source_documents: int}
      * }
      */
     public function __invoke(
@@ -167,7 +167,7 @@ class BuildDashboardReadiness
     }
 
     /**
-     * @return array{blood_test_ids: list<int>, include_attention: int, include_normal: int, include_trends: int, include_source_documents: int}
+     * @return array{blood_test_ids: list<int>, include_attention: int, include_normal: int, include_trends: int, include_themes: int, include_source_documents: int}
      */
     private function consultHandoffQuery(int $bloodTestId): array
     {
@@ -176,6 +176,7 @@ class BuildDashboardReadiness
             'include_attention' => 1,
             'include_normal' => 1,
             'include_trends' => 1,
+            'include_themes' => 1,
             'include_source_documents' => 1,
         ];
     }

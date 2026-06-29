@@ -507,6 +507,7 @@ class DashboardTest extends TestCase
                 'include_attention' => 1,
                 'include_normal' => 1,
                 'include_trends' => 1,
+                'include_themes' => 1,
                 'include_source_documents' => 1,
             ]))
             ->assertSee('data-test="dashboard-selection-pill-attention"', false)
@@ -647,6 +648,7 @@ class DashboardTest extends TestCase
                 'include_attention' => 1,
                 'include_normal' => 1,
                 'include_trends' => 1,
+                'include_themes' => 1,
                 'include_source_documents' => 1,
             ]))
             ->assertOk()
