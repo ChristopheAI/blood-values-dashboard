@@ -83,6 +83,19 @@
                 </article>
             @endforeach
         </div>
+
+        @if ($thematicOverview && ! empty($thematicOverview['categories']))
+            <div class="border-t border-neutral-200 p-5 dark:border-neutral-700" data-test="dashboard-thematic-overview">
+                <div class="space-y-1">
+                    <div class="text-sm font-medium text-neutral-900 dark:text-white">{{ __('Per thema') }}</div>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('Alleen bevestigde waarden, gegroepeerd voor overzicht.') }}</p>
+                </div>
+
+                <div class="mt-4">
+                    @include('shared._thematic-biomarker-overview', ['thematicOverview' => $thematicOverview])
+                </div>
+            </div>
+        @endif
     @elseif ($latestBloodTest)
         <div class="border-t border-neutral-200 p-5 text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400" data-test="dashboard-no-confirmed-values">
             {{ __('Open deze bloedtest om waarden te bevestigen voordat ze in dashboard, trends of consult verschijnen.') }}

@@ -62,6 +62,10 @@
                             <span>{{ __('Tijdlijn van bevestigde waarden') }}</span>
                         </label>
                         <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" name="include_themes" value="1" @checked($filters['include_themes']) data-test="include-themes-checkbox">
+                            <span>{{ __('Waarden per thema') }}</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-sm">
                             <input type="checkbox" name="include_context" value="1" @checked($filters['include_context']) data-test="include-context-checkbox">
                             <span>{{ __('Contextnotities') }}</span>
                         </label>

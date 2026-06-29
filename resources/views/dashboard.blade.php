@@ -17,6 +17,7 @@
             @include('dashboard._latest-blood-test', [
                 'bloodTests' => $dashboardOverview['bloodTests'],
                 'latestUploadSummary' => $latestUploadSummary,
+                'thematicOverview' => $thematicOverview,
             ])
         @else
             @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])

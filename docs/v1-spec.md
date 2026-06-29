@@ -546,7 +546,9 @@ Acceptance criteria:
 
 - overview clearly says it is personal tracking data;
 - overview contains no diagnosis or treatment copy;
-- user can export or print the result.
+- user can export or print the result;
+- optional **Per thema** section groups confirmed values by owner category with
+  trend labels and neutral reference descriptions when `include_themes` is enabled.
 
 ### 7.8 Export And Delete Data
 

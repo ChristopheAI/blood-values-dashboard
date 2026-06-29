@@ -32,9 +32,9 @@ class BloodValuesQaScenarioSeeder extends Seeder
             ],
         );
 
-        $inflammation = $this->category($user, 'QA Inflammation');
-        $vitamins = $this->category($user, 'QA Vitamins');
-        $thyroid = $this->category($user, 'QA Thyroid');
+        $inflammation = $this->category($user, 'Ontstekingen');
+        $vitamins = $this->category($user, 'Slaap');
+        $thyroid = $this->category($user, 'Hormoonbalans');
 
         $ferritin = $this->biomarker($user, $inflammation, 'Ferritin', 'FER', 'ug/L', 30, 150);
         $crp = $this->biomarker($user, $inflammation, 'CRP', null, 'mg/L', 0, 5);

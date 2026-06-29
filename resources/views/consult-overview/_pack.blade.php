@@ -31,6 +31,10 @@
                 <input type="hidden" name="include_trends" value="1">
             @endif
 
+            @if ($filters['include_themes'])
+                <input type="hidden" name="include_themes" value="1">
+            @endif
+
             @if ($filters['include_context'])
                 <input type="hidden" name="include_context" value="1">
             @endif
@@ -124,6 +128,17 @@
                     <div class="p-4 text-sm text-neutral-600 dark:text-neutral-400">{{ __('Geen normale bevestigde waarden in deze selectie.') }}</div>
                 @endforelse
             </div>
+        </section>
+    @endif
+
+    @if ($filters['include_themes'] && ! empty($overview['thematicOverview']['categories']))
+        <section class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="consult-thematic-overview">
+            <div class="space-y-1">
+                <flux:heading size="lg">{{ __('Per thema') }}</flux:heading>
+                <flux:text>{{ __('Alleen bevestigde waarden, gegroepeerd voor overzicht. Geen medische interpretatie.') }}</flux:text>
+            </div>
+
+            @include('shared._thematic-biomarker-overview', ['thematicOverview' => $overview['thematicOverview']])
         </section>
     @endif
 

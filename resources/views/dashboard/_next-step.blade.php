@@ -75,6 +75,7 @@
                     <input type="hidden" name="include_attention" value="1">
                     <input type="hidden" name="include_normal" value="1">
                     <input type="hidden" name="include_trends" value="1">
+                    <input type="hidden" name="include_themes" value="1">
                     <input type="hidden" name="include_source_documents" value="1">
                     <flux:button type="submit" variant="primary" class="w-full" data-test="dashboard-consult-handoff-button">
                         {{ __('Consultlijst maken') }}

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Biomarker;
+use App\Models\BiomarkerCategory;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
@@ -93,6 +94,60 @@ it('builds a print ready consult pack from selected owned confirmed values and s
         ->toBeLessThan(strpos($content, 'data-test="consult-source-documents"'))
         ->and(strpos($content, 'data-test="consult-source-documents"'))
         ->toBeLessThan(strpos($content, 'data-test="consult-selected-tests"'));
+});
+
+it('shows thematic overview grouped under ontstekingen with trend labels', function () {
+    $user = User::factory()->create();
+    $category = BiomarkerCategory::factory()->for($user)->create(['name' => 'Ontstekingen']);
+    $crp = Biomarker::factory()->for($user)->for($category)->create(['name' => 'CRP']);
+    $april = BloodTest::factory()->for($user)->create(['test_date' => '2026-04-01', 'title' => 'April test']);
+    $june = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01', 'title' => 'June test']);
+
+    BiomarkerResult::factory()->for($april)->for($crp)->create([
+        'value' => 1.2,
+        'unit' => 'mg/L',
+        'status' => 'normal',
+        'confirmed_at' => '2026-04-02 09:00:00',
+    ]);
+    BiomarkerResult::factory()->for($june)->for($crp)->create([
+        'value' => 7.8,
+        'unit' => 'mg/L',
+        'status' => 'high',
+        'confirmed_at' => '2026-06-02 09:00:00',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'blood_test_ids' => [$june->id],
+            'include_themes' => '1',
+        ])
+        ->assertOk()
+        ->assertSee('data-test="consult-thematic-overview"', false)
+        ->assertSee('data-test="thematic-category-ontstekingen"', false)
+        ->assertSee('Ontstekingen')
+        ->assertSee('CRP')
+        ->assertSee('+6.6 mg/L')
+        ->assertSee('Marker die in labrapporten vaak wordt gebruikt bij ontstekingsonderzoek.');
+});
+
+it('hides thematic overview when include_themes is disabled', function () {
+    $user = User::factory()->create();
+    $category = BiomarkerCategory::factory()->for($user)->create(['name' => 'Ontstekingen']);
+    $crp = Biomarker::factory()->for($user)->for($category)->create(['name' => 'CRP']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($crp)->create([
+        'confirmed_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'blood_test_ids' => [$bloodTest->id],
+            'include_themes' => '0',
+        ])
+        ->assertOk()
+        ->assertDontSee('data-test="consult-thematic-overview"', false)
+        ->assertDontSee('Per thema');
 });
 
 it('does not show a trend change when comparable units are missing', function () {

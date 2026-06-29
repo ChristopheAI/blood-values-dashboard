@@ -2,6 +2,7 @@
 
 namespace App\Domain\Consult;
 
+use App\Domain\Biomarkers\BuildThematicBiomarkerOverview;
 use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Domain\BloodTests\LongitudinalChange;
 use App\Models\BiomarkerResult;
@@ -14,7 +15,10 @@ use Illuminate\Support\Collection;
 
 class BuildConsultOverview
 {
-    public function __construct(private readonly BuildLongitudinalChanges $buildLongitudinalChanges) {}
+    public function __construct(
+        private readonly BuildLongitudinalChanges $buildLongitudinalChanges,
+        private readonly BuildThematicBiomarkerOverview $buildThematicBiomarkerOverview,
+    ) {}
 
     /**
      * @param  array{
@@ -25,6 +29,7 @@ class BuildConsultOverview
      *     include_attention?: bool,
      *     include_normal?: bool,
      *     include_trends?: bool,
+     *     include_themes?: bool,
      *     include_context?: bool,
      *     include_source_documents?: bool,
      *     questions?: string|null
@@ -36,6 +41,7 @@ class BuildConsultOverview
      *     normalResults: Collection<int, BiomarkerResult>,
      *     trendResults: Collection<int, BiomarkerResult>,
      *     trendChanges: Collection<int, array{result: BiomarkerResult, previousResult: BiomarkerResult, changeLabel: string}>,
+     *     thematicOverview: array{categories: list<array<string, mixed>>, uncategorizedCount: int}|null,
      *     contextNotes: Collection<int, ContextNote>,
      *     sourceDocuments: Collection<int, BloodTestDocument>,
      *     questions: string|null
@@ -67,6 +73,9 @@ class BuildConsultOverview
             'trendChanges' => ($filters['include_trends'] ?? false)
                 ? $this->trendChanges($user, $bloodTests)
                 : collect(),
+            'thematicOverview' => ($filters['include_themes'] ?? false)
+                ? $this->buildThematicBiomarkerOverview->forBloodTests($user, $bloodTestIds)
+                : null,
             'contextNotes' => ($filters['include_context'] ?? false)
                 ? $this->contextNotes($user, $filters, $bloodTestIds)
                 : collect(),
