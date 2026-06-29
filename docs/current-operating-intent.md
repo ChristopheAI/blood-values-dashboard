@@ -55,7 +55,8 @@ Do not merge without owner code review per `AGENTS.md`.
 - Consult pack **Per thema** section (`include_themes`)
 - Dashboard latest digest **Per thema** block
 - ADR-0013 organizational-only copy boundary
-- Dashboard consult handoff + **Selectie aanpassen** GET prefill includes `include_themes`
+- PR #39 thematic biomarker overview + theme assignment command
+- `docs/research/2026-06-29-cma-biomarker-theme-mapping.md` — CMA name → Vitasure theme map (slice 4)
 
 ## Hard Invariants
 
@@ -67,10 +68,12 @@ Do not merge without owner code review per `AGENTS.md`.
 
 ## Active Next Move
 
-1. **Validate PR #39 locally:** `php artisan test tests/Unit/Biomarkers/`, consult/dashboard feature tests, `sh scripts/validate.sh`.
-2. **Browser QA:** upload/confirm → dashboard **Per thema** → consult pack **Per thema** with trends.
-3. **Owner review** of PR #39 and #40; close superseded #37 after #39 merges.
-4. **Later slices (not now):** category assignment UI, auto-category on import (ADR), account-delete storage sweep, consult print mode (PR C).
+1. **Validate PR #39 locally:** biomarker theme tests + consult/dashboard + `sh scripts/validate.sh`.
+2. **Assign themes to existing catalog:** `php artisan biomarkers:assign-themes --email=you@example.com`
+   (see `docs/research/2026-06-29-cma-biomarker-theme-mapping.md`).
+3. **Browser QA:** dashboard + consult **Per thema** after theme assignment.
+4. **Owner review** PR #39 and #40; close superseded #37.
+5. **Later:** account-delete storage fix, consult print mode (PR C), intake auto-assign (new ADR).
 
 ## Done Means
 

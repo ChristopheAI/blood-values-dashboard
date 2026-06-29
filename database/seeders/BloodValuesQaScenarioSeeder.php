@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Enums\ContextNoteCategory;
+use App\Domain\Biomarkers\AssignDefaultBiomarkerThemes;
 use App\Models\Biomarker;
-use App\Models\BiomarkerCategory;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
@@ -32,14 +32,10 @@ class BloodValuesQaScenarioSeeder extends Seeder
             ],
         );
 
-        $inflammation = $this->category($user, 'Ontstekingen');
-        $vitamins = $this->category($user, 'Slaap');
-        $thyroid = $this->category($user, 'Hormoonbalans');
-
-        $ferritin = $this->biomarker($user, $inflammation, 'Ferritin', 'FER', 'ug/L', 30, 150);
-        $crp = $this->biomarker($user, $inflammation, 'CRP', null, 'mg/L', 0, 5);
-        $vitaminD = $this->biomarker($user, $vitamins, 'Vitamin D', null, 'nmol/L', 50, 125);
-        $tsh = $this->biomarker($user, $thyroid, 'TSH', null, 'mIU/L', 0.4, 4.0);
+        $ferritin = $this->biomarker($user, 'Ferritin', 'FER', 'ug/L', 30, 150);
+        $crp = $this->biomarker($user, 'CRP', null, 'mg/L', 0, 5);
+        $vitaminD = $this->biomarker($user, 'Vitamin D', null, 'nmol/L', 50, 125);
+        $tsh = $this->biomarker($user, 'TSH', null, 'mIU/L', 0.4, 4.0);
 
         $older = $this->bloodTest(
             $user,
@@ -98,19 +94,12 @@ class BloodValuesQaScenarioSeeder extends Seeder
                 'completed_at' => null,
             ],
         );
-    }
 
-    private function category(User $user, string $name): BiomarkerCategory
-    {
-        return BiomarkerCategory::query()->updateOrCreate(
-            ['user_id' => $user->id, 'name' => $name],
-            [],
-        );
+        app(AssignDefaultBiomarkerThemes::class)->forUser($user);
     }
 
     private function biomarker(
         User $user,
-        BiomarkerCategory $category,
         string $name,
         ?string $shortName,
         string $unit,
@@ -120,7 +109,7 @@ class BloodValuesQaScenarioSeeder extends Seeder
         return Biomarker::query()->updateOrCreate(
             ['user_id' => $user->id, 'name' => $name],
             [
-                'biomarker_category_id' => $category->id,
+                'biomarker_category_id' => null,
                 'short_name' => $shortName,
                 'default_unit' => $unit,
                 'reference_min' => $referenceMin,
