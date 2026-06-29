@@ -501,6 +501,13 @@ class DashboardTest extends TestCase
             ->assertSee('Consultlijst maken')
             ->assertSee('Klaar voor je consult?')
             ->assertSee('Jouw selectie')
+            ->assertSee(route('consult-overview.index', [
+                'blood_test_ids' => [$latest->id],
+                'include_attention' => 1,
+                'include_normal' => 1,
+                'include_trends' => 1,
+                'include_source_documents' => 1,
+            ]))
             ->assertSee('data-test="dashboard-selection-pill-attention"', false)
             ->assertSee('data-test="dashboard-selection-pill-normal"', false)
             ->assertSee('data-test="dashboard-selection-pill-changes"', false)
@@ -615,6 +622,36 @@ class DashboardTest extends TestCase
             ->assertDontSee('Later open reminder')
             ->assertDontSee('Completed reminder')
             ->assertDontSee('Other user reminder');
+    }
+
+    public function test_dashboard_consult_customize_link_prefills_default_selection_via_get(): void
+    {
+        $user = User::factory()->create();
+        $marker = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+        $bloodTest = BloodTest::factory()->for($user)->create([
+            'title' => 'Prefill consult test',
+            'test_date' => '2026-06-15',
+        ]);
+
+        BiomarkerResult::factory()->for($bloodTest)->for($marker)->create([
+            'value' => 18,
+            'unit' => 'ug/L',
+            'status' => 'low',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('consult-overview.index', [
+                'blood_test_ids' => [$bloodTest->id],
+                'include_attention' => 1,
+                'include_normal' => 1,
+                'include_trends' => 1,
+                'include_source_documents' => 1,
+            ]))
+            ->assertOk()
+            ->assertSee('data-test="consult-pack"', false)
+            ->assertSee('Prefill consult test')
+            ->assertSee('Ferritine');
     }
 
     public function test_dashboard_consult_handoff_posts_default_selection_to_consult_overview(): void

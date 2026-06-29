@@ -16,7 +16,7 @@ class BuildDashboardOverview
     /**
      * @return array{
      *     nextStep: array{kind: string, title: string, body: string, href: string, action: string},
-     *     readiness: array{headline: string, variant: string, items: list<array{state: string, label: string}>, consultBloodTestId: int|null, showConsultPost: bool, selectionPills: list<array{key: string, label: string, count: int, tone: string}>},
+     *     readiness: array{headline: string, variant: string, items: list<array{state: string, label: string}>, consultBloodTestId: int|null, showConsultPost: bool, selectionPills: list<array{key: string, label: string, count: int, tone: string}>, consultHandoffQuery: array{blood_test_ids: list<int>, include_attention: int, include_normal: int, include_trends: int, include_source_documents: int}},
      *     workstand: Collection<int, array{key: string, label: string, count: int, summary: string, help: string, emphasis: bool, icon: string, tone: string}>,
      *     bloodTests: Collection<int, array{id: int, title: non-falsy-string, href: string, date: string, status: string, confirmedCount: int, draftCount: int, documentCount: int}>,
      *     reviewDraftCount: int,
