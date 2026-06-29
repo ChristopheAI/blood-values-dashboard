@@ -446,7 +446,7 @@ function addReminder(Browser $browser): void
         ->visit('/dashboard')
         ->waitForText('Volgende herinnering')
         ->assertSee('Plan next blood test')
-        ->assertSee('2026-07-15');
+        ->assertSee('15 juli 2026');
 
     assertNoForbiddenMedicalCopyAppears($browser);
 }
