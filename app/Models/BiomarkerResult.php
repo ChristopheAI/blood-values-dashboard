@@ -97,4 +97,23 @@ class BiomarkerResult extends Model
             ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $userId))
             ->whereHas('biomarker', fn ($query) => $query->where('user_id', $userId));
     }
+
+    /**
+     * Extracted intake rows that still require owner review before downstream use.
+     *
+     * @param  Builder<BiomarkerResult>  $query
+     * @return Builder<BiomarkerResult>
+     */
+    public function scopeReviewDraftsForUser(Builder $query, int $userId): Builder
+    {
+        return $query
+            ->whereNull('confirmed_at')
+            ->where('entry_source', 'extracted')
+            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $userId))
+            ->where(function ($query) use ($userId): void {
+                $query
+                    ->whereNull('biomarker_id')
+                    ->orWhereHas('biomarker', fn ($query) => $query->where('user_id', $userId));
+            });
+    }
 }

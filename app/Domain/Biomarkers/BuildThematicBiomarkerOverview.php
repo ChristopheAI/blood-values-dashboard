@@ -20,6 +20,7 @@ final class BuildThematicBiomarkerOverview
     public function __construct(
         private readonly BuildLongitudinalChanges $buildLongitudinalChanges,
         private readonly BiomarkerReferenceDescriptions $descriptions,
+        private readonly BiomarkerPresentation $biomarkerPresentation,
     ) {}
 
     /**
@@ -177,40 +178,10 @@ final class BuildThematicBiomarkerOverview
             'valueLabel' => Format::biomarkerValue($result->value, $result->source_snippet),
             'unit' => $result->unit,
             'status' => $result->status,
-            'statusLabel' => $this->statusLabel($result->status),
-            'trendLabel' => $this->trendLabel($change),
+            'statusLabel' => $this->biomarkerPresentation->statusLabel($result->status),
+            'trendLabel' => $this->biomarkerPresentation->compactTrendLabel($change),
             'testDate' => $result->bloodTest->test_date?->toDateString(),
             'bloodTestTitle' => $result->bloodTest->title,
         ];
-    }
-
-    private function statusLabel(string $status): string
-    {
-        return match ($status) {
-            'normal' => 'In orde',
-            'high', 'low' => 'Aandacht',
-            default => 'Controle nodig',
-        };
-    }
-
-    private function trendLabel(?LongitudinalChange $change): ?string
-    {
-        if (! $change instanceof LongitudinalChange) {
-            return '—';
-        }
-
-        if (! $change->previousResult instanceof BiomarkerResult) {
-            return 'Eerste meting';
-        }
-
-        if (! $change->comparable) {
-            return '—';
-        }
-
-        if ($change->direction === 'unchanged') {
-            return 'Geen verandering';
-        }
-
-        return (string) $change->changeLabel;
     }
 }

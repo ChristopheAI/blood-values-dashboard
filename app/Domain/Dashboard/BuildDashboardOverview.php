@@ -34,14 +34,7 @@ class BuildDashboardOverview
                 'results as confirmed_results_count' => fn ($query) => $query
                     ->whereNotNull('confirmed_at')
                     ->whereHas('biomarker', fn ($query) => $query->where('user_id', $user->id)),
-                'results as draft_results_count' => fn ($query) => $query
-                    ->whereNull('confirmed_at')
-                    ->where('entry_source', 'extracted')
-                    ->where(function ($query) use ($user): void {
-                        $query
-                            ->whereNull('biomarker_id')
-                            ->orWhereHas('biomarker', fn ($query) => $query->where('user_id', $user->id));
-                    }),
+                'results as draft_results_count' => fn ($query) => $query->reviewDraftsForUser($user->id),
             ])
             ->recentFirst()
             ->limit(5)
@@ -180,14 +173,7 @@ class BuildDashboardOverview
     private function reviewDraftCount(User $user): int
     {
         return BiomarkerResult::query()
-            ->whereNull('confirmed_at')
-            ->where('entry_source', 'extracted')
-            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', $user->id))
-            ->where(function ($query) use ($user): void {
-                $query
-                    ->whereNull('biomarker_id')
-                    ->orWhereHas('biomarker', fn ($query) => $query->where('user_id', $user->id));
-            })
+            ->reviewDraftsForUser($user->id)
             ->count();
     }
 
@@ -195,14 +181,7 @@ class BuildDashboardOverview
     {
         return BloodTest::query()
             ->where('user_id', $user->id)
-            ->whereHas('results', fn ($query) => $query
-                ->whereNull('confirmed_at')
-                ->where('entry_source', 'extracted')
-                ->where(function ($query) use ($user): void {
-                    $query
-                        ->whereNull('biomarker_id')
-                        ->orWhereHas('biomarker', fn ($query) => $query->where('user_id', $user->id));
-                }))
+            ->whereHas('results', fn ($query) => $query->reviewDraftsForUser($user->id))
             ->recentFirst()
             ->first();
     }

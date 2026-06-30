@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Biomarkers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Biomarker;
+use App\Models\BiomarkerResult;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,9 +14,9 @@ class ShowBiomarkerController extends Controller
     {
         abort_unless($biomarker->user_id === Auth::id(), 403);
 
-        $results = $biomarker->results()
-            ->whereNotNull('confirmed_at')
-            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', Auth::id()))
+        $results = BiomarkerResult::query()
+            ->confirmedForUser(Auth::id())
+            ->where('biomarker_id', $biomarker->id)
             ->with('bloodTest')
             ->get()
             ->sortBy(fn ($result) => $result->bloodTest->test_date?->toDateString() ?? '');

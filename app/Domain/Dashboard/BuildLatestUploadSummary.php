@@ -2,6 +2,7 @@
 
 namespace App\Domain\Dashboard;
 
+use App\Domain\Biomarkers\BiomarkerPresentation;
 use App\Domain\Biomarkers\BuildThematicBiomarkerOverview;
 use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Domain\BloodTests\LongitudinalChange;
@@ -16,6 +17,7 @@ class BuildLatestUploadSummary
     public function __construct(
         private readonly BuildLongitudinalChanges $buildLongitudinalChanges,
         private readonly BuildThematicBiomarkerOverview $buildThematicBiomarkerOverview,
+        private readonly BiomarkerPresentation $biomarkerPresentation,
     ) {}
 
     /**
@@ -156,53 +158,20 @@ class BuildLatestUploadSummary
      */
     private function summarizeResult(BiomarkerResult $result, ?LongitudinalChange $change): array
     {
-        $trend = $this->buildTrend($change);
+        $trend = $this->biomarkerPresentation->trendPayload($change);
         $valueLabel = Format::biomarkerValue($result->value, $result->source_snippet).' '.$result->unit;
 
         return [
             'name' => $result->biomarker->name,
             'valueLabel' => $valueLabel,
             'status' => $result->status,
-            'statusLabel' => $this->statusLabel($result->status),
+            'statusLabel' => $this->biomarkerPresentation->statusLabel($result->status),
             'takeaway' => $this->takeaway($result->status),
             'needsAttention' => in_array($result->status, ['low', 'high', 'unknown'], true),
             'trendKind' => $trend['kind'],
             'trendLabel' => $trend['label'],
             'range' => $this->buildRange($result),
         ];
-    }
-
-    /**
-     * @return array{kind: string, label: string}
-     */
-    private function buildTrend(?LongitudinalChange $change): array
-    {
-        if (! $change instanceof LongitudinalChange || ! $change->previousResult instanceof BiomarkerResult) {
-            return ['kind' => 'new', 'label' => 'Eerste meting'];
-        }
-
-        if (! $change->comparable) {
-            return ['kind' => 'not_comparable', 'label' => $this->notComparableTrendLabel($change->reason)];
-        }
-
-        if ($change->direction === 'unchanged') {
-            return ['kind' => 'unchanged', 'label' => 'Geen verandering'];
-        }
-
-        return [
-            'kind' => 'changed',
-            'label' => (string) $change->changeLabel,
-        ];
-    }
-
-    private function notComparableTrendLabel(?string $reason): string
-    {
-        return match ($reason) {
-            'missing_unit' => 'Eenheid ontbreekt',
-            'unit_mismatch' => 'Eenheid gewijzigd',
-            'non_numeric' => 'Niet numeriek vergelijkbaar',
-            default => 'Niet vergelijkbaar',
-        };
     }
 
     /**
@@ -349,15 +318,6 @@ class BuildLatestUploadSummary
         }
 
         return 'Afname '.Format::dutchDate($bloodTest->test_date);
-    }
-
-    private function statusLabel(string $status): string
-    {
-        return match ($status) {
-            'normal' => 'In orde',
-            'high', 'low' => 'Aandacht',
-            default => 'Controle nodig',
-        };
     }
 
     private function takeaway(string $status): string

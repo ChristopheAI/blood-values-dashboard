@@ -9,7 +9,8 @@ but broader workflows belong in `app/Domain`.
 - `BloodTest.php` - owner root for documents, results, extraction runs, context
   notes, and confirmed result relation.
 - `BiomarkerResult.php` - measured value, unit/range snapshot, status,
-  `confirmed_at`, extraction metadata, and `confirmedForUser` scope.
+  `confirmed_at`, extraction metadata, and `confirmedForUser` /
+  `reviewDraftsForUser` scopes.
 - `Biomarker.php`, `BiomarkerCategory.php`, `PinnedBiomarker.php` - owner-scoped
   catalog and follow-up markers.
 - `BloodTestDocument.php` - private source document metadata, not the PDF path
