@@ -9,10 +9,19 @@ copy beyond data labels returned to views.
 
 - `Biomarkers/DetermineBiomarkerStatus.php` - calculates `low`, `normal`,
   `high`, or `unknown`.
+- `Biomarkers/BiomarkerPresentation.php` - shared Dutch status/trend labels for
+  dashboard, thematic, and future summary surfaces.
+- `Biomarkers/BuildThematicBiomarkerOverview.php` - groups confirmed values by
+  owner-scoped category for consult and dashboard.
+- `Biomarkers/BiomarkerReferenceDescriptions.php` - static reference copy lookup.
 - `BloodTests/CompareBloodTests.php` - compares confirmed values between two
   blood tests.
+- `BloodTests/BuildLongitudinalChanges.php` - longitudinal trend rows reused by
+  dashboard, consult, and thematic builders.
 - `Dashboard/BuildLatestUploadSummary.php` - builds patient-friendly confirmed
   result summaries for dashboard and blood-test detail surfaces.
+- `Dashboard/BuildDashboardOverview.php` and `BuildDashboardReadiness.php` -
+  dashboard workstand and consult handoff readiness.
 - `Intake/AGENTS.md` - local contract for parser/trust/auto-confirm logic.
 - `Consult/AGENTS.md` - local contract for consult/export data builders.
 - `Privacy/AGENTS.md` - local contract for data export and delete-all privacy
@@ -57,6 +66,8 @@ copy beyond data labels returned to views.
   importance, diagnosis, advice, or triage.
 - Do not leak storage paths, original private content, or sensitive free text in
   export rows unless the export contract explicitly allows it.
+- Do not call `route()` or other HTTP/routing facades from domain builders; return
+  IDs and semantic keys for controllers/views to resolve.
 
 ## Related Context
 

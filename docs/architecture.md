@@ -4,12 +4,11 @@ A map of how the app is built. It is a map, not a spec: the source of truth
 stays `docs/codex-prd.md`, the specs, ADRs, tests, and per-slice kickoff docs.
 Update this when a slice changes the shape.
 
-Status: V1 is complete on `main` - four merged slices (PDF-first intake,
-consult preparation, privacy export + delete-all, reminders). On
-`codex/v2-clean-autoconfirm`, V2 clean-by-default extraction, confidence-gated
-auto-confirm, upload-first intake, the canonical blood-test detail workspace,
-and date-based recency ordering are implemented in draft PR #11. `main` may lag
-until that PR is reviewed and merged.
+Status: V2 is implemented on `main` — PDF-first intake, confidence-gated
+auto-confirm (ADR-0011), canonical blood-test detail, longitudinal changes,
+consult pack, privacy export/delete, reminders, dashboard polish, and thematic
+biomarker overview (ADR-0013). Active follow-up slices: category assignment,
+consult CSV domain extraction, domain routing cleanup.
 
 ## 1. The stack, by layer
 
@@ -25,8 +24,10 @@ Request
   │                      ConsultOverview · DownloadDataExport · +more
   │
   ▼  Domain  (rules) ... DetermineBiomarkerStatus · CompareBloodTests ·
-  │                      BuildLongitudinalChanges · BuildLatestUploadSummary ·
-  │                      BuildConsultOverview · BuildDataExport · DeleteAllHealthData ·
+  │                      BuildLongitudinalChanges · BiomarkerPresentation ·
+  │                      BuildThematicBiomarkerOverview · BuildLatestUploadSummary ·
+  │                      BuildDashboardOverview · BuildConsultOverview ·
+  │                      BuildDataExport · DeleteAllHealthData ·
   │                      ExtractBiomarkerDrafts · RunBloodTestExtraction
   │
   ▼  Models (Eloquent) . User · BloodTest · BiomarkerResult · Biomarker ·
@@ -55,79 +56,54 @@ Cross-cutting (through every layer):
 
 Before step 6 it is just a guess next to your PDF. After it, the value is
 tracked, status-labeled, and yours — and only confirmed values travel past the
-gate. Everything before the gate is about getting the PDF in safely (private
-storage, owner checks, validation); everything after is the confirmed-only
-pipeline.
+gate.
 
 ## 3. Feature map — the files behind each slice
 
-Every slice has the same shape: a thin UI layer, one domain service for the
-rules, a model plus migration, and its own tests. The exceptions are telling.
-
 ### 1 · PDF-first intake — merged
-- UI: `StoreBloodTestController`, `ReviewBloodTest` (Livewire),
-  `CompareBloodTestsController`, `DownloadBloodTestDocumentController`,
-  `DestroyBloodTestController`, `ShowBiomarkerController`
-- Domain: `DetermineBiomarkerStatus`, `CompareBloodTests`
-- Data: `BloodTest`, `BloodTestDocument`, `Biomarker`, `BiomarkerCategory`,
-  `BiomarkerResult` · 5 migrations
-- Tests: `BiomarkerStatusTest`, `BloodTestReviewAuthorizationTest`,
-  `BloodTestPdfUploadTest`, `BloodTestDocumentDownloadTest`,
-  `BloodTestDocumentDeletionTest`, `BiomarkerHistoryTest`, `CompareBloodTestsTest`,
-  `PrivacyBoundaryTest`
+- UI: `StoreBloodTestController`, `ReviewBloodTest` (Livewire), compare, documents
+- Domain: `DetermineBiomarkerStatus`, `CompareBloodTests`, intake extractors
+- Tests: intake, privacy, medical-copy boundaries
 
 ### 2 · Consult preparation — merged
-- UI: `ContextNotes` Index/Store/Update/Destroy, `ConsultOverview` Show + Csv,
-  `PinBiomarkerController`, `UnpinBiomarkerController`, `DashboardController`
-- Domain: `BuildConsultOverview`
-- Data: `PinnedBiomarker`, `ContextNote`, `ContextNoteCategory` (enum) · 2 migrations
-- Tests: `ConsultOverviewTest`, `ContextNoteTest`, `PinnedBiomarkerTest`,
-  `MedicalCopyBoundaryTest`
+- UI: `ConsultOverview` Show + CSV, context notes, pinned biomarkers
+- Domain: `BuildConsultOverview`, `BuildLongitudinalChanges`
+- Tests: `ConsultPackTest`, `ConsultOverviewPrivacyTest`
 
-### 3 · Privacy: export + delete-all — merged
-- UI: `DownloadDataExportController`, `DestroyAllHealthDataController`,
-  `DestroyBloodTestDocumentController`, settings/data page (password-confirmed)
+### 3 · Privacy export + delete — merged
 - Domain: `BuildDataExport`, `DeleteAllHealthData`
-- Data: reuses existing models · no new migration
 - Tests: `DataExportAndDeletionTest`
 
 ### 4 · Reminders — merged
-- UI: `Reminders` Index/Store/Update/Destroy, dashboard "next reminder"
-- Domain: none — plain CRUD, no real rules
-- Data: `Reminder` · `create_reminders` migration
-- Tests: `ReminderTest` (+ updates to the export and dashboard tests)
+- UI: reminders CRUD, dashboard next reminder
 
-### 5 · V2 clean extraction and upload-first intake - implemented on branch
-- UI: `StoreBloodTestController`, `ReviewBloodTest` (reused), upload-first
-  dashboard/dropzone affordances, streamed intake progress states
-- Domain: `ExtractBiomarkerDrafts`, `ExtractTabularBiomarkerCandidates`,
-  `ExtractCmaLayoutBiomarkerCandidates`, `RunBloodTestExtraction`
-- Data: `extraction_runs`; extracted result metadata on `biomarker_results`;
-  private source documents stay separate from structured values
-- Tests: `AssistedPdfExtractionTest`, `ExtractedDraftReviewTest`,
-  `PdfFirstIntakeSmokeTest`, `PrivacyBoundaryTest`, `PackageBoundaryTest`
+### 5 · V2 clean extraction + detail workspace — merged
+- Domain: `RunBloodTestExtraction`, `BuildLatestUploadSummary`, `BuildDashboardOverview`
+- UI: upload-first dashboard, canonical blood-test detail
 
-### 6 · Canonical blood-test detail workspace - implemented on branch
-- UI: `ReviewBloodTest`, `resources/views/livewire/blood-tests/review-blood-test.blade.php`,
-  shared dashboard overview partials
-- Domain: `BuildLatestUploadSummary`, `BuildLongitudinalChanges`
-- Data: reuses `BloodTest`, `BloodTestDocument`, `BiomarkerResult`,
-  `ContextNote`
-- Tests: `ExtractedDraftReviewTest`, `BuildLongitudinalChangesTest`,
-  `DashboardTest`, `BloodTestPdfUploadTest`
+### 6 · Thematic biomarker overview — merged/in PR
+- Domain: `BuildThematicBiomarkerOverview`, `BiomarkerReferenceDescriptions`,
+  `BiomarkerPresentation` (shared labels)
+- UI: consult **Per thema**, dashboard theme block
+- ADR: 0013
 
-## 4. Invariants — the non-negotiables that cut across every layer
+## 4. Invariants — the non-negotiables
 
-- **Owner-scoping.** Every health record belongs to a `user_id`; a different user
-  is denied (403), proven by tamper/isolation tests in every slice.
-- **Confirmed-only.** Only values with `confirmed_at` set feed status, history,
-  compare, consult, and export — via `BloodTest::confirmedResults()`. Drafts and
-  unconfirmed entries never count.
-- **Medical boundary.** No diagnosis / treatment / advice copy (v1-spec §10);
-  `MedicalCopyBoundaryTest` scans the views to keep it true.
-- **Private + local.** Lab PDFs live on a private disk under generated names with
-  owner-authorized download; no external or AI processing of lab PDFs —
-  `PrivacyBoundaryTest` guards it.
+- **Owner-scoping.** Every health record belongs to a `user_id`; foreign access → 403.
+- **Confirmed-only.** Only `confirmed_at` values feed downstream surfaces.
+- **Review drafts.** `BiomarkerResult::reviewDraftsForUser()` centralizes extracted
+  unconfirmed rows pending owner review.
+- **Medical boundary.** No diagnosis / treatment / advice copy.
+- **Private + local.** Lab PDFs on private disk; no external processing.
+- **Presentation vs rules.** Status/trend *labels* live in `BiomarkerPresentation`;
+  status *calculation* stays in `DetermineBiomarkerStatus`.
 - **Tests own trust.** Pest + Dusk + PHPStan + Pint + `scripts/validate.sh` + CI.
-  Nothing is "done" until that is green; AI-written code is not trusted until it is.
-```
+
+## 5. Known architecture follow-ups
+
+| Follow-up | Why |
+| --- | --- |
+| Move consult CSV row assembly to domain | Export logic still in HTTP controller |
+| Shared consult filter FormRequest | Duplicated validation in Show + CSV controllers |
+| Remove `route()` from `BuildDashboardOverview` | Domain should not depend on route names |
+| Category assignment UI | Makes thematic overview useful (see plan 2026-06-30) |
