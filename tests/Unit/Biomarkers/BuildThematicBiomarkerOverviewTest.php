@@ -137,4 +137,30 @@ class BuildThematicBiomarkerOverviewTest extends TestCase
         $this->assertSame([], $overview['categories']);
         $this->assertSame(0, $overview['uncategorizedCount']);
     }
+
+    public function test_returns_empty_overview_for_empty_blood_test_scope(): void
+    {
+        $user = User::factory()->create();
+
+        $overview = app(BuildThematicBiomarkerOverview::class)->forBloodTests($user, []);
+
+        $this->assertSame([], $overview['categories']);
+        $this->assertSame(0, $overview['uncategorizedCount']);
+    }
+
+    public function test_returns_empty_overview_when_scope_includes_foreign_blood_test_id(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $ownedBloodTest = BloodTest::factory()->for($user)->create();
+        $foreignBloodTest = BloodTest::factory()->for($otherUser)->create();
+
+        $overview = app(BuildThematicBiomarkerOverview::class)->forBloodTests($user, [
+            $ownedBloodTest->id,
+            $foreignBloodTest->id,
+        ]);
+
+        $this->assertSame([], $overview['categories']);
+        $this->assertSame(0, $overview['uncategorizedCount']);
+    }
 }

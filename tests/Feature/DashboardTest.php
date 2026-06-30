@@ -635,18 +635,57 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-test="dashboard-consult-handoff-form"', false)
+            ->assertSee('name="include_themes"', false);
+
+        $this->actingAs($user)
             ->post(route('consult-overview.index'), [
                 'blood_test_ids' => [$bloodTest->id],
                 'include_attention' => '1',
                 'include_normal' => '1',
                 'include_trends' => '1',
                 'include_source_documents' => '1',
+                'include_themes' => '1',
             ])
             ->assertOk()
             ->assertSee('data-test="consult-pack"', false)
             ->assertSee('Ferritine')
             ->assertSee('18')
             ->assertSee('Consult handoff test');
+    }
+
+    public function test_dashboard_handoff_post_includes_themes_when_form_defaults_are_used(): void
+    {
+        $user = User::factory()->create();
+        $category = BiomarkerCategory::factory()->for($user)->create(['name' => 'Ontstekingen']);
+        $crp = Biomarker::factory()->for($user)->for($category, 'category')->create(['name' => 'CRP']);
+        $bloodTest = BloodTest::factory()->for($user)->create([
+            'title' => 'Handoff themes test',
+            'test_date' => '2026-06-15',
+        ]);
+
+        BiomarkerResult::factory()->for($bloodTest)->for($crp)->create([
+            'value' => 3,
+            'unit' => 'mg/L',
+            'status' => 'normal',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('consult-overview.index'), [
+                'blood_test_ids' => [$bloodTest->id],
+                'include_attention' => '1',
+                'include_normal' => '1',
+                'include_trends' => '1',
+                'include_source_documents' => '1',
+                'include_themes' => '1',
+            ])
+            ->assertOk()
+            ->assertSee('data-test="consult-thematic-overview"', false)
+            ->assertSee('Ontstekingen')
+            ->assertSee('CRP');
     }
 
     public function test_dashboard_shows_thematic_grouping_when_categories_are_assigned(): void
