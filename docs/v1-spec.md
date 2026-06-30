@@ -339,7 +339,10 @@ Rules:
 
 - export copy must say it is user-entered personal tracking data;
 - export must not contain medical conclusions;
-- first implementation may be printable HTML or CSV before PDF.
+- first implementation may be printable HTML or CSV before PDF;
+- thematic grouping may show confirmed values by owner-scoped category with
+  optional neutral reference descriptions; descriptions are organizational only
+  and must not appear in CSV export v1.
 
 ## 6. Status Calculation
 
