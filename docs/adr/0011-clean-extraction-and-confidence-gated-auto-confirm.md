@@ -32,6 +32,18 @@ full reference range are unaffected and still auto-confirm. This tightens, never
 the trust boundary, so it stays within the accepted policy. Enforced by
 `RunBloodTestExtraction::autoConfirmYieldsConclusiveStatus`.
 
+### Amendment 2026-06-30 — parser-lab is a heuristic, not a spec twin
+
+`tools/parser_lab/cma_layout_lab.py` (sanitized, dev-only CMA structure check, run via
+`scripts/validate.sh`) uses its own header-matching rule — a word-boundary regex — while
+the production parser, `ExtractCmaLayoutBiomarkerCandidates::header()`, matches headers
+as a case-insensitive substring (`stripos`). The two rules can disagree on whether a given
+layout's header is detectable, so the lab is documented as a heuristic plausibility check,
+not a guarantee of what the real parser will do. No code change: the lab never writes to
+the database, so a disagreement costs a wasted manual check, not a wrong stored value. If
+the two are ever brought into lockstep, this amendment should be superseded rather than
+silently dropped.
+
 
 
 The auto-confirm policy relaxes the confirmed-only trust boundary set in ADR-0005

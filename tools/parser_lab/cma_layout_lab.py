@@ -11,6 +11,17 @@
 #    python3 tools/parser_lab/cma_layout_lab.py --layout-text /tmp/cma-layout.txt
 # 3. Keep output sanitized. Do not commit real layout text or extracted values.
 # ------------------
+#
+# --- Heuristic vs. production parser ---
+# This lab uses its own header-matching rule (word-boundary regex) and is not
+# kept in lockstep with the PHP CMA-layout parser
+# (app/Domain/Intake/ExtractCmaLayoutBiomarkerCandidates.php), which matches
+# headers as a case-insensitive substring. The two can disagree on whether a
+# given layout has a detectable header. Treat a lab result as a quick signal
+# of whether a PDF is plausibly CMA-shaped, not as a guarantee that the real
+# parser will or will not extract it. It writes nothing to the database, so a
+# false reading here costs you a wasted check, never a wrong stored value.
+# ------------------
 
 from __future__ import annotations
 
