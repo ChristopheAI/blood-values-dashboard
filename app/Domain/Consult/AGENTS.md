@@ -27,7 +27,7 @@ layout, CSV streaming, route authorization, or medical interpretation.
 ## Patterns
 
 - Keep include flags explicit: attention, normal, trends, context, pinned, source
-  documents.
+  documents, themes.
 - Put cross-surface change/trend rules in shared domain logic when they outgrow
   consult-only behavior.
 - Return empty collections for empty selections instead of widening queries.

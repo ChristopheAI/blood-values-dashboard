@@ -33,6 +33,7 @@
                 <input type="hidden" name="include_normal" value="1">
                 <input type="hidden" name="include_trends" value="1">
                 <input type="hidden" name="include_source_documents" value="1">
+                <input type="hidden" name="include_themes" value="1">
                 <flux:button type="submit" variant="primary" data-test="latest-upload-consult-button">{{ __('Maak consultlijst') }}</flux:button>
             </form>
         </div>

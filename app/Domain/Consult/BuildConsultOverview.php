@@ -2,6 +2,7 @@
 
 namespace App\Domain\Consult;
 
+use App\Domain\Biomarkers\BuildThematicBiomarkerOverview;
 use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Domain\BloodTests\LongitudinalChange;
 use App\Models\BiomarkerResult;
@@ -14,7 +15,10 @@ use Illuminate\Support\Collection;
 
 class BuildConsultOverview
 {
-    public function __construct(private readonly BuildLongitudinalChanges $buildLongitudinalChanges) {}
+    public function __construct(
+        private readonly BuildLongitudinalChanges $buildLongitudinalChanges,
+        private readonly BuildThematicBiomarkerOverview $buildThematicBiomarkerOverview,
+    ) {}
 
     /**
      * @param  array{
@@ -27,6 +31,7 @@ class BuildConsultOverview
      *     include_trends?: bool,
      *     include_context?: bool,
      *     include_source_documents?: bool,
+     *     include_themes?: bool,
      *     questions?: string|null
      * }  $filters
      * @return array{
@@ -38,6 +43,7 @@ class BuildConsultOverview
      *     trendChanges: Collection<int, array{result: BiomarkerResult, previousResult: BiomarkerResult, changeLabel: string}>,
      *     contextNotes: Collection<int, ContextNote>,
      *     sourceDocuments: Collection<int, BloodTestDocument>,
+     *     thematicOverview: array{categories: list<array<string, mixed>>, uncategorizedCount: int}|null,
      *     questions: string|null
      * }
      */
@@ -73,6 +79,9 @@ class BuildConsultOverview
             'sourceDocuments' => ($filters['include_source_documents'] ?? false)
                 ? $this->sourceDocuments($user, $bloodTestIds)
                 : collect(),
+            'thematicOverview' => ($filters['include_themes'] ?? false)
+                ? $this->buildThematicBiomarkerOverview->forBloodTests($user, $bloodTestIds)
+                : null,
             'questions' => $filters['questions'] ?? null,
         ];
     }

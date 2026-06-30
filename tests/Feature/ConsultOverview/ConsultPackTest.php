@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Biomarker;
+use App\Models\BiomarkerCategory;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\BloodTestDocument;
@@ -88,7 +89,8 @@ it('builds a print ready consult pack from selected owned confirmed values and s
     expect(strpos($content, 'data-test="consult-attention-values"'))
         ->toBeLessThan(strpos($content, 'data-test="consult-normal-values"'))
         ->and(strpos($content, 'data-test="consult-normal-values"'))
-        ->toBeLessThan(strpos($content, 'data-test="consult-trend-changes"'))
+        ->toBeLessThan(strpos($content, 'data-test="consult-thematic-overview"') ?: PHP_INT_MAX)
+        ->and(strpos($content, 'data-test="consult-trend-changes"'))
         ->and(strpos($content, 'data-test="consult-trend-changes"'))
         ->toBeLessThan(strpos($content, 'data-test="consult-source-documents"'))
         ->and(strpos($content, 'data-test="consult-source-documents"'))
@@ -199,4 +201,60 @@ it('exports consult pack normal values changes and source documents as csv', fun
         ->assertDontSee('Other marker')
         ->assertDontSee('123')
         ->assertDontSee('other-private-lab.pdf');
+});
+
+it('shows thematic biomarker section when enabled', function () {
+    $user = User::factory()->create();
+    $category = BiomarkerCategory::factory()->for($user)->create(['name' => 'Ontstekingen']);
+    $crp = Biomarker::factory()->for($user)->for($category, 'category')->create(['name' => 'hsCRP']);
+    $april = BloodTest::factory()->for($user)->create(['test_date' => '2026-04-01', 'title' => 'April test']);
+    $june = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01', 'title' => 'June test']);
+
+    BiomarkerResult::factory()->for($april)->for($crp)->create([
+        'value' => 1,
+        'unit' => 'mg/L',
+        'status' => 'normal',
+        'confirmed_at' => '2026-04-02 09:00:00',
+    ]);
+    BiomarkerResult::factory()->for($june)->for($crp)->create([
+        'value' => 4,
+        'unit' => 'mg/L',
+        'status' => 'high',
+        'confirmed_at' => '2026-06-02 09:00:00',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'blood_test_ids' => [$april->id, $june->id],
+            'include_themes' => '1',
+        ])
+        ->assertOk()
+        ->assertSee('data-test="consult-thematic-overview"', false)
+        ->assertSee('Ontstekingen')
+        ->assertSee('hsCRP')
+        ->assertSee('Marker die in labrapporten vaak wordt gebruikt bij ontstekingsonderzoek.')
+        ->assertSee('+3 mg/L');
+});
+
+it('hides thematic biomarker section when disabled', function () {
+    $user = User::factory()->create();
+    $category = BiomarkerCategory::factory()->for($user)->create(['name' => 'Ontstekingen']);
+    $crp = Biomarker::factory()->for($user)->for($category, 'category')->create(['name' => 'CRP']);
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    BiomarkerResult::factory()->for($bloodTest)->for($crp)->create([
+        'value' => 2,
+        'unit' => 'mg/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('consult-overview.index'), [
+            'blood_test_ids' => [$bloodTest->id],
+            'include_themes' => '0',
+        ])
+        ->assertOk()
+        ->assertDontSee('data-test="consult-thematic-overview"', false)
+        ->assertDontSee('Ontstekingen');
 });

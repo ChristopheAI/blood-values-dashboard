@@ -2,6 +2,7 @@
 
 namespace App\Domain\Dashboard;
 
+use App\Domain\Biomarkers\BuildThematicBiomarkerOverview;
 use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Domain\BloodTests\LongitudinalChange;
 use App\Models\BiomarkerResult;
@@ -12,7 +13,10 @@ use Illuminate\Support\Collection;
 
 class BuildLatestUploadSummary
 {
-    public function __construct(private readonly BuildLongitudinalChanges $buildLongitudinalChanges) {}
+    public function __construct(
+        private readonly BuildLongitudinalChanges $buildLongitudinalChanges,
+        private readonly BuildThematicBiomarkerOverview $buildThematicBiomarkerOverview,
+    ) {}
 
     /**
      * @return array{
@@ -30,7 +34,8 @@ class BuildLatestUploadSummary
      *     attentionRows: Collection<int, mixed>,
      *     featuredAttentionRows: Collection<int, mixed>,
      *     reviewRows: Collection<int, mixed>,
-     *     normalRows: Collection<int, mixed>
+     *     normalRows: Collection<int, mixed>,
+     *     thematicOverview: array{categories: list<array<string, mixed>>, uncategorizedCount: int}
      * }|null
      */
     public function __invoke(User $user): ?array
@@ -66,7 +71,8 @@ class BuildLatestUploadSummary
      *     attentionRows: Collection<int, mixed>,
      *     featuredAttentionRows: Collection<int, mixed>,
      *     reviewRows: Collection<int, mixed>,
-     *     normalRows: Collection<int, mixed>
+     *     normalRows: Collection<int, mixed>,
+     *     thematicOverview: array{categories: list<array<string, mixed>>, uncategorizedCount: int}
      * }|null
      */
     public function forBloodTest(User $user, BloodTest $bloodTest): ?array
@@ -141,6 +147,7 @@ class BuildLatestUploadSummary
             'featuredAttentionRows' => $featuredAttentionRows,
             'reviewRows' => $reviewRows,
             'normalRows' => $normalRows,
+            'thematicOverview' => $this->buildThematicBiomarkerOverview->forBloodTest($user, $bloodTest),
         ];
     }
 
