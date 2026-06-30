@@ -196,3 +196,34 @@ ready.
   correct next step.
 - Prefer minimal, verifiable changes over broad rewrites.
 - Do not claim completion without fresh validation evidence.
+
+## Cursor Cloud specific instructions
+
+Durable, non-obvious notes for running this app in the Cursor Cloud VM. Standard
+commands live in the `Commands`/`Validation` sections above; this section only
+captures gotchas.
+
+- PHP 8.4 is required, not 8.3. `composer.json` declares `php: ^8.3`, but
+  `composer.lock` pins Symfony 8.1 packages that require `php >=8.4.1`, so
+  `composer install` fails on PHP 8.3. The VM has PHP 8.4 (with sqlite3, mbstring,
+  xml, curl, zip, gd, bcmath, intl) and Composer 2 installed.
+- The update script only refreshes dependencies (`composer install`, `npm install`).
+  One-time setup that persists in the VM snapshot is NOT re-run on startup: `.env`
+  (copied from `.env.example`), `APP_KEY`, the `database/database.sqlite` file,
+  applied migrations, and built `public/build` assets. If the snapshot is reset or
+  these are missing, re-run: `cp .env.example .env` (if absent),
+  `php artisan key:generate`, `touch database/database.sqlite`,
+  `php artisan migrate`, then `npm run build`.
+- Run the app for development with `php artisan serve --host=0.0.0.0 --port=8000`.
+  Built assets are already present, so the Vite dev server is optional; run
+  `npm run dev` only when you need HMR while editing CSS/JS.
+- `composer dev` also starts a queue worker and `pail`, but neither is needed:
+  PDF extraction runs synchronously in the upload request, no jobs are dispatched.
+- Demo login: run `php artisan app:seed-blood-test-demo`, then sign in at `/login`
+  with `qa@example.com` / `password`. Core flow to smoke-test: upload a lab PDF at
+  `/blood-tests` (fixtures under `tests/Fixtures/*.pdf`) and confirm extracted
+  biomarkers appear, then check `/dashboard`.
+- `sh scripts/validate.sh` additionally runs Python parser tests (`python3`) and a
+  Laravel Dusk browser smoke test, which needs Chrome + chromedriver
+  (`php artisan dusk:chrome-driver --detect`); these are not required for normal
+  `php artisan test` runs.
