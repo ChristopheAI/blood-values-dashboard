@@ -40,3 +40,60 @@ jobs:
 
       - name: Validate project
         run: sh scripts/validate.sh
+
+  postgres:
+    # The production/staging target is Postgres, but the default suite runs on
+    # SQLite, whose loose type affinity hides schema/type mismatches (e.g.
+    # qualitative lab values stored in the numeric value column). This job runs
+    # the migrations and the type-sensitive feature tests against real Postgres
+    # so those bugs are caught before a Railway deploy.
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: bloedzorg_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d bloedzorg_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: bloedzorg_test
+      DB_USERNAME: app
+      DB_PASSWORD: secret
+      DB_URL: ''
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql
+          tools: composer:v2
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Migrate on Postgres
+        run: php artisan migrate:fresh --force
+
+      - name: Run type-sensitive feature tests on Postgres
+        run: php artisan test tests/Feature/BloodTests/QualitativeValuePersistenceTest.php
