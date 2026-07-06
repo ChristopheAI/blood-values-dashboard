@@ -117,7 +117,7 @@ it('groups rows by status with counts and keeps the display value as a string', 
     $this->actingAs($user)
         ->get(route('blood-results.overview'))
         ->assertOk()
-        ->assertSeeInOrder(['laag', 'hoog', 'normaal', 'onbekend'])
+        ->assertSeeInOrder(['laag', 'hoog', 'normaal', 'geen status'])
         ->assertSee('data-test="confirmed-overview-attention"', false)
         ->assertSee('data-test="confirmed-overview-normal"', false)
         ->assertSee('data-test="confirmed-overview-unknown"', false);
@@ -322,6 +322,68 @@ it('is reachable from the sidebar navigation and the dashboard confirmed tile', 
         ->assertOk()
         ->assertSee('data-test="dashboard-metric-link-confirmed"', false)
         ->assertSee(route('blood-results.overview'));
+});
+
+it('states the magnitude beyond the reference as a factual sentence with arrow pill', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-15']);
+
+    confirmedOverviewResult($user, $bloodTest, 'CRP', [
+        'value' => '7.8', 'unit' => 'mg/L', 'reference_min' => 0, 'reference_max' => 5,
+        'status' => 'high', 'confirmed_at' => now(),
+    ]);
+
+    $row = app(BuildBloodResultsOverview::class)($user)->firstWhere('label', 'CRP');
+
+    expect($row['beyond'])->toBe(['direction' => 'above', 'label' => '2.8']);
+
+    $this->actingAs($user)
+        ->get(route('blood-results.overview'))
+        ->assertOk()
+        ->assertSee('↑ hoog')
+        ->assertSee('Ligt 2.8 mg/L boven de opgegeven referentie.')
+        ->assertSee('data-test="confirmed-beyond-sentence"', false);
+});
+
+it('explains why a detection-limit row has no status and never computes a beyond-magnitude for it', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    confirmedOverviewResult($user, $bloodTest, 'CMV IgM', [
+        'value' => '50', 'value_comparator' => '<', 'unit' => 'U/L', 'reference_max' => 30,
+        'status' => 'unknown', 'confirmed_at' => now(),
+    ]);
+
+    $row = app(BuildBloodResultsOverview::class)($user)->firstWhere('label', 'CMV IgM');
+
+    expect($row['beyond'])->toBeNull();
+
+    $this->actingAs($user)
+        ->get(route('blood-results.overview'))
+        ->assertOk()
+        ->assertSee('geen status')
+        ->assertSee('is een meetgrens van het lab, geen exacte meting');
+});
+
+it('captions the reference in its own unit when it differs from the value unit', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    confirmedOverviewResult($user, $bloodTest, 'Eenheid mismatch', [
+        'value' => 5, 'unit' => 'mg/L', 'reference_min' => 1, 'reference_max' => 3,
+        'reference_unit' => 'µmol/L', 'status' => 'unknown', 'confirmed_at' => now(),
+    ]);
+
+    $row = app(BuildBloodResultsOverview::class)($user)->firstWhere('label', 'Eenheid mismatch');
+
+    expect($row['reference'])->toBe('1 – 3 µmol/L')
+        ->and($row['reference_unit_mismatch'])->toBeTrue();
+
+    $this->actingAs($user)
+        ->get(route('blood-results.overview'))
+        ->assertOk()
+        ->assertSee('1 – 3 µmol/L')
+        ->assertSee('andere eenheid dan de meting');
 });
 
 it('shows an empty state without any values', function () {
