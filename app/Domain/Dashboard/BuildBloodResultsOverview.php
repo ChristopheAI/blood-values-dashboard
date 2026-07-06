@@ -41,6 +41,18 @@ final class BuildBloodResultsOverview
     }
 
     /**
+     * Total confirmed measurements behind the deduped rows. The dashboard's
+     * 'Bevestigd' tile counts these, so the overview must surface the same
+     * number or the tile appears to overcount on the page it links to.
+     */
+    public function measurementCount(User $user): int
+    {
+        return BiomarkerResult::query()
+            ->confirmedForUser($user->id)
+            ->count();
+    }
+
+    /**
      * Pick the current measurement for a biomarker: latest by sample date, then
      * by confirmation time, then by id, so ties (same-day tests, second-precision
      * timestamps) resolve deterministically.

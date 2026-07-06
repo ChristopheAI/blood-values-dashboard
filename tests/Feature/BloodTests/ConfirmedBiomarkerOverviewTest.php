@@ -49,6 +49,7 @@ it('shows only confirmed values and never extracted drafts', function () {
         ->assertOk()
         ->assertSee('data-test="confirmed-biomarker-overview"', false)
         ->assertSee('Ferritine')
+        ->assertSee('1 biomarker')
         ->assertSee('1 bevestigde waarde')
         ->assertDontSee('Draftmarker')
         ->assertDontSee('87654');
@@ -231,10 +232,38 @@ it('shows one row per biomarker using the most recent measurement, not every his
     $this->actingAs($user)
         ->get(route('blood-results.overview'))
         ->assertOk()
-        ->assertSee('1 bevestigde waarde')
+        ->assertSee('1 biomarker')
+        ->assertSee('2 bevestigde waarden')
         ->assertSee('7.8')
         ->assertSee('15 juni 2026')
         ->assertDontSee('15 april 2026');
+});
+
+it('shows the same confirmed-measurement total as the dashboard tile it links from', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'CRP']);
+
+    foreach (['2026-04-15', '2026-06-15'] as $date) {
+        $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => $date]);
+        BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+            'value' => '1.2', 'unit' => 'mg/L', 'status' => 'normal', 'confirmed_at' => now(),
+        ]);
+    }
+
+    // Dashboard 'Bevestigd' tile counts every confirmed measurement (2)…
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSeeInOrder(['data-test="dashboard-metric-confirmed"', '2', 'Bevestigd'], false);
+
+    // …and the overview it links to surfaces that same total next to the
+    // deduped biomarker count, so the numbers reconcile for the user.
+    $this->actingAs($user)
+        ->get(route('blood-results.overview'))
+        ->assertOk()
+        ->assertSee('1 biomarker')
+        ->assertSee('gebaseerd op')
+        ->assertSee('2 bevestigde waarden');
 });
 
 it('keeps a detection-limit value in the unknown group and shows its prefix instead of the bare bound', function () {
