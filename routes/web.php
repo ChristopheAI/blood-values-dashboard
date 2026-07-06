@@ -19,6 +19,7 @@ use App\Http\Controllers\Reminders\DestroyReminderController;
 use App\Http\Controllers\Reminders\IndexRemindersController;
 use App\Http\Controllers\Reminders\StoreReminderController;
 use App\Http\Controllers\Reminders\UpdateReminderController;
+use App\Livewire\BloodTests\ConfirmedBiomarkerOverview;
 use App\Livewire\BloodTests\ReviewBloodTest;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +27,8 @@ Route::view('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    Route::get('blood-results', ConfirmedBiomarkerOverview::class)->name('blood-results.overview');
 
     Route::view('blood-tests', 'blood-tests.index')->name('blood-tests.index');
     Route::post('blood-tests', StoreBloodTestController::class)->name('blood-tests.store');

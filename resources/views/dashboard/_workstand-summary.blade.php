@@ -26,16 +26,23 @@
 <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-test="dashboard-metrics">
     @foreach ($workstand as $metric)
         @php($tone = $toneClasses($metric['emphasis'] ? 'amber' : $metric['tone']))
+        {{-- De bevestigd-teller linkt door naar het volledige waardenoverzicht. --}}
+        @php($href = $metric['key'] === 'confirmed' ? route('blood-results.overview') : null)
 
         <article
             @class([
                 'rounded-xl border bg-white p-5 shadow-xs dark:bg-neutral-900',
                 'border-amber-300 ring-1 ring-amber-200 dark:border-amber-800 dark:ring-amber-900/40' => $metric['emphasis'],
                 'border-neutral-200 dark:border-neutral-700' => ! $metric['emphasis'],
+                'transition-shadow hover:shadow-md' => $href !== null,
             ])
             data-test="dashboard-metric-{{ $metric['key'] }}"
         >
-            <div class="flex items-start gap-4">
+            @if ($href !== null)
+                <a href="{{ $href }}" wire:navigate class="flex items-start gap-4" data-test="dashboard-metric-link-{{ $metric['key'] }}">
+            @else
+                <div class="flex items-start gap-4">
+            @endif
                 <div @class(['flex size-11 shrink-0 items-center justify-center rounded-xl', $tone['icon']])>
                     @include('dashboard._metric-icon', ['icon' => $metric['icon']])
                 </div>
@@ -47,7 +54,11 @@
                     <div class="text-sm font-semibold text-neutral-900 dark:text-white">{{ $metric['label'] }}</div>
                     <p class="text-xs leading-snug text-neutral-600 dark:text-neutral-400">{{ $metric['help'] }}</p>
                 </div>
-            </div>
+            @if ($href !== null)
+                </a>
+            @else
+                </div>
+            @endif
         </article>
     @endforeach
 </section>
