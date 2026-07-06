@@ -27,7 +27,7 @@
                             <td class="p-3">{{ trim($row['previous_value'].' '.$row['previous_unit']) }}</td>
                             <td class="p-3">{{ trim($row['current_value'].' '.$row['current_unit']) }}</td>
                             <td class="p-3">{{ $row['delta'] }}</td>
-                            <td class="p-3">{{ $row['status'] }}</td>
+                            <td class="p-3">{{ (\App\Enums\BiomarkerStatus::tryFrom((string) $row['status']) ?? \App\Enums\BiomarkerStatus::Unknown)->dutchLabel() }}</td>
                         </tr>
                     @empty
                         <tr>

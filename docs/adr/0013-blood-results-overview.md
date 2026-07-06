@@ -47,12 +47,33 @@ deterministic derivation when a persisted status is absent or untrusted.
 The surface shows name, value, unit, reference range, and status in words. It
 does not interpret, explain meaning, or advise.
 
+## Amendment (2026-07-06)
+
+Reading-model research (NL/BE lab-report conventions, NVKC/Thuisarts patient
+education, adversarial review against `MedicalCopyBoundaryTest`) showed the
+"does not interpret" line was being read too broadly: the amber attention card
+alarmed without the one piece of context every authoritative NL source pairs
+with an out-of-range result. Two additions are ruled IN scope because they
+state facts, not an interpretation of the user's value:
+
+1. A generic education line, once per out-of-range section, explaining what a
+   reference range *is* (lab-specific; healthy people also fall outside it),
+   without any population statistic that a user-entered range may not support.
+2. A factual, dated own-history line on attention cards (previous value with
+   its date and delta), valence-free, guarded by `BuildLongitudinalChanges`
+   comparability rules. Chart-style trend lines stay out of scope.
+
+The distinction that holds the boundary: the surface may state what a
+reference range is and what the user's own earlier numbers were, but still
+never says what *this* value means for *this* person. "No individual-value
+interpretation" replaces the broader "does not explain meaning".
+
 ## Stop Conditions
 
 - No draft, unconfirmed, or extracted-but-unreviewed value may appear;
   `confirmed_at` through `confirmedForUser` remains the only entry path.
-- No medical interpretation, urgency, diagnosis, advice, scoring, or
-  extra-testing encouragement in copy or structure.
+- No medical interpretation of an individual value, urgency, diagnosis,
+  advice, scoring, or extra-testing encouragement in copy or structure.
 - No OCR, AI/LLM, external service, network call, or new package.
 - The architecture boundary tests (`MedicalCopyBoundaryTest`,
   `PrivacyBoundaryTest`, `PackageBoundaryTest`) must stay green; the surface

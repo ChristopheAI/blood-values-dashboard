@@ -229,14 +229,18 @@ it('shows one row per biomarker using the most recent measurement, not every his
         ->and($rows->first()['status'])->toBe('high')
         ->and($rows->first()['date'])->toBe('15 juni 2026');
 
-    $this->actingAs($user)
+    // The stale April value is not shown as a current row; it may only appear
+    // inside the labeled 'Vorige meting' history referent.
+    $response = $this->actingAs($user)
         ->get(route('blood-results.overview'))
         ->assertOk()
         ->assertSee('1 biomarker')
         ->assertSee('2 bevestigde waarden')
         ->assertSee('7.8')
         ->assertSee('15 juni 2026')
-        ->assertDontSee('15 april 2026');
+        ->assertSee('Vorige meting');
+
+    expect(substr_count($response->getContent(), '15 april 2026'))->toBe(1);
 });
 
 it('shows the same confirmed-measurement total as the dashboard tile it links from', function () {
@@ -384,6 +388,92 @@ it('captions the reference in its own unit when it differs from the value unit',
         ->assertOk()
         ->assertSee('1 – 3 µmol/L')
         ->assertSee('andere eenheid dan de meting');
+});
+
+it('shows the reference-context reassurance line once when a value is out of range', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    confirmedOverviewResult($user, $bloodTest, 'CRP', [
+        'value' => '7.8', 'unit' => 'mg/L', 'reference_min' => 0, 'reference_max' => 5,
+        'status' => 'high', 'confirmed_at' => now(),
+    ]);
+
+    $response = $this->actingAs($user)->get(route('blood-results.overview'))->assertOk();
+
+    expect(substr_count($response->getContent(), 'data-test="confirmed-reference-context"'))->toBe(1);
+
+    $response
+        ->assertSee('ook gezonde mensen er soms buiten vallen')
+        ->assertSee('data-test="confirmed-reference-context"', false);
+});
+
+it('does not show the reassurance line when nothing is out of range', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    confirmedOverviewResult($user, $bloodTest, 'Ferritine', [
+        'value' => '80', 'unit' => 'ug/L', 'reference_min' => 30, 'reference_max' => 150,
+        'status' => 'normal', 'confirmed_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('blood-results.overview'))
+        ->assertOk()
+        ->assertDontSee('data-test="confirmed-reference-context"', false);
+});
+
+it('shows the previous measurement with its date on an out-of-range card', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'CRP']);
+
+    $older = BloodTest::factory()->for($user)->create(['test_date' => '2026-04-15']);
+    BiomarkerResult::factory()->for($older)->for($biomarker)->create([
+        'value' => '1.2', 'unit' => 'mg/L', 'reference_min' => 0, 'reference_max' => 5,
+        'status' => 'normal', 'confirmed_at' => now()->subMonth(),
+    ]);
+
+    $current = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-15']);
+    BiomarkerResult::factory()->for($current)->for($biomarker)->create([
+        'value' => '7.8', 'unit' => 'mg/L', 'reference_min' => 0, 'reference_max' => 5,
+        'status' => 'high', 'confirmed_at' => now(),
+    ]);
+
+    $row = app(BuildBloodResultsOverview::class)($user)->firstWhere('label', 'CRP');
+
+    expect($row['history']['previousLabel'])->toBe('1.2 mg/L')
+        ->and($row['history']['previousDate'])->toBe('15 april 2026')
+        ->and($row['history']['delta'])->toBe('+6.6 mg/L');
+
+    $this->actingAs($user)
+        ->get(route('blood-results.overview'))
+        ->assertOk()
+        ->assertSee('Vorige meting')
+        ->assertSee('15 april 2026')
+        ->assertSee('data-test="confirmed-history"', false);
+});
+
+it('omits the delta in history when units changed between measurements', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Glucose']);
+
+    $older = BloodTest::factory()->for($user)->create(['test_date' => '2026-04-15']);
+    BiomarkerResult::factory()->for($older)->for($biomarker)->create([
+        'value' => '90', 'unit' => 'mg/dL', 'reference_min' => 70, 'reference_max' => 100,
+        'status' => 'normal', 'confirmed_at' => now()->subMonth(),
+    ]);
+
+    $current = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-15']);
+    BiomarkerResult::factory()->for($current)->for($biomarker)->create([
+        'value' => '7', 'unit' => 'mmol/L', 'reference_min' => 4, 'reference_max' => 6,
+        'status' => 'high', 'confirmed_at' => now(),
+    ]);
+
+    $row = app(BuildBloodResultsOverview::class)($user)->firstWhere('label', 'Glucose');
+
+    expect($row['history']['previousLabel'])->toBe('90 mg/dL')
+        ->and($row['history']['previousDate'])->toBe('15 april 2026')
+        ->and($row['history']['delta'])->toBeNull();
 });
 
 it('shows an empty state without any values', function () {

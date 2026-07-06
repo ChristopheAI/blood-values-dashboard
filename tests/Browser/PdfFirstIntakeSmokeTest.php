@@ -73,7 +73,7 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
             ->waitForText('Compare blood tests')
             ->assertSee('Ferritin')
             ->assertSee('+6')
-            ->assertSee('normal');
+            ->assertSee('normaal');
 
         assertNoForbiddenMedicalCopyAppears($browser);
 
@@ -137,7 +137,7 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertSee('Ferritin')
             ->assertSee('42 ug/L')
             ->assertSee('automatisch ingevuld uit PDF')
-            ->assertSee('normal')
+            ->assertSee('normaal')
             ->assertPresent('[data-test="confirmed-value-trend"][data-state="compared"]')
             ->assertSee('+2 ug/L')
             ->assertSee('vorige 40 ug/L')
@@ -368,7 +368,7 @@ function confirmExtractedDraft(Browser $browser, string $name, string $value, st
         ->click('[data-test="confirm-value-button"]')
         ->waitForText("{$value} {$unit}")
         ->assertSee($name)
-        ->assertSee('normal');
+        ->assertSee('normaal');
 
     assertNoForbiddenMedicalCopyAppears($browser);
 }
@@ -379,7 +379,7 @@ function assertAutoFilledConfirmedValue(Browser $browser, string $name, string $
         ->assertSee($name)
         ->assertSee("{$value} {$unit}")
         ->assertSee('automatisch ingevuld uit PDF')
-        ->assertSee('normal');
+        ->assertSee('normaal');
 
     assertNoForbiddenMedicalCopyAppears($browser);
 }
@@ -403,7 +403,7 @@ function confirmBiomarkerValue(
         ->click('[data-test="confirm-value-button"]')
         ->waitForText("{$value} {$unit}")
         ->assertSee($name)
-        ->assertSee('normal');
+        ->assertSee('normaal');
 
     assertNoForbiddenMedicalCopyAppears($browser);
 }
