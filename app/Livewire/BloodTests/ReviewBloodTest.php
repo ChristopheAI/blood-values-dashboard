@@ -319,7 +319,7 @@ class ReviewBloodTest extends Component
         if (! $change instanceof LongitudinalChange || ! $change->previousResult instanceof BiomarkerResult) {
             return [
                 'state' => 'first',
-                'label' => 'First tracked value',
+                'label' => 'Eerste meting',
                 'detail' => null,
             ];
         }
@@ -329,15 +329,15 @@ class ReviewBloodTest extends Component
         if (! $change->comparable) {
             return [
                 'state' => 'not-comparable',
-                'label' => 'Not comparable',
-                'detail' => 'previous '.$previousValue,
+                'label' => 'Niet vergelijkbaar',
+                'detail' => 'vorige '.$previousValue,
             ];
         }
 
         return [
             'state' => 'compared',
-            'label' => $change->direction === 'unchanged' ? 'No change' : (string) $change->changeLabel,
-            'detail' => 'previous '.$previousValue,
+            'label' => $change->direction === 'unchanged' ? 'Geen verandering' : (string) $change->changeLabel,
+            'detail' => 'vorige '.$previousValue,
         ];
     }
 

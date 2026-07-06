@@ -82,6 +82,7 @@
                     <tr>
                         <th class="p-3">{{ __('Biomarker') }}</th>
                         <th class="p-3">{{ __('Waarde') }}</th>
+                        <th class="p-3">{{ __('Referentie') }}</th>
                         <th class="p-3">{{ __('Status') }}</th>
                         <th class="p-3 text-right">{{ __('Trend') }}</th>
                         <th class="p-3 text-right">{{ __('Acties') }}</th>
@@ -92,7 +93,7 @@
                         @php
                             $trendSummary = $trendSummaries[$result->id] ?? [
                                 'state' => 'first',
-                                'label' => __('Eerste gevolgde waarde'),
+                                'label' => __('Eerste meting'),
                                 'detail' => null,
                             ];
                         @endphp
@@ -100,9 +101,21 @@
                         <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="confirmed-value-row">
                             <td class="p-3">{{ $result->biomarker->name }}</td>
                             <td class="p-3">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator) }} {{ $result->unit }}</td>
+                            <td class="p-3 text-neutral-600 dark:text-neutral-400">
+                                {{ \App\Support\Format::referenceRange(
+                                    $result->reference_min !== null ? (float) $result->reference_min : null,
+                                    $result->reference_max !== null ? (float) $result->reference_max : null,
+                                    $result->reference_unit ?: $result->unit,
+                                ) }}
+                            </td>
                             <td class="p-3">
                                 <div class="flex flex-col gap-1">
-                                    <span>{{ $result->status }}</span>
+                                    <span @class([
+                                        'font-medium',
+                                        'text-amber-700 dark:text-amber-300' => in_array($result->status, ['high', 'low'], true),
+                                        'text-emerald-700 dark:text-emerald-300' => $result->status === 'normal',
+                                        'text-neutral-500 dark:text-neutral-400' => ! in_array($result->status, ['high', 'low', 'normal'], true),
+                                    ])>{{ (\App\Enums\BiomarkerStatus::tryFrom((string) $result->status) ?? \App\Enums\BiomarkerStatus::Unknown)->dutchLabel() }}</span>
                                     @if ($result->entry_source === 'extracted')
                                         <span class="text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400">
                                             {{ $hasSourceDocuments ? __('automatisch ingevuld uit PDF') : __('automatisch ingevuld uit PDF (bron verwijderd)') }}
@@ -134,7 +147,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('Nog geen bevestigde waarden.') }}</td>
+                            <td colspan="6" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('Nog geen bevestigde waarden.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

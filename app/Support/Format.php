@@ -108,4 +108,20 @@ class Format
     {
         return $date->day.' '.self::DUTCH_MONTHS[$date->month].' '.$date->year;
     }
+
+    /**
+     * One shared shape for a reference range so every surface captions it
+     * identically — and always in the range's own unit.
+     */
+    public static function referenceRange(?float $min, ?float $max, ?string $unit): string
+    {
+        $suffix = $unit ? ' '.$unit : '';
+
+        return match (true) {
+            $min !== null && $max !== null => self::number($min).' – '.self::number($max).$suffix,
+            $max !== null => '≤ '.self::number($max).$suffix,
+            $min !== null => '≥ '.self::number($min).$suffix,
+            default => '—',
+        };
+    }
 }

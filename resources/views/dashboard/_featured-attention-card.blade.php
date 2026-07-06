@@ -41,11 +41,11 @@
 
             <div class="flex flex-col gap-1 text-sm text-neutral-600 dark:text-neutral-400 sm:flex-row sm:items-center sm:justify-between">
                 <span>{{ $row['range']['label'] }}</span>
-                <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $row['trendLabel'] }}</span>
+                <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $row['trendLabel'] }}@if (!empty($row['trendDetail'])) <span class="font-normal text-neutral-500 dark:text-neutral-400">({{ $row['trendDetail'] }})</span>@endif</span>
             </div>
         @else
             <div class="rounded-md border border-amber-200 bg-white/70 p-3 text-sm text-neutral-700 dark:border-amber-900 dark:bg-neutral-950/30 dark:text-neutral-300" data-test="biomarker-range-missing">
-                {{ $row['valueLabel'] }} · {{ $row['range']['label'] }} · {{ $row['trendLabel'] }}
+                {{ $row['valueLabel'] }} · {{ $row['range']['label'] }} · {{ $row['trendLabel'] }}@if (!empty($row['trendDetail'])) ({{ $row['trendDetail'] }})@endif
             </div>
         @endif
     </div>
