@@ -13,6 +13,9 @@
                 <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:navbar.item>
+                <flux:navbar.item icon="heart" :href="route('blood-results.overview')" :current="request()->routeIs('blood-results.*')" wire:navigate>
+                    {{ __('Mijn bloedwaarden') }}
+                </flux:navbar.item>
                 <flux:navbar.item icon="folder-git-2" :href="route('blood-tests.index')" :current="request()->routeIs('blood-tests.*')" wire:navigate>
                     {{ __('Bloedtesten') }}
                 </flux:navbar.item>
@@ -37,6 +40,9 @@
                 <flux:sidebar.group :heading="__('Overzicht')">
                     <flux:sidebar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard')  }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="heart" :href="route('blood-results.overview')" :current="request()->routeIs('blood-results.*')" wire:navigate>
+                        {{ __('Mijn bloedwaarden') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="folder-git-2" :href="route('blood-tests.index')" :current="request()->routeIs('blood-tests.*')" wire:navigate>
                         {{ __('Bloedtesten') }}

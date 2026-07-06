@@ -34,8 +34,10 @@ it('shows only confirmed values and never extracted drafts', function () {
         'confirmed_at' => now(),
     ]);
 
+    // 87654 in plaats van een rond getal: icon-SVG-paths bevatten cijferreeksen
+    // als "9.999", waar een assertDontSee('999') op zou matchen.
     confirmedOverviewResult($user, $bloodTest, 'Draftmarker', [
-        'value' => 999,
+        'value' => 87654,
         'unit' => 'mg/L',
         'entry_source' => 'extracted',
         'status' => 'unknown',
@@ -49,7 +51,7 @@ it('shows only confirmed values and never extracted drafts', function () {
         ->assertSee('Ferritine')
         ->assertSee('1 bevestigde waarde')
         ->assertDontSee('Draftmarker')
-        ->assertDontSee('999');
+        ->assertDontSee('87654');
 });
 
 it('never shows values owned by another user', function () {
@@ -275,6 +277,22 @@ it('never float-casts a qualitative value into a status', function () {
 
     expect($row['status'])->toBe('unknown')
         ->and($row['valueLabel'])->toBe('Negatief');
+});
+
+it('is reachable from the sidebar navigation and the dashboard confirmed tile', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('blood-results.overview'))
+        ->assertOk()
+        ->assertSee('Mijn bloedwaarden')
+        ->assertSee(route('blood-results.overview'));
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('data-test="dashboard-metric-link-confirmed"', false)
+        ->assertSee(route('blood-results.overview'));
 });
 
 it('shows an empty state without any values', function () {

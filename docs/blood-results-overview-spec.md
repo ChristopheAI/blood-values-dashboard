@@ -127,7 +127,25 @@ Required before the slice is complete:
 
 ## 9. Open Questions
 
-- Route path and navigation entry point (decided in the task plan/build,
-  within the authenticated blood-tests area).
-- Ordering within groups (by biomarker name, by test date, or by deviation) —
-  build picks the simplest defensible default and records it.
+### Resolved (build, 2026-07-02)
+
+- **Route:** `GET /blood-results`, named `blood-results.overview`, inside the
+  authenticated route group next to the blood-tests routes.
+- **Naming:** the component is `App\Livewire\BloodTests\ConfirmedBiomarkerOverview`
+  with view `resources/views/livewire/blood-tests/confirmed-biomarker-overview.blade.php`,
+  a deliberate choice to avoid collision with the existing dashboard digest
+  partial `resources/views/dashboard/_blood-results-overview.blade.php`. The
+  domain builder keeps the spec name: `App\Domain\Dashboard\BuildBloodResultsOverview`.
+- **Ordering within groups:** most recently confirmed first
+  (`latest('confirmed_at')` in the builder); grouping by status happens on the
+  already-ordered collection.
+- **Column names (corrected against the migration):** the reference columns are
+  `reference_min` and `reference_max` (not `reference_minimum`/`reference_maximum`)
+  and the unit column is `unit` (not `value_unit`). The status enum lives at
+  `App\Enums\BiomarkerStatus`; the model does not cast `status` to the enum, so
+  the builder maps it with `BiomarkerStatus::tryFrom`.
+
+### Open
+
+- Navigation entry point (sidebar and/or dashboard link) — deferred; the route
+  exists but is not yet linked from navigation.
