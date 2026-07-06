@@ -68,10 +68,11 @@
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="space-y-1">
                     <div class="text-xl font-semibold text-neutral-900 dark:text-white">
-                        {{ $rows->count() }} {{ $rows->count() === 1 ? __('bevestigde waarde') : __('bevestigde waarden') }}
+                        {{ $rows->count() }} {{ $rows->count() === 1 ? __('biomarker') : __('biomarkers') }}
                     </div>
                     <p class="text-sm text-neutral-600 dark:text-neutral-400">
-                        {{ __('Laatste bevestigde waarde per biomarker, gegroepeerd op status.') }}
+                        {{ __('Laatste bevestigde waarde per biomarker, gebaseerd op') }}
+                        {{ $measurementCount }} {{ $measurementCount === 1 ? __('bevestigde waarde') : __('bevestigde waarden') }}.
                     </p>
                 </div>
 
