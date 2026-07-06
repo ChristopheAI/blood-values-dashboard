@@ -12,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Railway (and most PaaS) terminate TLS at the edge and forward over
+        // HTTP with X-Forwarded-* headers. Trust them so request()->secure()
+        // and generated URLs reflect the real https:// scheme.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

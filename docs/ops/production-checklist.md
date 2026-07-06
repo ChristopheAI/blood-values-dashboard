@@ -41,7 +41,7 @@ or real health-data use outside a local private development environment.
 - [ ] `APP_KEY` is unique and secret.
 - [ ] Database backups are configured.
 - [ ] Private file storage is backed up or explicitly disposable.
-- [ ] HTTPS is enforced.
+- [ ] HTTPS is enforced (trusted proxies in `bootstrap/app.php`; `URL::forceScheme('https')` in production — see `AppServiceProvider::configureDefaults`).
 - [ ] Session/cookie settings are reviewed.
 - [ ] Error reporting avoids leaking sensitive values.
 - [ ] `sh scripts/validate.sh` passes in CI.
