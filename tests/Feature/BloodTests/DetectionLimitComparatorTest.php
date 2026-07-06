@@ -40,6 +40,9 @@ it('persists the comparator when manually confirming a detection-limit value', f
 });
 
 it('keeps a manually entered detection limit in the unknown group and shows its prefix on the overview', function () {
+    // This file also runs in the assets-less Postgres CI job.
+    $this->withoutVite();
+
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'CMV IgM']);
     $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-15']);
