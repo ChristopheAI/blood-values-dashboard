@@ -9,6 +9,7 @@ or real health-data use outside a local private development environment.
 
 - Phase: planning baseline.
 - Production deployment: not started.
+- Railway staging preparation: see `docs/ops/railway-deployment.md`.
 - External processing: not allowed in V1 without a separate decision.
 - Health data boundary: personal organization only, no medical advice.
 
