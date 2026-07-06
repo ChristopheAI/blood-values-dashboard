@@ -109,7 +109,7 @@ final class BuildBloodResultsOverview
         return [
             'label' => $result->biomarker->name,
             'value' => (string) $result->value,
-            'valueLabel' => Format::biomarkerValue($result->value, $result->source_snippet),
+            'valueLabel' => Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator),
             'unit' => $result->unit,
             'status' => $status->value,
             'ref_min' => $min,

@@ -78,6 +78,12 @@ final class DetectionLimitValue
             return null;
         }
 
+        // The persisted comparator is authoritative; the snippet heuristic
+        // below only covers legacy rows written before the column existed.
+        if (in_array($result->value_comparator, ['<', '>'], true)) {
+            return self::parse($result->value_comparator.$result->value);
+        }
+
         if ($result->source_snippet === null || $result->source_snippet === '') {
             return null;
         }

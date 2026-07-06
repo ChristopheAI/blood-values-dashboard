@@ -315,7 +315,7 @@ class BuildLongitudinalChanges
             return trim((string) $result->value);
         }
 
-        return Format::biomarkerValue($result->value, $result->source_snippet);
+        return Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator);
     }
 
     private function qualitativeComparison(BiomarkerResult $previous, BiomarkerResult $current): ?string

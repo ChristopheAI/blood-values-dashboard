@@ -127,6 +127,9 @@ class ReviewBloodTest extends Component
         $payload = [
             'biomarker_id' => $biomarker->id,
             'value' => $form['value'],
+            'value_comparator' => $detectionLimit instanceof DetectionLimitValue
+                ? ($detectionLimit->bound === 'lt' ? '<' : '>')
+                : null,
             'unit' => $form['unit'],
             'reference_min' => $form['reference_min'],
             'reference_max' => $form['reference_max'],
@@ -172,7 +175,7 @@ class ReviewBloodTest extends Component
             'biomarker_id' => $result->biomarker_id,
             'name' => $result->biomarker->name,
             'value' => QualitativeLabValue::fromResult($result)?->storedValue()
-                ?? Format::biomarkerValue($result->value, $result->source_snippet),
+                ?? Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator),
             'unit' => $result->unit,
             'reference_min' => $this->formatDecimal($result->reference_min),
             'reference_max' => $this->formatDecimal($result->reference_max),
@@ -209,7 +212,7 @@ class ReviewBloodTest extends Component
         $this->resultForm = [
             'biomarker_id' => $draft->biomarker_id,
             'name' => $biomarkerName ?? $draft->extracted_name ?? '',
-            'value' => Format::biomarkerValue($draft->value, $draft->source_snippet),
+            'value' => Format::biomarkerValue($draft->value, $draft->source_snippet, $draft->value_comparator),
             'unit' => $draft->unit,
             'reference_min' => $this->formatDecimal($draft->reference_min),
             'reference_max' => $this->formatDecimal($draft->reference_max),

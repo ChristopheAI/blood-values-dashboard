@@ -146,6 +146,11 @@ class RunBloodTestExtraction
                 continue;
             }
 
+            $detectionLimit = DetectionLimitValue::parse($candidate->value);
+            $valueComparator = $detectionLimit instanceof DetectionLimitValue
+                ? ($detectionLimit->bound === 'lt' ? '<' : '>')
+                : null;
+
             if ($this->shouldDiscardNonActionableTrustedCmaCandidate($candidate)) {
                 continue;
             }
@@ -198,6 +203,7 @@ class RunBloodTestExtraction
                 $attributes['biomarker_id'] = null;
                 $attributes['extracted_name'] = $extractedName;
                 $attributes['value'] = $storedValue;
+                $attributes['value_comparator'] = $valueComparator;
                 $attributes['unit'] = $unit;
                 $attributes['reference_min'] = $referenceMin;
                 $attributes['reference_max'] = $referenceMax;
@@ -211,6 +217,7 @@ class RunBloodTestExtraction
                 'biomarker_id' => $biomarker?->id,
                 'extracted_name' => $extractedName,
                 'value' => $storedValue,
+                'value_comparator' => $valueComparator,
                 'unit' => $unit,
                 'reference_min' => $referenceMin,
                 'reference_max' => $referenceMax,
