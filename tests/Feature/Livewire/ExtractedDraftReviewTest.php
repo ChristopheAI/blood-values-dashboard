@@ -584,7 +584,7 @@ it('shows a compact trend summary for confirmed values on the result screen', fu
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertSee('data-test="confirmed-value-trend" data-state="compared"', false)
         ->assertSee('+2 ug/L')
-        ->assertSee('previous 40 ug/L');
+        ->assertSee('vorige 40 ug/L');
 });
 
 it('shows source documents for the selected owned blood test without storage paths', function () {
@@ -695,7 +695,7 @@ it('shows confirmed only comparable changes for the selected blood test', functi
         ->test(ReviewBloodTest::class, ['bloodTest' => $currentBloodTest])
         ->assertSee('data-test="confirmed-value-trend" data-state="compared"', false)
         ->assertSee('+2 ug/L')
-        ->assertSee('previous 40 ug/L')
+        ->assertSee('vorige 40 ug/L')
         ->assertDontSee('9.9 mIU/L')
         ->assertDontSee('Draft TSH');
 });

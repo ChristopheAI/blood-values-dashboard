@@ -159,13 +159,6 @@ final class BuildBloodResultsOverview
 
     private function reference(?float $min, ?float $max, ?string $unit): string
     {
-        $suffix = $unit ? ' '.$unit : '';
-
-        return match (true) {
-            $min !== null && $max !== null => $min.' – '.$max.$suffix,
-            $max !== null => '≤ '.$max.$suffix,
-            $min !== null => '≥ '.$min.$suffix,
-            default => '—',
-        };
+        return Format::referenceRange($min, $max, $unit);
     }
 }

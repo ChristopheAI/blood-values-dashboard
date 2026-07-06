@@ -3,7 +3,7 @@
         <header class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
                 <flux:heading size="xl">{{ $biomarker->name }}</flux:heading>
-                <flux:text>{{ __('Confirmed values over time.') }}</flux:text>
+                <flux:text>{{ __('Bevestigde waarden door de tijd — bespreek je waarden met je arts.') }}</flux:text>
             </div>
 
             @if ($pin)
@@ -11,14 +11,14 @@
                     @csrf
                     @method('DELETE')
 
-                    <flux:button type="submit" variant="outline" data-test="unpin-biomarker-button">{{ __('Unpin') }}</flux:button>
+                    <flux:button type="submit" variant="outline" data-test="unpin-biomarker-button">{{ __('Losmaken') }}</flux:button>
                 </form>
             @else
                 <form method="POST" action="{{ route('biomarkers.pin', $biomarker) }}" class="flex flex-col gap-2 md:min-w-64">
                     @csrf
 
-                    <flux:input name="note" :label="__('Pin note')" data-test="pin-note-input" />
-                    <flux:button type="submit" variant="primary" data-test="pin-biomarker-button">{{ __('Pin') }}</flux:button>
+                    <flux:input name="note" :label="__('Notitie (optioneel)')" data-test="pin-note-input" />
+                    <flux:button type="submit" variant="primary" data-test="pin-biomarker-button">{{ __('Vastzetten') }}</flux:button>
                 </form>
             @endif
         </header>
@@ -27,21 +27,36 @@
             <table class="w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
                     <tr>
-                        <th class="p-3">{{ __('Date') }}</th>
-                        <th class="p-3">{{ __('Value') }}</th>
+                        <th class="p-3">{{ __('Datum') }}</th>
+                        <th class="p-3">{{ __('Waarde') }}</th>
+                        <th class="p-3">{{ __('Referentie') }}</th>
                         <th class="p-3">{{ __('Status') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($results as $result)
                         <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="biomarker-history-row">
-                            <td class="p-3">{{ $result->bloodTest->test_date ? \App\Support\Format::dutchDate($result->bloodTest->test_date) : __('No date') }}</td>
-                            <td class="p-3">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator) }} {{ $result->unit }}</td>
-                            <td class="p-3">{{ $result->status }}</td>
+                            <td class="p-3">{{ $result->bloodTest->test_date ? \App\Support\Format::dutchDate($result->bloodTest->test_date) : __('Geen datum') }}</td>
+                            <td class="p-3 font-medium tabular-nums">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator) }} {{ $result->unit }}</td>
+                            <td class="p-3 tabular-nums text-neutral-600 dark:text-neutral-400">
+                                {{ \App\Support\Format::referenceRange(
+                                    $result->reference_min !== null ? (float) $result->reference_min : null,
+                                    $result->reference_max !== null ? (float) $result->reference_max : null,
+                                    $result->reference_unit ?: $result->unit,
+                                ) }}
+                            </td>
+                            <td class="p-3">
+                                <span @class([
+                                    'font-medium',
+                                    'text-amber-700 dark:text-amber-300' => in_array($result->status, ['high', 'low'], true),
+                                    'text-emerald-700 dark:text-emerald-300' => $result->status === 'normal',
+                                    'text-neutral-500 dark:text-neutral-400' => ! in_array($result->status, ['high', 'low', 'normal'], true),
+                                ])>{{ (\App\Enums\BiomarkerStatus::tryFrom((string) $result->status) ?? \App\Enums\BiomarkerStatus::Unknown)->dutchLabel() }}</span>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('No confirmed values yet.') }}</td>
+                            <td colspan="4" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('Nog geen bevestigde waarden.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -5,13 +5,8 @@
     $unknownRows = $rows->where('status', 'unknown')->values();
 
     // Eén statusvocabulaire, mét het pijltje dat elke NL/BE-patiënt van het
-    // labverslag kent: ↑ hoog / ↓ laag / normaal / geen status.
-    $statusPill = fn (string $status): string => match ($status) {
-        'low' => '↓ laag',
-        'high' => '↑ hoog',
-        'normal' => 'normaal',
-        default => 'geen status',
-    };
+    // labverslag kent — de enum is de ene bron voor alle oppervlakken.
+    $statusPill = fn (string $status): string => (\App\Enums\BiomarkerStatus::tryFrom($status) ?? \App\Enums\BiomarkerStatus::Unknown)->dutchLabel();
 
     // Getallenlijn-posities draaien op de (float)-cast van de waarde, nooit op de string.
     // Een detectielimiet ('<40') of kwalitatieve waarde ('Negatief') krijgt geen

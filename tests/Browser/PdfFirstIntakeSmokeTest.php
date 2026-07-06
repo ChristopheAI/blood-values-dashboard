@@ -140,7 +140,7 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertSee('normal')
             ->assertPresent('[data-test="confirmed-value-trend"][data-state="compared"]')
             ->assertSee('+2 ug/L')
-            ->assertSee('previous 40 ug/L')
+            ->assertSee('vorige 40 ug/L')
             ->assertPresent('[data-test="review-strip"]')
             ->assertPresent('[data-test="extracted-draft-row"][data-state="draft"][data-confidence="low"]')
             ->assertSee('CRP')
@@ -414,7 +414,7 @@ function pinBiomarker(Browser $browser, int $biomarkerId): void
         ->waitForText('Ferritin')
         ->type('[data-test="pin-note-input"]', 'Follow around consults')
         ->click('[data-test="pin-biomarker-button"]')
-        ->waitForText('Unpin')
+        ->waitForText('Losmaken')
         ->assertSee('Ferritin');
 
     assertNoForbiddenMedicalCopyAppears($browser);

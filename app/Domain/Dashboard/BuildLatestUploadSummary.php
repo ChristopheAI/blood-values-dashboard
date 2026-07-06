@@ -4,6 +4,7 @@ namespace App\Domain\Dashboard;
 
 use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Domain\BloodTests\LongitudinalChange;
+use App\Enums\BiomarkerStatus;
 use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\User;
@@ -161,6 +162,9 @@ class BuildLatestUploadSummary
             'needsAttention' => in_array($result->status, ['low', 'high', 'unknown'], true),
             'trendKind' => $trend['kind'],
             'trendLabel' => $trend['label'],
+            // A bare delta next to a reference range invites the misreading
+            // 'delta above normal'; the delta may only render WITH its referent.
+            'trendDetail' => $this->trendDetail($change),
             'range' => $this->buildRange($result),
         ];
     }
@@ -186,6 +190,15 @@ class BuildLatestUploadSummary
             'kind' => 'changed',
             'label' => (string) $change->changeLabel,
         ];
+    }
+
+    private function trendDetail(?LongitudinalChange $change): ?string
+    {
+        if (! $change instanceof LongitudinalChange || ! $change->previousResult instanceof BiomarkerResult) {
+            return null;
+        }
+
+        return 'vorige '.trim($change->previousValue.' '.$change->previousUnit);
     }
 
     private function notComparableTrendLabel(?string $reason): string
@@ -252,7 +265,7 @@ class BuildLatestUploadSummary
                 normalEndValue: $max,
                 scaleMin: $scaleMin,
                 scaleMax: $scaleMax,
-                label: 'Normaal: '.Format::number($min).' - '.Format::number($max).' '.$result->unit,
+                label: 'Referentie: '.Format::number($min).' – '.Format::number($max).' '.$result->unit,
             );
         }
 
@@ -266,7 +279,7 @@ class BuildLatestUploadSummary
                 normalEndValue: $scaleMax,
                 scaleMin: $scaleMin,
                 scaleMax: $scaleMax,
-                label: 'Normaal: vanaf '.Format::number($min).' '.$result->unit,
+                label: 'Referentie: vanaf '.Format::number($min).' '.$result->unit,
             );
         }
 
@@ -279,7 +292,7 @@ class BuildLatestUploadSummary
             normalEndValue: $max,
             scaleMin: $scaleMin,
             scaleMax: $scaleMax,
-            label: 'Normaal: onder '.Format::number($max).' '.$result->unit,
+            label: 'Referentie: onder '.Format::number($max).' '.$result->unit,
         );
     }
 
@@ -346,11 +359,7 @@ class BuildLatestUploadSummary
 
     private function statusLabel(string $status): string
     {
-        return match ($status) {
-            'normal' => 'In orde',
-            'high', 'low' => 'Aandacht',
-            default => 'Controle nodig',
-        };
+        return (BiomarkerStatus::tryFrom($status) ?? BiomarkerStatus::Unknown)->dutchLabel();
     }
 
     private function takeaway(string $status): string

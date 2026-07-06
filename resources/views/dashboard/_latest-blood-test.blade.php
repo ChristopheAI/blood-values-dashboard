@@ -79,7 +79,7 @@
                     </div>
 
                     <div class="font-medium tabular-nums text-neutral-900 dark:text-white md:text-right">{{ $row['valueLabel'] }}</div>
-                    <div class="text-neutral-500 dark:text-neutral-400 md:text-right">{{ $row['trendLabel'] }}</div>
+                    <div class="text-neutral-500 dark:text-neutral-400 md:text-right">{{ $row['trendLabel'] }}@if (!empty($row['trendDetail'])) <span class="text-xs">({{ $row['trendDetail'] }})</span>@endif</div>
                 </article>
             @endforeach
         </div>
