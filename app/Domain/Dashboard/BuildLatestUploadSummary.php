@@ -150,7 +150,7 @@ class BuildLatestUploadSummary
     private function summarizeResult(BiomarkerResult $result, ?LongitudinalChange $change): array
     {
         $trend = $this->buildTrend($change);
-        $valueLabel = Format::biomarkerValue($result->value, $result->source_snippet).' '.$result->unit;
+        $valueLabel = Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator).' '.$result->unit;
 
         return [
             'name' => $result->biomarker->name,

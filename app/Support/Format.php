@@ -37,10 +37,11 @@ class Format
     }
 
     /**
-     * Render a stored biomarker value, preserving below/above-detection prefixes
-     * from the extraction snippet when they match the stored numeric bound.
+     * Render a stored biomarker value, preserving below/above-detection
+     * prefixes. The persisted comparator wins; the snippet match remains as
+     * fallback for legacy rows written before the comparator column existed.
      */
-    public static function biomarkerValue(string|float|null $value, ?string $sourceSnippet = null): string
+    public static function biomarkerValue(string|float|null $value, ?string $sourceSnippet = null, ?string $comparator = null): string
     {
         if ($value === null || $value === '') {
             return '';
@@ -54,6 +55,10 @@ class Format
 
         if (! is_numeric($value)) {
             return trim((string) $value);
+        }
+
+        if (in_array($comparator, ['<', '>'], true)) {
+            return $comparator.self::number((float) $value);
         }
 
         $numericLabel = self::number((float) $value);

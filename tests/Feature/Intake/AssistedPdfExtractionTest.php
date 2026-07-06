@@ -725,6 +725,7 @@ it('auto-confirms safe below-detection tabular rows such as RA and CCP', functio
         ->and($ra->unit)->toBe('kIU/L')
         ->and($ra->status)->toBe('normal')
         ->and($ra->confirmed_at)->not->toBeNull()
+        ->and($ra->value_comparator)->toBe('<')
         ->and($ra->source_snippet)->toContain('<10');
 
     expect($ccp)->not->toBeNull()

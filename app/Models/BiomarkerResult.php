@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $biomarker_id
  * @property string|null $extracted_name
  * @property string $value
+ * @property string|null $value_comparator
  * @property string $unit
  * @property string|null $reference_min
  * @property string|null $reference_max
@@ -36,6 +37,7 @@ use Illuminate\Support\Carbon;
     'biomarker_id',
     'extracted_name',
     'value',
+    'value_comparator',
     'unit',
     'reference_min',
     'reference_max',
