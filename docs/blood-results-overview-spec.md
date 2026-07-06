@@ -25,12 +25,27 @@ In scope:
 
 Out of scope (non-goals):
 
-- interpretation, advice, or explanation of what a value means;
+- interpretation or advice about what an individual value means;
 - urgency, risk, scoring, or extra-testing encouragement;
 - draft or unconfirmed values in any form, including counts;
 - write actions (confirm, edit, delete happen on their existing surfaces);
-- trend lines or comparisons (existing surfaces already cover those);
+- trend lines or chart comparisons (existing surfaces already cover those);
 - new packages, AI, OCR, or external processing.
+
+Amendment (2026-07-06, reading-model research — see ADR-0013 §Amendment):
+two elements are explicitly IN scope because they state facts, not
+interpretation of the user's value:
+
+- one generic education line per out-of-range section, in the NVKC/Thuisarts
+  register ("Referentiewaarden verschillen per lab en zijn zo gekozen dat ook
+  gezonde mensen er soms buiten vallen. Bespreek je waarden met je arts.") — it
+  explains what a reference range is, never what this value means, and carries
+  no population statistic that a user-entered range may not support;
+- a factual, dated own-history line on attention cards ("Vorige meting
+  (15 april 2026): 1,2 mg/L — nu +6,6 mg/L"), valence-free and always carrying
+  its date and referent, using the comparability guards of
+  `BuildLongitudinalChanges` (no delta across unit changes, qualitative values,
+  or detection limits). Chart-style trend lines stay out of scope.
 
 ## 3. Data Source
 

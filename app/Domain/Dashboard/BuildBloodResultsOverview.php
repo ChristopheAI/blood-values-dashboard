@@ -6,6 +6,8 @@ namespace App\Domain\Dashboard;
 
 use App\Domain\Biomarkers\DetectionLimitValue;
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
+use App\Domain\BloodTests\BuildLongitudinalChanges;
+use App\Domain\BloodTests\LongitudinalChange;
 use App\Enums\BiomarkerStatus;
 use App\Models\BiomarkerResult;
 use App\Models\User;
@@ -14,7 +16,13 @@ use Illuminate\Support\Collection;
 
 final class BuildBloodResultsOverview
 {
-    public function __construct(private readonly DetermineBiomarkerStatus $determineStatus) {}
+    /** @var array<int, LongitudinalChange> */
+    private array $changesByResultId = [];
+
+    public function __construct(
+        private readonly DetermineBiomarkerStatus $determineStatus,
+        private readonly BuildLongitudinalChanges $buildLongitudinalChanges,
+    ) {}
 
     /**
      * One row per biomarker, holding that biomarker's most recent confirmed
@@ -29,6 +37,14 @@ final class BuildBloodResultsOverview
      */
     public function __invoke(User $user): Collection
     {
+        // Latest confirmed change per biomarker, so an attention row can carry
+        // its previous value with a date. Keyed by the current result id.
+        $this->changesByResultId = $this->buildLongitudinalChanges
+            ->across($user, $user->bloodTests()->get())
+            ->filter(fn (LongitudinalChange $change): bool => $change->result instanceof BiomarkerResult)
+            ->keyBy(fn (LongitudinalChange $change): int => (int) $change->result->id)
+            ->all();
+
         return BiomarkerResult::query()
             ->confirmedForUser($user->id)
             ->with(['biomarker', 'bloodTest'])
@@ -75,7 +91,7 @@ final class BuildBloodResultsOverview
     }
 
     /**
-     * @return array{label: string, value: string, valueLabel: string, unit: string|null, status: string, ref_min: float|null, ref_max: float|null, reference: string, reference_unit_mismatch: bool, date: string|null, is_detection_limit: bool, beyond: array{direction: string, label: string}|null, no_reference: bool}
+     * @return array{label: string, value: string, valueLabel: string, unit: string|null, status: string, ref_min: float|null, ref_max: float|null, reference: string, reference_unit_mismatch: bool, date: string|null, is_detection_limit: bool, beyond: array{direction: string, label: string}|null, no_reference: bool, history: array{previousLabel: string, previousDate: string|null, delta: string|null}|null}
      */
     private function row(BiomarkerResult $result): array
     {
@@ -128,6 +144,37 @@ final class BuildBloodResultsOverview
             'is_detection_limit' => $isDetectionLimit,
             'beyond' => $this->beyond($result, $status, $min, $max, $isDetectionLimit, $unitMismatch),
             'no_reference' => $min === null && $max === null,
+            'history' => $this->history($result),
+        ];
+    }
+
+    /**
+     * The biomarker's previous measurement with its date — a fact, not a trend
+     * line. Uses BuildLongitudinalChanges so unit changes, qualitative values,
+     * and detection limits drop the delta rather than compute a false one.
+     *
+     * @return array{previousLabel: string, previousDate: string|null, delta: string|null}|null
+     */
+    private function history(BiomarkerResult $result): ?array
+    {
+        $change = $this->changesByResultId[(int) $result->id] ?? null;
+
+        if (! $change instanceof LongitudinalChange || ! $change->previousResult instanceof BiomarkerResult) {
+            return null;
+        }
+
+        return [
+            'previousLabel' => Format::biomarkerValue(
+                $change->previousResult->value,
+                $change->previousResult->source_snippet,
+                $change->previousResult->value_comparator,
+            ).($change->previousResult->unit ? ' '.$change->previousResult->unit : ''),
+            'previousDate' => $change->previousResult->bloodTest?->test_date !== null
+                ? Format::dutchDate($change->previousResult->bloodTest->test_date)
+                : null,
+            'delta' => $change->comparable && $change->direction !== 'unchanged'
+                ? (string) $change->changeLabel
+                : null,
         ];
     }
 

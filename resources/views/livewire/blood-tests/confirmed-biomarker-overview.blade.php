@@ -121,6 +121,11 @@
                     {{ $attentionRows->count() === 1 ? __('Deze waarde valt buiten de ingevoerde referentie') : __('Deze waarden vallen buiten de ingevoerde referentie') }}
                 </flux:heading>
 
+                {{-- Geruststelling, één keer per sectie: wat een referentiewaarde ís (geen interpretatie van déze waarde). --}}
+                <p class="text-sm text-neutral-600 dark:text-neutral-400" data-test="confirmed-reference-context">
+                    {{ __('Referentiewaarden verschillen per lab en zijn zo gekozen dat ook gezonde mensen er soms buiten vallen. Bespreek je waarden met je arts.') }}
+                </p>
+
                 @foreach ($attentionRows as $row)
                     <article class="rounded-lg border border-amber-300 bg-amber-50 p-5 shadow-xs dark:border-amber-800 dark:bg-amber-950/30" data-test="confirmed-attention-card">
                         {{-- Leesmodel 1-2: naam, dan het pijltje + statuswoord, datum als context. --}}
@@ -180,6 +185,13 @@
                                     <span class="absolute -translate-x-1/2 uppercase tracking-wide" style="left: {{ number_format((float) $bar['normalStart'] + ((float) $bar['normalWidth'] / 2), 2, '.', '') }}%;">{{ __('referentie') }}</span>
                                 </div>
                             </div>
+                        @endif
+
+                        {{-- Leesmodel 6: eigen historie mét datum-referent, feitelijk en zonder goed/slecht-kleur. --}}
+                        @if ($row['history'] !== null)
+                            <p class="mt-3 text-sm text-neutral-500 dark:text-neutral-400" data-test="confirmed-history">
+                                {{ __('Vorige meting') }}@if ($row['history']['previousDate']) ({{ $row['history']['previousDate'] }})@endif: {{ $row['history']['previousLabel'] }}@if ($row['history']['delta']) — {{ __('nu') }} {{ $row['history']['delta'] }}@endif
+                            </p>
                         @endif
                     </article>
                 @endforeach
