@@ -49,6 +49,32 @@ Date: 2026-07-07. Method: Firecrawl search (discovery) + Exa/Firecrawl fetch
   converts this into controller processing of special-category data, and the
   transfer/art. 9 analysis must be done for real before that happens.
 
+## 4. pg_dump over Railway's TCP proxy: verified, the backup plan is complete
+
+- Railway's Postgres docs state external connections work through the TCP
+  proxy, enabled by default; Neon's official migration guide runs `pg_dump`
+  against exactly that proxy. The pull-based local backup from §1 rests on a
+  supported, documented path — no unproven links remain.
+
+## 5. LOINC/FHIR: keep the option, skip the machinery
+
+- Published work on lab-to-LOINC mapping is dominated by ML pipelines for
+  noisy hospital data — evidence that mapping is hard at scale, and equally
+  evidence that a personal catalog of tens of hand-curated biomarkers does
+  not need any of it. Full FHIR (Observation/DiagnosticReport) would be
+  over-engineering for this boundary.
+- The minimal option-preserving bridge, if a structured doctor export is
+  ever wanted: one nullable `loinc_code` column on the biomarker catalog,
+  filled by hand. Not now (YAGNI); trigger = a concrete wish for structured
+  export toward a practitioner system.
+
+## 6. Stack support calendar: healthy, no action
+
+- The project runs Laravel 13.16 on PHP 8.5 — the current major. The
+  Laravel 12 windows surfaced in search (bug fixes to 2026-08-13, security
+  to 2027-02-24) do not apply. Next checkpoint: the Laravel 14 release
+  (~Q1 2027 on the annual cadence).
+
 ## Sources
 
 - `https://docs.railway.com/volumes/backups` — backup caveats (verified; see
@@ -63,3 +89,9 @@ Date: 2026-07-07. Method: Firecrawl search (discovery) + Exa/Firecrawl fetch
 - `https://pmc.ncbi.nlm.nih.gov/articles/PMC8216070/`,
   `https://www.kiteworks.com/gdpr-compliance/us-companies-eu-data-sovereignty-compliance/`
   — art. 9 / SCC / CLOUD-Act framing (inference-grade, not legal advice).
+- `https://docs.railway.com/databases/postgresql` (TCP proxy, external
+  connections), `https://neon.com/docs/import/migrate-from-railway`
+  (pg_dump against the proxy in practice).
+- `https://pmc.ncbi.nlm.nih.gov/articles/PMC7646911/` — automated LOINC
+  mapping needs ML at hospital scale; a hand-curated personal catalog does
+  not.
