@@ -39,6 +39,19 @@ Conditions that are part of this decision, not optional extras:
 - deletion flows are re-verified against the volume (deleting a document must
   remove the file from the volume, not only the database row).
 
+Amendment (2026-07-07, pre-mortem research): Railway volume backups live WITH
+the volume and die with it — the official caveats state "wiping a volume
+deletes all backups" and "backups can only be restored into the same project +
+environment", with at most 3 months of retention. Railway's own May 2026
+incident (Google Cloud suspended Railway's production account without prior
+notice; ~8 hours platform-wide outage, persistent disks temporarily
+inaccessible) shows platform/account-level loss is a real scenario. Volume
+backups therefore only cover data mistakes, not platform loss. Additional
+hard precondition: an **off-platform backup** — a periodic export of the
+Postgres database and the private files to a location the owner controls
+outside Railway — configured and drill-tested before the first real document
+upload.
+
 Revisit triggers that reopen the S3 question: a second service needs direct
 file access, storage outgrows what a single volume handles comfortably, a
 backup/retention requirement exceeds Railway's backup features, or Railway's
@@ -52,6 +65,20 @@ EU-region or backup guarantees change.
   - Summary: Services with volumes support manual and automated (scheduled)
     backups with restore; manual backups are limited to 50% of the volume's
     total size.
+
+- Source: `https://docs.railway.com/volumes/backups` (Caveats)
+  - Claim type: fact
+  - Summary: "Wiping a volume deletes all backups"; "backups can only be
+    restored into the same project + environment"; scheduled retention is at
+    most 3 months (monthly schedule). Volume backups are snapshots coupled to
+    the volume, not an independent backup tier.
+
+- Source: `https://blog.railway.com/p/incident-report-may-19-2026-gcp-account-outage`
+  - Claim type: fact
+  - Summary: Google Cloud suspended Railway's production account without
+    prior notice on 2026-05-19, causing a ~8-hour platform-wide outage with
+    persistent disks temporarily inaccessible — platform/account-level loss
+    is a demonstrated failure mode, which coupled backups do not survive.
 
 - Source: `https://docs.railway.com/integrations/api/manage-volumes`
   - Claim type: fact
