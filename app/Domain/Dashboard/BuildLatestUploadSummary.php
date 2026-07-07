@@ -9,6 +9,7 @@ use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Models\User;
 use App\Support\Format;
+use App\Support\RangeBarScale;
 use Illuminate\Support\Collection;
 
 class BuildLatestUploadSummary
@@ -251,20 +252,14 @@ class BuildLatestUploadSummary
                 ];
             }
 
-            $span = $max - $min;
-            $scaleMin = min($min, $value) - ($span * 0.15);
-            $scaleMax = max($max, $value) + ($span * 0.15);
-
-            if ($scaleMin >= 0 && $min >= 0 && $value >= 0) {
-                $scaleMin = max(0, $scaleMin);
-            }
+            $scale = RangeBarScale::twoSided($value, $min, $max);
 
             return $this->rangePayload(
                 value: $value,
                 normalStartValue: $min,
                 normalEndValue: $max,
-                scaleMin: $scaleMin,
-                scaleMax: $scaleMax,
+                scaleMin: $scale['scaleMin'],
+                scaleMax: $scale['scaleMax'],
                 label: 'Referentie: '.Format::number($min).' – '.Format::number($max).' '.$result->unit,
             );
         }
@@ -301,19 +296,13 @@ class BuildLatestUploadSummary
      */
     private function rangePayload(float $value, float $normalStartValue, float $normalEndValue, float $scaleMin, float $scaleMax, string $label): array
     {
-        if ($scaleMax <= $scaleMin) {
-            $scaleMax = $scaleMin + 1;
-        }
-
-        $position = (($value - $scaleMin) / ($scaleMax - $scaleMin)) * 100;
-        $normalStart = (($normalStartValue - $scaleMin) / ($scaleMax - $scaleMin)) * 100;
-        $normalEnd = (($normalEndValue - $scaleMin) / ($scaleMax - $scaleMin)) * 100;
+        $percentages = RangeBarScale::percentages($value, $normalStartValue, $normalEndValue, $scaleMin, $scaleMax);
 
         return [
             'available' => true,
-            'position' => max(0, min(100, $position)),
-            'normalStart' => max(0, min(100, $normalStart)),
-            'normalWidth' => max(0, min(100, $normalEnd) - max(0, min(100, $normalStart))),
+            'position' => $percentages['position'],
+            'normalStart' => $percentages['normalStart'],
+            'normalWidth' => $percentages['normalWidth'],
             'label' => $label,
         ];
     }

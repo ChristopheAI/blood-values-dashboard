@@ -127,6 +127,16 @@ class BuildLongitudinalChanges
             ->values();
     }
 
+    /**
+     * Build a single change from two already-loaded results, so callers that
+     * have the data in hand (e.g. the overview builder) do not re-query. Both
+     * results must have `biomarker` and `bloodTest` loaded.
+     */
+    public function change(BiomarkerResult $previous, BiomarkerResult $current): LongitudinalChange
+    {
+        return $this->row($previous, $current);
+    }
+
     private function row(?BiomarkerResult $previous, ?BiomarkerResult $current): LongitudinalChange
     {
         $biomarker = 'Unknown biomarker';

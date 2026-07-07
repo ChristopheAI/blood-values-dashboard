@@ -123,6 +123,52 @@ it('groups rows by status with counts and keeps the display value as a string', 
         ->assertSee('data-test="confirmed-overview-unknown"', false);
 });
 
+it('builds the grouped overview payload with counts the view renders verbatim', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => now()->subDay()]);
+
+    confirmedOverviewResult($user, $bloodTest, 'Lage marker', [
+        'value' => 10, 'unit' => 'mg/L', 'reference_min' => 20, 'reference_max' => 30,
+        'status' => 'low', 'confirmed_at' => now()->subMinutes(3),
+    ]);
+    confirmedOverviewResult($user, $bloodTest, 'Hoge marker', [
+        'value' => 50, 'unit' => 'mg/L', 'reference_min' => 20, 'reference_max' => 30,
+        'status' => 'high', 'confirmed_at' => now()->subMinutes(2),
+    ]);
+    confirmedOverviewResult($user, $bloodTest, 'Normale marker', [
+        'value' => 25, 'unit' => 'mg/L', 'reference_min' => 20, 'reference_max' => 30,
+        'status' => 'normal', 'confirmed_at' => now()->subMinute(),
+    ]);
+    confirmedOverviewResult($user, $bloodTest, 'Onbekende marker', [
+        'value' => 5, 'unit' => 'mg/L', 'status' => 'unknown', 'confirmed_at' => now(),
+    ]);
+
+    // Een tweede, oudere meting van een bestaande biomarker: telt mee in
+    // 'measurements' maar levert geen extra rij op — dedup per biomarker.
+    $olderBloodTest = BloodTest::factory()->for($user)->create(['test_date' => now()->subMonths(2)]);
+    BiomarkerResult::factory()
+        ->for($olderBloodTest)
+        ->for(Biomarker::query()->where('name', 'Hoge marker')->firstOrFail())
+        ->create([
+            'value' => 45, 'unit' => 'mg/L', 'reference_min' => 20, 'reference_max' => 30,
+            'status' => 'high', 'confirmed_at' => now()->subMonths(2),
+        ]);
+
+    $overview = app(BuildBloodResultsOverview::class)->overview($user);
+
+    expect($overview['counts'])->toBe([
+        'biomarkers' => 4,
+        'measurements' => 5,
+        'low' => 1,
+        'high' => 1,
+        'normal' => 1,
+        'unknown' => 1,
+    ])
+        ->and($overview['attention']->pluck('label')->all())->toBe(['Hoge marker', 'Lage marker'])
+        ->and($overview['normal']->pluck('label')->all())->toBe(['Normale marker'])
+        ->and($overview['unknown']->pluck('label')->all())->toBe(['Onbekende marker']);
+});
+
 it('positions the number line marker from the float value', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create();
@@ -474,6 +520,54 @@ it('omits the delta in history when units changed between measurements', functio
     expect($row['history']['previousLabel'])->toBe('90 mg/dL')
         ->and($row['history']['previousDate'])->toBe('15 april 2026')
         ->and($row['history']['delta'])->toBeNull();
+});
+
+it('treats an undated blood test as the newest measurement, matching the longitudinal chronology', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'CRP']);
+
+    $dated = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+    BiomarkerResult::factory()->for($dated)->for($biomarker)->create([
+        'value' => '10', 'unit' => 'mg/L', 'reference_min' => 0, 'reference_max' => 5,
+        'status' => 'high', 'confirmed_at' => now(),
+    ]);
+
+    // Datum kon niet worden vastgesteld; across() en het overzicht moeten deze
+    // meting allebei als nieuwste behandelen, anders keert de delta om.
+    $undated = BloodTest::factory()->for($user)->create(['test_date' => null]);
+    BiomarkerResult::factory()->for($undated)->for($biomarker)->create([
+        'value' => '20', 'unit' => 'mg/L', 'reference_min' => 0, 'reference_max' => 5,
+        'status' => 'high', 'confirmed_at' => now()->subDay(),
+    ]);
+
+    $row = app(BuildBloodResultsOverview::class)($user)->firstWhere('label', 'CRP');
+
+    expect($row['value'])->toBe('20')
+        ->and($row['date'])->toBeNull()
+        ->and($row['history']['previousLabel'])->toBe('10 mg/L')
+        ->and($row['history']['previousDate'])->toBe('1 juni 2026')
+        ->and($row['history']['delta'])->toBe('+10 mg/L');
+});
+
+it('explains a no-status row even when no specific cause applies', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    // Kwalitatieve waarde naast een numerieke referentie: geen meetgrens,
+    // geen ontbrekende referentie, geen eenheidsverschil — toch geen status.
+    confirmedOverviewResult($user, $bloodTest, 'CMV IgG', [
+        'value' => 'Negatief', 'unit' => 'index', 'reference_min' => 0, 'reference_max' => 1,
+        'status' => 'unknown', 'confirmed_at' => now(),
+    ]);
+
+    $row = app(BuildBloodResultsOverview::class)($user)->firstWhere('label', 'CMV IgG');
+
+    expect($row['no_status_reason'])->toBe('not_classified');
+
+    $this->actingAs($user)
+        ->get(route('blood-results.overview'))
+        ->assertOk()
+        ->assertSee('De waarde en de referentie konden niet automatisch vergeleken worden');
 });
 
 it('shows an empty state without any values', function () {

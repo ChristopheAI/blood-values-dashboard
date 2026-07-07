@@ -154,3 +154,7 @@ actions. Implementation confidence is deferred to the task plan and its tests.
   addition to status, and does that need a spec amendment?
 - Where does the surface get its navigation entry (sidebar, dashboard link, or
   both) without demoting the dashboard next-step flow?
+  *Answered during build (2026-07-06, commit d29892b):* both — the sidebar and
+  mobile header ("Mijn bloedwaarden") plus the dashboard 'Bevestigd' tile,
+  which links to the page whose summary line reconciles with its count.
+  Recorded in the spec §9 and covered by the reachability feature test.

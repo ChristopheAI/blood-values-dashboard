@@ -10,6 +10,24 @@
 
 ---
 
+## Status (2026-07-07)
+
+Tasks 1–4 are substantively complete on `feat/blood-results-overview`, with
+recorded deviations from the letter of this plan (see the dated amendments in
+`docs/blood-results-overview-spec.md` and the deviations log in
+`docs/session-handoff.md`): the component/view/test names use
+`ConfirmedBiomarkerOverview`, builder assertions live in
+`tests/Feature/BloodTests/ConfirmedBiomarkerOverviewTest.php` instead of a
+separate unit-test file, and the reading model evolved to one dated row per
+biomarker. `sh scripts/validate.sh` passed in full on 2026-07-06 (Vite build,
+Pint, PHPStan, 319 Pest tests, 3 Dusk smoke tests).
+
+Still open: Task 4 Step 3 (browser QA on the seeded scenario), Task 5 Step 2
+(owner review), and Task 6 Step 2 (move ADR-0013 to Accepted with validation
+evidence). The checkboxes below are left as the execution record they are.
+
+---
+
 ## Scope
 
 This is a read-only overview slice.

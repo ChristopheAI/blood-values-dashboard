@@ -12,6 +12,7 @@ use App\Enums\BiomarkerStatus;
 use App\Models\BiomarkerResult;
 use App\Models\User;
 use App\Support\Format;
+use App\Support\RangeBarScale;
 use Illuminate\Support\Collection;
 
 final class BuildBloodResultsOverview
@@ -25,10 +26,53 @@ final class BuildBloodResultsOverview
     ) {}
 
     /**
-     * One row per biomarker, holding that biomarker's most recent confirmed
-     * measurement. Showing every historical value here (grouped only by status)
-     * let a stale result sit next to the current one without a date, so a user
-     * could read an old normal value as "resolved" — see the row() shape below.
+     * The full overview payload for the results page: rows grouped into the
+     * page's reading sections plus the summary counts. Grouping and status
+     * logic live here so the Blade view only renders.
+     *
+     * All confirmed results are loaded once: the deduped rows, the
+     * previous-measurement history, and the measurement total are all derived
+     * from that single load rather than re-querying per concern. The
+     * 'measurements' count feeds the summary line that must match the
+     * dashboard's 'Bevestigd' tile, or the tile appears to overcount on the
+     * page it links to.
+     *
+     * @return array{attention: Collection<int, mixed>, normal: Collection<int, mixed>, unknown: Collection<int, mixed>, counts: array{biomarkers: int, measurements: int, low: int, high: int, normal: int, unknown: int}}
+     */
+    public function overview(User $user): array
+    {
+        $confirmed = $this->confirmedResults($user);
+        $rows = $this->rowsFrom($confirmed);
+
+        // One grouping pass feeds both the sections and the counts, so the
+        // summary tiles cannot drift from the rows rendered under them.
+        $byStatus = $rows->groupBy('status');
+        $countFor = fn (BiomarkerStatus $status): int => $byStatus->get($status->value, collect())->count();
+
+        return [
+            // Filtered from $rows (not concatenated groups) to keep low and
+            // high rows interleaved in one alphabetical sequence.
+            'attention' => $rows
+                ->filter(fn (array $row): bool => in_array($row['status'], [BiomarkerStatus::Low->value, BiomarkerStatus::High->value], true))
+                ->values(),
+            'normal' => $byStatus->get(BiomarkerStatus::Normal->value, collect())->values(),
+            'unknown' => $byStatus->get(BiomarkerStatus::Unknown->value, collect())->values(),
+            'counts' => [
+                'biomarkers' => $rows->count(),
+                'measurements' => $confirmed->count(),
+                'low' => $countFor(BiomarkerStatus::Low),
+                'high' => $countFor(BiomarkerStatus::High),
+                'normal' => $countFor(BiomarkerStatus::Normal),
+                'unknown' => $countFor(BiomarkerStatus::Unknown),
+            ],
+        ];
+    }
+
+    /**
+     * The flat deduped rows — one per biomarker, holding its most recent
+     * confirmed measurement — kept public for direct assertions in tests.
+     * The page contract is overview() above; grouping or presentation changes
+     * belong there or in rowsFrom()/row(), never here.
      *
      * PHPStan's invariant Collection template cannot carry the array shape here,
      * so the value type stays mixed, matching BuildLatestUploadSummary.
@@ -37,61 +81,76 @@ final class BuildBloodResultsOverview
      */
     public function __invoke(User $user): Collection
     {
-        // Latest confirmed change per biomarker, so an attention row can carry
-        // its previous value with a date. Keyed by the current result id.
-        $this->changesByResultId = $this->buildLongitudinalChanges
-            ->across($user, $user->bloodTests()->get())
-            ->filter(fn (LongitudinalChange $change): bool => $change->result instanceof BiomarkerResult)
-            ->keyBy(fn (LongitudinalChange $change): int => (int) $change->result->id)
-            ->all();
+        return $this->rowsFrom($this->confirmedResults($user));
+    }
 
+    /**
+     * @return Collection<int, BiomarkerResult>
+     */
+    private function confirmedResults(User $user): Collection
+    {
         return BiomarkerResult::query()
             ->confirmedForUser($user->id)
             ->with(['biomarker', 'bloodTest'])
-            ->get()
+            ->get();
+    }
+
+    /**
+     * @param  Collection<int, BiomarkerResult>  $confirmed
+     * @return Collection<int, mixed>
+     */
+    private function rowsFrom(Collection $confirmed): Collection
+    {
+        $this->changesByResultId = [];
+
+        return $confirmed
             ->groupBy('biomarker_id')
-            ->map(fn (Collection $results): BiomarkerResult => $this->mostRecent($results))
-            ->map(fn (BiomarkerResult $result): array => $this->row($result))
+            ->map(function (Collection $results): array {
+                // Newest first: current is [0], previous (if any) is [1]. The
+                // unique (blood_test_id, biomarker_id) constraint guarantees
+                // the previous entry comes from a different blood test.
+                $ordered = $this->orderedByRecency($results);
+                $current = $ordered->first();
+                $previous = $ordered->get(1);
+
+                if ($previous instanceof BiomarkerResult) {
+                    $this->changesByResultId[(int) $current->id] = $this->buildLongitudinalChanges->change($previous, $current);
+                }
+
+                return $this->row($current);
+            })
             ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)
             ->values();
     }
 
     /**
-     * Total confirmed measurements behind the deduped rows. The dashboard's
-     * 'Bevestigd' tile counts these, so the overview must surface the same
-     * number or the tile appears to overcount on the page it links to.
-     */
-    public function measurementCount(User $user): int
-    {
-        return BiomarkerResult::query()
-            ->confirmedForUser($user->id)
-            ->count();
-    }
-
-    /**
-     * Pick the current measurement for a biomarker: latest by sample date, then
-     * by confirmation time, then by id, so ties (same-day tests, second-precision
-     * timestamps) resolve deterministically.
+     * Order a biomarker's measurements newest-first: latest by sample date,
+     * then by confirmation time, then by id, so ties (same-day tests,
+     * second-precision timestamps) resolve deterministically. An undated
+     * blood test counts as NEWEST, matching BuildLongitudinalChanges's
+     * chronology — sorting it oldest would let the overview report the
+     * opposite change direction from the consult and dashboard surfaces.
      *
      * @param  Collection<int, BiomarkerResult>  $results
+     * @return Collection<int, BiomarkerResult>
      */
-    private function mostRecent(Collection $results): BiomarkerResult
+    private function orderedByRecency(Collection $results): Collection
     {
         return $results->sort(function (BiomarkerResult $a, BiomarkerResult $b): int {
             return [
-                $b->bloodTest?->test_date?->getTimestamp() ?? 0,
+                $b->bloodTest?->test_date?->getTimestamp() ?? PHP_INT_MAX,
                 $b->confirmed_at?->getTimestamp() ?? 0,
                 $b->id,
             ] <=> [
-                $a->bloodTest?->test_date?->getTimestamp() ?? 0,
+                $a->bloodTest?->test_date?->getTimestamp() ?? PHP_INT_MAX,
                 $a->confirmed_at?->getTimestamp() ?? 0,
                 $a->id,
             ];
-        })->first();
+        })->values();
     }
 
     /**
-     * @return array{label: string, value: string, valueLabel: string, unit: string|null, status: string, ref_min: float|null, ref_max: float|null, reference: string, reference_unit_mismatch: bool, date: string|null, is_detection_limit: bool, beyond: array{direction: string, label: string}|null, no_reference: bool, history: array{previousLabel: string, previousDate: string|null, delta: string|null}|null}
+     * @return array{label: string, value: string, valueLabel: string, valueWithUnit: string, unit: string|null, status: string, statusLabel: string, reference: string, reference_unit_mismatch: bool, date: string|null, is_detection_limit: bool, beyond: array{direction: string, label: string}|null, no_status_reason: string|null, bar: array{position: string, normalStart: string, normalWidth: string, minLabel: string, maxLabel: string}|null, history: array{previousLabel: string, previousDate: string|null, delta: string|null}|null}
      */
     private function row(BiomarkerResult $result): array
     {
@@ -126,14 +185,16 @@ final class BuildBloodResultsOverview
             && $result->reference_unit !== ''
             && $result->reference_unit !== $result->unit;
 
+        $valueLabel = Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator);
+
         return [
             'label' => $result->biomarker->name,
             'value' => (string) $result->value,
-            'valueLabel' => Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator),
+            'valueLabel' => $valueLabel,
+            'valueWithUnit' => $valueLabel.($result->unit ? ' '.$result->unit : ''),
             'unit' => $result->unit,
             'status' => $status->value,
-            'ref_min' => $min,
-            'ref_max' => $max,
+            'statusLabel' => $status->dutchLabel(),
             // The range must be captioned in ITS OWN unit: on a mismatch the
             // value's unit would print a factually wrong reference.
             'reference' => $this->reference($min, $max, $result->reference_unit ?: $result->unit),
@@ -143,7 +204,8 @@ final class BuildBloodResultsOverview
                 : null,
             'is_detection_limit' => $isDetectionLimit,
             'beyond' => $this->beyond($result, $status, $min, $max, $isDetectionLimit, $unitMismatch),
-            'no_reference' => $min === null && $max === null,
+            'no_status_reason' => $this->noStatusReason($status, $isDetectionLimit, $min, $max, $unitMismatch),
+            'bar' => $this->bar($result, $min, $max, $isDetectionLimit, $unitMismatch),
             'history' => $this->history($result),
         ];
     }
@@ -202,6 +264,69 @@ final class BuildBloodResultsOverview
         }
 
         return null;
+    }
+
+    /**
+     * Why a row shows no status — the one fact that resolves the apparent
+     * contradiction of e.g. '<50' next to 'Referentie: ≤ 30'. Returns a
+     * reason code ('detection_limit', 'no_reference', 'unit_mismatch',
+     * 'not_classified'); the view owns the sentence. A row that is unknown
+     * without a specific cause (e.g. a qualitative value next to a numeric
+     * range) still gets the 'not_classified' fallback — an unknown row with
+     * an empty explanation would leave exactly the contradiction this field
+     * exists to resolve.
+     */
+    private function noStatusReason(BiomarkerStatus $status, bool $isDetectionLimit, ?float $min, ?float $max, bool $unitMismatch): ?string
+    {
+        if ($isDetectionLimit) {
+            return 'detection_limit';
+        }
+
+        if ($min === null && $max === null) {
+            return 'no_reference';
+        }
+
+        if ($unitMismatch) {
+            return 'unit_mismatch';
+        }
+
+        if ($status === BiomarkerStatus::Unknown) {
+            return 'not_classified';
+        }
+
+        return null;
+    }
+
+    /**
+     * Range-bar geometry, driven by the (float) cast of the value — never the
+     * string. A detection limit ('<40') or qualitative value ('Negatief') gets
+     * no marker: it would show a bound or non-numeric value as an exact
+     * measurement. A reference in a different unit gets no band either: the
+     * geometry would lie.
+     *
+     * @return array{position: string, normalStart: string, normalWidth: string, minLabel: string, maxLabel: string}|null
+     */
+    private function bar(BiomarkerResult $result, ?float $min, ?float $max, bool $isDetectionLimit, bool $unitMismatch): ?array
+    {
+        if ($isDetectionLimit || $unitMismatch || ! is_numeric($result->value)) {
+            return null;
+        }
+
+        if ($min === null || $max === null || $max <= $min) {
+            return null;
+        }
+
+        $value = (float) $result->value;
+        $scale = RangeBarScale::twoSided($value, $min, $max);
+        $percentages = RangeBarScale::percentages($value, $min, $max, $scale['scaleMin'], $scale['scaleMax']);
+
+        return [
+            'position' => number_format($percentages['position'], 2, '.', ''),
+            'normalStart' => number_format($percentages['normalStart'], 2, '.', ''),
+            'normalWidth' => number_format($percentages['normalWidth'], 2, '.', ''),
+            'minLabel' => Format::number($min),
+            'maxLabel' => Format::number($max),
+        ];
     }
 
     private function reference(?float $min, ?float $max, ?string $unit): string
