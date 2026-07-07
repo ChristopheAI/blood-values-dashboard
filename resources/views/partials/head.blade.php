@@ -16,3 +16,6 @@
 @fonts
 
 @vite(['resources/css/app.css', 'resources/js/app.js'])
+{{-- OS-voorkeur dark mode (default 'system', geen settings-UI): de spec eist
+     dark-varianten op elk oppervlak en die zitten al in alle views. --}}
+@fluxAppearance
