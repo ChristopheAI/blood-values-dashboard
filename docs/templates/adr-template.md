@@ -34,6 +34,15 @@ What do we choose or believe?
 - Consequence 1
 - Consequence 2
 
+## Revisit Triggers
+
+What concrete condition reopens this decision? Name the observable trigger
+(a scale number, a new requirement, a provider change), not a date. A decision
+without a revisit trigger is permanent by default; with one it is reversible
+by design.
+
+- Trigger 1
+
 ## Confidence
 
 Low | Medium | High
