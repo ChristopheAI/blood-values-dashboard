@@ -22,9 +22,19 @@ separate unit-test file, and the reading model evolved to one dated row per
 biomarker. `sh scripts/validate.sh` passed in full on 2026-07-06 (Vite build,
 Pint, PHPStan, 319 Pest tests, 3 Dusk smoke tests).
 
-Still open: Task 4 Step 3 (browser QA on the seeded scenario), Task 5 Step 2
-(owner review), and Task 6 Step 2 (move ADR-0013 to Accepted with validation
-evidence). The checkboxes below are left as the execution record they are.
+Browser QA on the seeded scenario passed on 2026-07-07 (Task 4 Step 3):
+summary counts reconcile with the seeded confirmed values (4 biomarkers from
+6 measurements, 0/1/2/1 per status), the attention card renders the full
+reading model (value+reference anchor, beyond sentence, range bar, dated
+history), the detection-limit row explains itself, the seeded TSH draft and
+storage paths are nowhere in the page, and there is no horizontal overflow.
+Dark-scheme QA is not applicable: commit bc70d59 deliberately removed dark
+mode app-wide pending the UX-audit #54 checkpoint, so the view's dark:
+variants are currently unreachable.
+
+Still open: Task 5 Step 2 (owner review) and Task 6 Step 2 (move ADR-0013 to
+Accepted with validation evidence). The checkboxes below are left as the
+execution record they are.
 
 ---
 
