@@ -2,7 +2,16 @@
 
 ## Status
 
-Proposed
+Accepted (2026-07-07)
+
+Validation evidence at acceptance: `sh scripts/validate.sh` green on
+2026-07-06/07 (Vite build, Pint, PHPStan 0 errors, 321 Pest tests incl. the
+confirmed-only, tenant-isolation, and medical-copy boundary suites, 3 Dusk
+smoke tests); a multi-agent code review of the working tree (8 finder angles,
+findings fixed or refuted — see `docs/session-handoff.md`); and browser QA on
+the seeded scenario (counts reconcile, drafts invisible, reading model renders,
+no overflow — recorded in the task plan). Review and ratification were
+owner-delegated to the working session on 2026-07-07.
 
 ## Context
 
