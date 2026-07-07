@@ -24,7 +24,11 @@ Required before real data:
 
 - `railway/app.railway.json` - app service config: Railpack, Vite build,
   migration pre-deploy, `/up` healthcheck.
-- `railway/init-app.sh` - pre-deploy migration script.
+- `railway/init-app.sh` - pre-deploy migration script. Migrations only: the
+  pre-deploy step runs in an ephemeral container, so artisan cache commands
+  would be no-ops here and `optimize:clear` would flush the shared database
+  cache store on every deploy (see ADR-0014 evidence). Railpack caches at
+  build time and re-optimizes at container start.
 - `railway/worker.railway.json` and `railway/run-worker.sh` - optional queue
   worker service.
 - `railway/cron.railway.json` and `railway/run-cron.sh` - optional Laravel
@@ -100,6 +104,12 @@ Laravel app writes under `/app/storage/app/private` in Railway's app container.
 
 Volumes are mounted at runtime, not during pre-deploy. The pre-deploy script
 must not depend on uploaded files or volume contents.
+
+Known Railpack behavior: the Laravel container entrypoint runs
+`php artisan optimize:clear` (which includes `cache:clear`) plus `optimize` on
+every container start, so with `CACHE_STORE=database` the shared cache table is
+flushed whenever an app container boots. Acceptable for staging; revisit before
+any production use that relies on a warm database cache.
 
 ## Worker Service
 

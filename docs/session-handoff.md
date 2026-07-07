@@ -35,9 +35,65 @@ The project is following the `ChristopheAI/Codex` starter-kit workflow:
 
 Update this section after each meaningful session.
 
-- Branch: `codex/v2-clean-autoconfirm`
+- Branch: `feat/blood-results-overview` (the earlier durable checkpoint for
+  `codex/v2-clean-autoconfirm` is preserved below)
 - Worktree:
   `/Users/christophe/Projects/Laravel 1st project`
+- Blood results overview slice (2026-07-06, `feat/blood-results-overview`):
+  - The confirmed-only overview page (`GET /blood-results`) is implemented
+    around the lay reading model: one row per biomarker with its measurement
+    date, one status vocabulary (`↓ laag / ↑ hoog / normaal / geen status`),
+    value and reference as one reading anchor, a factual beyond-magnitude
+    sentence, a guarded range bar, one reassurance line per out-of-range
+    section, and a dated own-history line. Navigation entry points exist in
+    the sidebar, mobile header, and the dashboard 'Bevestigd' tile.
+  - Grouping, counts, and status logic moved from the Blade view into
+    `BuildBloodResultsOverview::overview()` per the spec's data-source
+    contract ("Livewire orchestrates only"); the view only renders. A direct
+    payload-contract test pins the groups and counts.
+  - Deviations log (map vs territory, recorded in the spec as dated
+    amendments):
+    - ordering became alphabetical-by-name with per-row dates, replacing
+      "most recently confirmed first" (spec §9 correction);
+    - vocabulary became `geen status` with ↑/↓ arrows, replacing `onbekend`
+      (spec §7 amendment);
+    - the promised separate builder unit-test file was folded into
+      `tests/Feature/BloodTests/ConfirmedBiomarkerOverviewTest.php`, which
+      asserts builder rows directly and needs the database anyway;
+    - the single-load refactor made the "Vorige meting" pick use the same
+      recency rule as the current pick (sample date, then confirmation time,
+      then id) — the previous implementation ignored confirmation time when
+      pairing history;
+    - the `measurementCount()` method and its cache dissolved into the
+      payload's `counts.measurements`, removing cross-user cache risk.
+  - ADR-0013 is still Proposed: owner review of the branch (plan Task 5) and
+    acceptance with validation evidence (plan Task 6) remain open.
+  - Review-fix pass (2026-07-07, multi-agent review of the working tree):
+    an undated blood test now counts as the NEWEST measurement in the
+    overview's recency ordering, matching `BuildLongitudinalChanges`'s
+    chronology (sorting it oldest could invert the 'Vorige meting' delta
+    against the consult/dashboard surfaces); no-status rows without a
+    specific cause get a 'not_classified' fallback sentence instead of an
+    empty explanation; the range-bar scale math is extracted into the shared
+    `App\Support\RangeBarScale` used by both this overview and
+    `BuildLatestUploadSummary` (whose previous zero-clamp was a no-op — the
+    clamp now works); overview counts derive from one groupBy pass; the dead
+    row keys `ref_min`/`ref_max`/`no_reference` are removed; the `chmod +x`
+    prefixes are stripped from the Railway service configs (`sh` never needs
+    the execute bit). A reviewed "same-test sibling history" candidate was
+    refuted by the unique `(blood_test_id, biomarker_id)` constraint — one
+    result per biomarker per blood test is guaranteed at the schema level.
+    Note for later: `BuildLatestUploadSummary::buildRange()` float-casts
+    detection-limit and qualitative values without the overview's trust
+    guards; pre-existing, untouched by this pass.
+  - Railway pre-deploy correction (2026-07-07): `railway/init-app.sh` is
+    migrations-only again. The Laravel-guide caching block was removed after
+    verifying against Railway's pre-deploy docs, Railpack source, and Laravel
+    source that (a) the pre-deploy container is ephemeral so artisan cache
+    files never reach runtime, and (b) `optimize:clear` includes `cache:clear`,
+    which with `CACHE_STORE=database` would flush the shared Postgres cache
+    table on every deploy. Evidence recorded in ADR-0014; Railpack's own
+    start-time `optimize:clear` behavior is noted in the runbook.
 - Remote:
   - `origin` -> `https://github.com/ChristopheAI/blood-values-dashboard.git`
 - Commit state:
@@ -322,6 +378,7 @@ Update this section after each meaningful session.
 
 | Marker | Type | Meaning | How To Resume |
 | --- | --- | --- | --- |
+| feat/blood-results-overview | project state | Confirmed-only blood results overview page built around the lay reading model; grouping/status logic lives in `BuildBloodResultsOverview::overview()`; ADR-0013 still Proposed pending owner review. | Read `docs/adr/0013-blood-results-overview.md`, `docs/blood-results-overview-spec.md`, `docs/superpowers/plans/2026-07-02-blood-results-overview-slice.md`, latest git log/status, then run `sh scripts/validate.sh`. |
 | v2-clean-autoconfirm | project state | V2 clean extraction, confidence-gated auto-confirm, upload-first intake, and hardening follow-ups are implemented on `codex/v2-clean-autoconfirm`; ADR-0011 live gate passed with review remainder, and owner code review remains before merge. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v2-spec.md`, `docs/adr/0011-clean-extraction-and-confidence-gated-auto-confirm.md`, `docs/codex-v2-clean-autoconfirm-kickoff.md`, latest git log/status, then run `sh scripts/validate.sh`. |
 
 ## Handoff Prompt For A New Codex Thread

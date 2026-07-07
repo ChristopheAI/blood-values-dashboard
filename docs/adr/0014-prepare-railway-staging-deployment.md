@@ -24,9 +24,19 @@ Prepare Railway as a staging/deploy target, not as a production approval.
 
 Use Railway Railpack for the Laravel app service, Railway Postgres for hosted
 relational data, `/up` as the app healthcheck, and database-backed
-session/cache/queue settings. Keep migrations in a pre-deploy script and set
-`RAILPACK_SKIP_MIGRATIONS=true` so Railpack does not also run migrations at
-container startup.
+session/cache/queue settings. Keep the pre-deploy script migrations-only and
+set `RAILPACK_SKIP_MIGRATIONS=true` so Railpack does not also run migrations
+at container startup.
+
+Deliberately do not follow the Laravel-guide pre-deploy script that also runs
+`optimize:clear` plus config/event/route/view caching: Railway's own pre-deploy
+documentation states the step runs in a separate container whose filesystem
+changes are not persisted, so those cache files never reach the runtime
+containers — while `optimize:clear` includes `cache:clear`, which with
+`CACHE_STORE=database` durably flushes the shared Postgres cache table on
+every deploy. Railpack already builds the artisan caches into the image and
+re-runs `optimize:clear` + `optimize` at each container start, so pre-deploy
+caching is redundant even where it would persist.
 
 Keep private PDF uploads on Laravel's `local` disk for now, but require a
 Railway Volume mounted at `/app/storage/app/private` before any real lab PDF or
@@ -66,6 +76,29 @@ runs once and exits instead of an always-on Laravel scheduler loop.
   - Claim type: fact
   - Summary: Railway volumes provide persistent service storage and are mounted
     at runtime, not during build or pre-deploy.
+
+- Source: `https://docs.railway.com/deployments/pre-deploy-command`
+  - Claim type: fact
+  - Summary: "Pre-deploy commands execute in a separate container from your
+    application" and "changes to the filesystem are not persisted and volumes
+    are not mounted" — artisan cache files written in pre-deploy never reach
+    the runtime containers. This contradicts the caching block in Railway's
+    own Laravel guide, which this ADR therefore does not follow.
+
+- Source: `https://railpack.com/languages/php` and
+  `https://github.com/railwayapp/railpack` (`core/providers/php/php.go`,
+  `core/providers/php/start-container.sh`)
+  - Claim type: fact
+  - Summary: Railpack's Laravel provider runs config/event/route/view caching
+    at build time (baked into the deploy image) and its container entrypoint
+    runs `optimize:clear` + `optimize` on every Laravel container start.
+    `RAILPACK_SKIP_MIGRATIONS` only controls the `migrate --force` at startup.
+
+- Source: `https://laravel.com/docs/12.x/deployment#optimization`
+  - Claim type: fact
+  - Summary: `optimize:clear` removes the optimization caches "as well as all
+    keys in the default cache driver" — with `CACHE_STORE=database` it flushes
+    the shared cache table in Postgres.
 
 ## Considered Options
 
