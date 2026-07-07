@@ -2,7 +2,10 @@
 
 ## Status
 
-Proposed
+Accepted (2026-07-07, ratification owner-delegated to the working session)
+
+The decision's own preconditions stay hard gates: EU region, scheduled volume
+backups, and one documented restore drill before any real document upload.
 
 ## Context
 

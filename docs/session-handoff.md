@@ -66,8 +66,14 @@ Update this section after each meaningful session.
       pairing history;
     - the `measurementCount()` method and its cache dissolved into the
       payload's `counts.measurements`, removing cross-user cache risk.
-  - ADR-0013 is still Proposed: owner review of the branch (plan Task 5) and
-    acceptance with validation evidence (plan Task 6) remain open.
+  - ADR-0013 and ADR-0015 were Accepted on 2026-07-07; review and ratification
+    were owner-delegated to the working session (multi-agent code review,
+    full validation ladder, and browser QA as evidence).
+  - Dark mode restored on 2026-07-07 (OS preference via `@fluxAppearance`,
+    default 'system', no settings UI): the bc70d59 removal left every view's
+    tested dark: variants unreachable and contradicted the spec's
+    dark-mode-per-surface requirement. Verified in the browser against the
+    seeded scenario in both schemes.
   - Review-fix pass (2026-07-07, multi-agent review of the working tree):
     an undated blood test now counts as the NEWEST measurement in the
     overview's recency ordering, matching `BuildLongitudinalChanges`'s

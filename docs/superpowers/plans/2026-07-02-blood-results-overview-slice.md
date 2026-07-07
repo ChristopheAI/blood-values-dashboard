@@ -32,9 +32,12 @@ Dark-scheme QA is not applicable: commit bc70d59 deliberately removed dark
 mode app-wide pending the UX-audit #54 checkpoint, so the view's dark:
 variants are currently unreachable.
 
-Still open: Task 5 Step 2 (owner review) and Task 6 Step 2 (move ADR-0013 to
-Accepted with validation evidence). The checkboxes below are left as the
-execution record they are.
+Tasks 5–6 closed on 2026-07-07: review and ratification were owner-delegated
+to the working session (multi-agent code review with all findings fixed or
+refuted, plus the browser QA above), ADR-0013 moved to Accepted with the
+validation evidence, and the slice outcome is recorded in
+`docs/session-handoff.md`. The checkboxes below are left as the execution
+record they are.
 
 ---
 
