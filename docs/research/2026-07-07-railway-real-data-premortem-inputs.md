@@ -75,6 +75,29 @@ Date: 2026-07-07. Method: Firecrawl search (discovery) + Exa/Firecrawl fetch
   to 2027-02-24) do not apply. Next checkpoint: the Laravel 14 release
   (~Q1 2027 on the annual cadence).
 
+## 7. WCAG fix direction for the out-of-range badge (#54)
+
+- WCAG AA needs 4.5:1 for normal text, 3:1 for large/bold text; amber is the
+  canonical "dark yellow problem" in design systems. The audited failure is
+  white-on-`amber-500` (~2.15:1) on the featured attention card's value pill.
+- The compliant pattern already exists in this codebase: the results
+  overview's status pill uses dark amber text on a light amber ground.
+  Fix = align the card's value pill with that pattern; no new palette needed.
+
+## 8. Parser source landscape (Belgian lab PDFs) and security sweep
+
+- Belgian patients download lab PDFs from a jungle of portals (VRT's words):
+  CoZo (eID/itsme, LABO filter, PDF viewing), mijngezondheid.be (federal),
+  mynexuzhealth (validated reports incl. lab), Helena — each fed by
+  different hospital systems with their own report layouts. This confirms
+  the existing fixture-per-format strategy: expect one sanitized synthetic
+  fixture per portal/lab family, sourced as they are encountered, never
+  committed as real PDFs.
+- Nexuzhealth's own patient guidance ("bespreek deze rapporten steeds met je
+  arts") matches this app's boundary copy register.
+- Security sweep: `composer audit` reports no advisories for installed
+  dependencies; web search surfaced no recent Livewire disclosures.
+
 ## Sources
 
 - `https://docs.railway.com/volumes/backups` — backup caveats (verified; see
