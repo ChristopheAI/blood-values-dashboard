@@ -15,7 +15,11 @@ Required before real data:
 - Railway Postgres backup and restore path verified.
 - Private file storage location decided and backed up.
 - Railway Volume mounted at `/app/storage/app/private` if `FILESYSTEM_DISK=local`
-  remains the upload storage path.
+  remains the upload storage path (decided in ADR-0015; S3 only on its revisit
+  triggers).
+- Scheduled volume backups configured, and one restore drill performed and
+  documented (keep used volume space under 50% — Railway caps a manual backup
+  at half the volume size).
 - `APP_DEBUG=false`, `LOG_LEVEL=warning`, and no sensitive values in logs.
 - `sh scripts/validate.sh` green before deploy.
 - Browser QA with synthetic data after deploy.
