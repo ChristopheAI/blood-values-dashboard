@@ -41,6 +41,23 @@ Update this section after each meaningful session.
   preserved below.)
 - Worktree:
   `/Users/christophe/Projects/Laravel 1st project`
+- Signal-to-consult slice (2026-07-07, `feat/signal-to-consult`, UX audit #54):
+  - Dashboard leads with health: the latest-test verdict sits above the
+    review banner and the KPI tiles; KPI help texts rewritten in lay Dutch.
+  - The featured attention card carries a calm next step ("Bespreek deze
+    waarde met je arts" + consultlijst link with the blood test preselected).
+  - A bare GET on the consult overview preselects the latest consult-ready
+    blood test with the dashboard-handoff include defaults; explicit
+    submissions with an empty selection stay empty (no-widening invariant
+    preserved and re-tested); export/print hide behind an explanation until
+    a selection exists.
+  - Dashboard range bars decline detection-limit and qualitative values with
+    a factual label instead of plotting them at position 0.
+  - Review strip: five grid tracks only from xl (fixes the 1440px overlap);
+    'Geëxtraheerd' regained its trema.
+  - Verified: 326 Pest tests, Pint, PHPStan green; browser QA on the seeded
+    scenario for dashboard order, consult bare-visit preselection, and the
+    attention next-step link.
 - Blood results overview slice (2026-07-06, `feat/blood-results-overview`):
   - The confirmed-only overview page (`GET /blood-results`) is implemented
     around the lay reading model: one row per biomarker with its measurement
