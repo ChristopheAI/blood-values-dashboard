@@ -12,8 +12,7 @@ class ConfirmedBiomarkerOverview extends Component
     public function render(BuildBloodResultsOverview $buildBloodResultsOverview): View
     {
         return view('livewire.blood-tests.confirmed-biomarker-overview', [
-            'biomarkers' => $buildBloodResultsOverview(Auth::user()),
-            'measurementCount' => $buildBloodResultsOverview->measurementCount(Auth::user()),
+            'overview' => $buildBloodResultsOverview->overview(Auth::user()),
         ]);
     }
 }

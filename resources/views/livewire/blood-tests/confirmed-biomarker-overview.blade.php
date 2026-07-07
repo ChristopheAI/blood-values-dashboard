@@ -1,71 +1,21 @@
 @php
-    $rows = collect($biomarkers);
-    $attentionRows = $rows->filter(fn (array $row): bool => in_array($row['status'], ['low', 'high'], true))->values();
-    $normalRows = $rows->where('status', 'normal')->values();
-    $unknownRows = $rows->where('status', 'unknown')->values();
-
-    // Eén statusvocabulaire, mét het pijltje dat elke NL/BE-patiënt van het
-    // labverslag kent — de enum is de ene bron voor alle oppervlakken.
-    $statusPill = fn (string $status): string => (\App\Enums\BiomarkerStatus::tryFrom($status) ?? \App\Enums\BiomarkerStatus::Unknown)->dutchLabel();
-
-    // Getallenlijn-posities draaien op de (float)-cast van de waarde, nooit op de string.
-    // Een detectielimiet ('<40') of kwalitatieve waarde ('Negatief') krijgt geen
-    // markeerpunt: de marker zou een grens- of niet-numerieke waarde als exacte meting tonen.
-    // Een referentie in een andere eenheid krijgt evenmin een band: de geometrie zou liegen.
-    $rangeBar = function (array $row): ?array {
-        if (($row['is_detection_limit'] ?? false) || ! is_numeric($row['value']) || ($row['reference_unit_mismatch'] ?? false)) {
-            return null;
-        }
-
-        $min = $row['ref_min'];
-        $max = $row['ref_max'];
-
-        if ($min === null || $max === null || $max <= $min) {
-            return null;
-        }
-
-        $value = (float) $row['value'];
-        $span = $max - $min;
-        $scaleMin = min($min, $value) - ($span * 0.15);
-        $scaleMax = max($max, $value) + ($span * 0.15);
-
-        if ($min >= 0 && $value >= 0) {
-            $scaleMin = max(0.0, $scaleMin);
-        }
-
-        if ($scaleMax <= $scaleMin) {
-            $scaleMax = $scaleMin + 1;
-        }
-
-        $positionFor = fn (float $point): float => max(0.0, min(100.0, (($point - $scaleMin) / ($scaleMax - $scaleMin)) * 100));
-
-        return [
-            'position' => number_format($positionFor($value), 2, '.', ''),
-            'normalStart' => number_format($positionFor($min), 2, '.', ''),
-            'normalWidth' => number_format($positionFor($max) - $positionFor($min), 2, '.', ''),
-            'minLabel' => \App\Support\Format::number($min),
-            'maxLabel' => \App\Support\Format::number($max),
-        ];
-    };
-
-    $valueLabel = fn (array $row): string => $row['valueLabel'].($row['unit'] ? ' '.$row['unit'] : '');
+    // Groepering, tellingen en statuslogica leven in BuildBloodResultsOverview;
+    // deze view rendert alleen. De builder levert per rij ook statusLabel
+    // (de ene vocabulaire), bar-geometrie en de no-status-redencode.
+    $attentionRows = $overview['attention'];
+    $normalRows = $overview['normal'];
+    $unknownRows = $overview['unknown'];
+    $counts = $overview['counts'];
 
     // Waarom deze rij geen status heeft — de ene zin die de schijnbare
-    // tegenspraak ('<50' naast 'Referentie: ≤ 30') oplost.
-    $noStatusReason = function (array $row): ?string {
-        if ($row['is_detection_limit'] ?? false) {
-            return $row['valueLabel'].($row['unit'] ? ' '.$row['unit'] : '').' is een meetgrens van het lab, geen exacte meting — daarom tonen we geen status.';
-        }
-
-        if ($row['no_reference'] ?? false) {
-            return 'Geen referentie ingevuld — daarom tonen we geen status.';
-        }
-
-        if ($row['reference_unit_mismatch'] ?? false) {
-            return 'De referentie is opgegeven in een andere eenheid dan de meting — daarom tonen we geen status.';
-        }
-
-        return null;
+    // tegenspraak ('<50' naast 'Referentie: ≤ 30') oplost. De builder bepaalt
+    // de reden; de zin zelf is kopij en hoort hier.
+    $noStatusSentence = fn (array $row): ?string => match ($row['no_status_reason']) {
+        'detection_limit' => $row['valueWithUnit'].' is een meetgrens van het lab, geen exacte meting — daarom tonen we geen status.',
+        'no_reference' => 'Geen referentie ingevuld — daarom tonen we geen status.',
+        'unit_mismatch' => 'De referentie is opgegeven in een andere eenheid dan de meting — daarom tonen we geen status.',
+        'not_classified' => 'De waarde en de referentie konden niet automatisch vergeleken worden — daarom tonen we geen status.',
+        default => null,
     };
 @endphp
 
@@ -77,7 +27,7 @@
         </flux:text>
     </header>
 
-    @if ($rows->isEmpty())
+    @if ($counts['biomarkers'] === 0)
         <div class="rounded-lg border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400" data-test="confirmed-overview-empty">
             {{ __('Nog geen bevestigde waarden. Waarden verschijnen hier na bevestiging vanuit een bloedtest.') }}
         </div>
@@ -86,30 +36,30 @@
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="space-y-1">
                     <div class="text-xl font-semibold text-neutral-900 dark:text-white">
-                        {{ $rows->count() }} {{ $rows->count() === 1 ? __('biomarker') : __('biomarkers') }}
+                        {{ $counts['biomarkers'] }} {{ $counts['biomarkers'] === 1 ? __('biomarker') : __('biomarkers') }}
                     </div>
                     <p class="text-sm text-neutral-600 dark:text-neutral-400">
                         {{ __('Laatste bevestigde waarde per biomarker, gebaseerd op') }}
-                        {{ $measurementCount }} {{ $measurementCount === 1 ? __('bevestigde waarde') : __('bevestigde waarden') }}.
+                        {{ $counts['measurements'] }} {{ $counts['measurements'] === 1 ? __('bevestigde waarde') : __('bevestigde waarden') }}.
                     </p>
                 </div>
 
                 <dl class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                     <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('laag') }}</dt>
-                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $rows->where('status', 'low')->count() }}</dd>
+                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['low'] }}</dd>
                     </div>
                     <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('hoog') }}</dt>
-                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $rows->where('status', 'high')->count() }}</dd>
+                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['high'] }}</dd>
                     </div>
                     <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('normaal') }}</dt>
-                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $normalRows->count() }}</dd>
+                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['normal'] }}</dd>
                     </div>
                     <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('geen status') }}</dt>
-                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $unknownRows->count() }}</dd>
+                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['unknown'] }}</dd>
                     </div>
                 </dl>
             </div>
@@ -132,7 +82,7 @@
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
                             <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">{{ $row['label'] }}</h3>
                             <span class="inline-flex items-center rounded-full border-2 border-amber-400 px-2.5 py-0.5 text-sm font-bold text-amber-800 dark:border-amber-700 dark:text-amber-200">
-                                {{ $statusPill($row['status']) }}
+                                {{ $row['statusLabel'] }}
                             </span>
                             @if ($row['date'])
                                 <span class="ms-auto text-xs text-neutral-500 dark:text-neutral-400" data-test="confirmed-row-date">{{ __('Gemeten op') }} {{ $row['date'] }}</span>
@@ -160,7 +110,7 @@
                         </p>
 
                         {{-- Leesmodel 5: de zone als bevestiging — omlijnde band met ticklabels, streep-marker. --}}
-                        @php $bar = $rangeBar($row); @endphp
+                        @php $bar = $row['bar']; @endphp
 
                         @if ($bar !== null)
                             @php
@@ -212,7 +162,7 @@
                                     <div class="flex min-w-0 flex-wrap items-center gap-2">
                                         <h3 class="font-semibold text-neutral-900 dark:text-white">{{ $row['label'] }}</h3>
                                         <span class="inline-flex items-center rounded-full border border-emerald-400 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:border-emerald-700 dark:text-emerald-200">
-                                            {{ $statusPill($row['status']) }}
+                                            {{ $row['statusLabel'] }}
                                         </span>
                                     </div>
                                     @if ($row['date'])
@@ -221,7 +171,7 @@
                                 </div>
 
                                 <div>
-                                    @php $bar = $rangeBar($row); @endphp
+                                    @php $bar = $row['bar']; @endphp
 
                                     @if ($bar !== null)
                                         <div class="relative h-4" data-test="confirmed-range-bar">
@@ -234,7 +184,7 @@
 
                                 {{-- Leesmodel 3: waarde en referentie als één rechtsgroep — nooit gescheiden. --}}
                                 <div class="text-right tabular-nums">
-                                    <div class="font-semibold text-neutral-900 dark:text-white">{{ $valueLabel($row) }}</div>
+                                    <div class="font-semibold text-neutral-900 dark:text-white">{{ $row['valueWithUnit'] }}</div>
                                     <div class="text-xs text-neutral-500 dark:text-neutral-400">{{ __('Referentie') }}: {{ $row['reference'] }}</div>
                                 </div>
                             </div>
@@ -258,7 +208,7 @@
                                     <div class="flex min-w-0 flex-wrap items-center gap-2">
                                         <h3 class="font-semibold text-neutral-900 dark:text-white">{{ $row['label'] }}</h3>
                                         <span class="inline-flex items-center rounded-full border border-neutral-300 px-2 py-0.5 text-xs font-semibold text-neutral-600 dark:border-neutral-600 dark:text-neutral-300">
-                                            {{ $statusPill($row['status']) }}
+                                            {{ $row['statusLabel'] }}
                                         </span>
                                     </div>
                                     @if ($row['date'])
@@ -268,11 +218,11 @@
 
                                 {{-- De ene zin die de schijnbare tegenspraak oplost. --}}
                                 <div class="text-xs text-neutral-500 dark:text-neutral-400" data-test="confirmed-no-status-reason">
-                                    {{ $noStatusReason($row) ?? '' }}
+                                    {{ $noStatusSentence($row) ?? '' }}
                                 </div>
 
                                 <div class="text-right tabular-nums">
-                                    <div class="font-medium text-neutral-900 dark:text-white">{{ $valueLabel($row) }}</div>
+                                    <div class="font-medium text-neutral-900 dark:text-white">{{ $row['valueWithUnit'] }}</div>
                                     <div class="text-xs text-neutral-500 dark:text-neutral-400">{{ __('Referentie') }}: {{ $row['reference'] }}</div>
                                 </div>
                             </div>

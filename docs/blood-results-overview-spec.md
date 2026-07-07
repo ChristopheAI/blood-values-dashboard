@@ -61,6 +61,23 @@ interpretation of the user's value:
   - `unknown`: confirmed `unknown` rows.
 - Livewire orchestrates only; grouping and status logic live in the builder.
 
+Amendment (2026-07-06, build — commit d604479): the overview shows **one row
+per biomarker**, holding that biomarker's most recent confirmed measurement
+with its date. Showing every historical value grouped only by status let a
+stale result sit next to the current one without a date, so a user could read
+an old normal value as "resolved". The summary line carries the total
+measurement count ("gebaseerd op N bevestigde waarden") so the number
+reconciles with the dashboard's 'Bevestigd' tile.
+
+Amendment (2026-07-06, build): the builder's page contract is
+`BuildBloodResultsOverview::overview(User)`, returning `attention` / `normal` /
+`unknown` row groups plus `counts` (`biomarkers`, `measurements`, and the four
+per-status counts). Per-row it also carries the derived presentation facts the
+view must not compute itself: `statusLabel` (the one vocabulary), `bar` (range
+geometry with its trust guards), `no_status_reason` (a reason code; the view
+owns the sentence), and `history`. The invokable form still returns the flat
+deduped row collection for direct assertions in tests.
+
 ## 4. Status Rules
 
 - Status values come from `App\Enums\BiomarkerStatus`: `Low`, `High`, `Normal`,
@@ -125,6 +142,16 @@ Rendering:
   urgency language, and any explanation of what a marker means medically.
 - Rows show only: name, value, unit, reference range, status.
 
+Amendment (2026-07-06, one-vocabulary work — commits 841eeba/6ec1eb9): the
+shipped vocabulary is `↓ laag` / `↑ hoog` / `normaal` / `geen status`, defined
+once in `BiomarkerStatus::dutchLabel()` for every reading surface. `geen
+status` replaces `onbekend` as a cause-neutral label, and each no-status row
+states its cause in one sentence (meetgrens, geen referentie, andere eenheid).
+Rows additionally show the facts the reading model requires: the measurement
+date, the factual direction+magnitude sentence for out-of-range values, the
+range bar as confirmation, and the dated own-history line — all within the
+ADR-0013 amendment boundary (facts, never interpretation).
+
 ## 8. Validation
 
 Required before the slice is complete:
@@ -153,14 +180,23 @@ Required before the slice is complete:
   domain builder keeps the spec name: `App\Domain\Dashboard\BuildBloodResultsOverview`.
 - **Ordering within groups:** most recently confirmed first
   (`latest('confirmed_at')` in the builder); grouping by status happens on the
-  already-ordered collection.
+  already-ordered collection. *Corrected 2026-07-06:* since the one-row-per-
+  biomarker amendment, rows sort alphabetically by biomarker name (natural,
+  case-insensitive) so a user can find a marker by name; recency lives on each
+  row as its measurement date. Within a biomarker, "most recent" resolves by
+  sample date, then confirmation time, then id.
 - **Column names (corrected against the migration):** the reference columns are
   `reference_min` and `reference_max` (not `reference_minimum`/`reference_maximum`)
   and the unit column is `unit` (not `value_unit`). The status enum lives at
   `App\Enums\BiomarkerStatus`; the model does not cast `status` to the enum, so
   the builder maps it with `BiomarkerStatus::tryFrom`.
 
+### Resolved (build, 2026-07-06 — commit d29892b)
+
+- **Navigation entry point:** linked from the sidebar and mobile header
+  ("Mijn bloedwaarden") and from the dashboard's 'Bevestigd' tile; covered by
+  the reachability feature test.
+
 ### Open
 
-- Navigation entry point (sidebar and/or dashboard link) — deferred; the route
-  exists but is not yet linked from navigation.
+- None.
