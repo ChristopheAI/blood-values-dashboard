@@ -139,3 +139,7 @@ Medium
   storage, backup, restore, deletion, and logging review?
 - If real lab PDFs are uploaded to Railway, should the durable storage target be
   a Railway Volume or S3-compatible object storage?
+  *Answered 2026-07-07 by ADR-0015:* a Railway Volume, with an EU region,
+  scheduled volume backups, and a documented restore drill as hard
+  preconditions; S3 remains the recorded escape hatch with explicit revisit
+  triggers.
