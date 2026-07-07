@@ -318,6 +318,30 @@ class DashboardTest extends TestCase
             ->assertDontSee('Older but later created record · 1 bevestigde waarde');
     }
 
+    public function test_dashboard_puts_the_latest_test_verdict_above_the_process_banner_and_counters(): void
+    {
+        $user = User::factory()->create();
+        $biomarker = Biomarker::factory()->for($user)->create(['name' => 'CRP']);
+        $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+        BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+            'value' => 7.8,
+            'unit' => 'mg/L',
+            'reference_min' => 0,
+            'reference_max' => 5,
+            'status' => 'high',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'data-test="dashboard-latest-blood-test"',
+                'data-test="dashboard-next-step"',
+                'data-test="dashboard-metrics"',
+            ], false);
+    }
+
     public function test_upload_summary_never_plots_a_detection_limit_or_qualitative_value_on_the_range_bar(): void
     {
         $user = User::factory()->create();
