@@ -807,6 +807,8 @@ it('renders the patient friendly overview for an older owned blood test', functi
         ->assertSee('1/3 waarde is normaal')
         ->assertSee('2 waarden vragen aandacht')
         ->assertSee('data-test="featured-attention-card"', false)
+        ->assertSee('data-test="attention-next-step"', false)
+        ->assertSee('Zet hem klaar op je consultlijst')
         ->assertSee('data-test="compact-normal-row"', false)
         ->assertSee('data-test="compact-review-row"', false)
         ->assertSee('+7 ug/L')
