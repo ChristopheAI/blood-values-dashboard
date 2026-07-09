@@ -142,7 +142,8 @@
                         // page, slip past the guard below, and leave the progress
                         // panel stuck. 'manual' turns that 302 into an opaque,
                         // bodyless response so we fall through to a real GET
-                        // navigation where @error('document') is shown again.
+                        // navigation where the document validation error is shown
+                        // again.
                         redirect: 'manual',
                     });
 
