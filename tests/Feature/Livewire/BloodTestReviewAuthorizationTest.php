@@ -14,7 +14,7 @@ it('user cannot open review for another users blood test', function () {
 
     $this->actingAs($otherUser)
         ->get(route('blood-tests.show', $bloodTest))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 it('user cannot confirm values for another users blood test', function () {
@@ -29,7 +29,7 @@ it('user cannot confirm values for another users blood test', function () {
         ->set('resultForm.value', '42')
         ->set('resultForm.unit', 'ug/L')
         ->call('confirmResult', $ownersBloodTest->id)
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect(BiomarkerResult::query()->where('blood_test_id', $ownersBloodTest->id)->exists())->toBeFalse();
 });
@@ -54,7 +54,7 @@ it('tampered draft id cannot confirm another users extracted draft', function ()
         ->set('resultForm.value', '99')
         ->set('resultForm.unit', 'ug/L')
         ->call('confirmResult')
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect($ownersDraft->refresh()->confirmed_at)->toBeNull()
         ->and($ownersDraft->entry_source)->toBe('extracted')
@@ -73,7 +73,7 @@ it('tampered livewire public property cannot switch owner context', function () 
         ->set('resultForm.value', '42')
         ->set('resultForm.unit', 'ug/L')
         ->set('bloodTestId', $ownersBloodTest->id)
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect(BiomarkerResult::query()->where('blood_test_id', $ownersBloodTest->id)->exists())->toBeFalse();
 });
@@ -110,7 +110,7 @@ it('tampered livewire action cannot delete another users extracted draft', funct
     Livewire::actingAs($otherUser)
         ->test(ReviewBloodTest::class, ['bloodTest' => $otherUsersBloodTest])
         ->call('deleteDraft', $ownersDraft->id)
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect(BiomarkerResult::query()->whereKey($ownersDraft->id)->exists())->toBeTrue();
 });
@@ -131,7 +131,7 @@ it('tampered livewire action cannot edit another users confirmed result', functi
     Livewire::actingAs($otherUser)
         ->test(ReviewBloodTest::class, ['bloodTest' => $otherUsersBloodTest])
         ->call('editConfirmedResult', $ownersResult->id)
-        ->assertForbidden()
+        ->assertNotFound()
         ->assertSet('editingResultId', null)
         ->assertSet('resultForm.value', '');
 });
@@ -152,7 +152,7 @@ it('tampered livewire action cannot delete another users confirmed result', func
     Livewire::actingAs($otherUser)
         ->test(ReviewBloodTest::class, ['bloodTest' => $otherUsersBloodTest])
         ->call('deleteConfirmedResult', $ownersResult->id)
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect(BiomarkerResult::query()->whereKey($ownersResult->id)->exists())->toBeTrue();
 });
@@ -202,7 +202,7 @@ it('rejects manually adding a value with another users biomarker id', function (
         ->set('resultForm.value', '42')
         ->set('resultForm.unit', 'ug/L')
         ->call('confirmResult')
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect(BiomarkerResult::query()->where('blood_test_id', $bloodTest->id)->exists())->toBeFalse();
 });
@@ -226,7 +226,7 @@ it('rejects confirming an extracted draft with another users biomarker id', func
         ->call('useDraft', $draft->id)
         ->set('resultForm.biomarker_id', $foreignBiomarker->id)
         ->call('confirmResult')
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect($draft->refresh()->confirmed_at)->toBeNull()
         ->and($draft->biomarker_id)->toBe($ownedBiomarker->id);
@@ -250,7 +250,7 @@ it('rejects editing a confirmed result with another users biomarker id', functio
         ->call('editConfirmedResult', $result->id)
         ->set('resultForm.biomarker_id', $foreignBiomarker->id)
         ->call('confirmResult')
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect($result->refresh()->biomarker_id)->toBe($ownedBiomarker->id)
         ->and((float) $result->value)->toBe(42.0);

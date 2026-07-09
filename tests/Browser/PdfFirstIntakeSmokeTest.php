@@ -313,12 +313,12 @@ test('synthetic qa scenario proves the full multi blood test follow up flow', fu
 
         assertNoForbiddenMedicalCopyAppears($browser);
 
-        expect(browserGetStatus($browser, route('blood-tests.show', $foreignBloodTest, false)))->toBe(403);
-        expect(browserGetStatus($browser, route('blood-test-documents.download', $foreignDocument, false)))->toBe(403);
+        expect(browserGetStatus($browser, route('blood-tests.show', $foreignBloodTest, false)))->toBe(404);
+        expect(browserGetStatus($browser, route('blood-test-documents.download', $foreignDocument, false)))->toBe(404);
         expect(browserGetStatus($browser, route('blood-tests.compare', [
             'first' => $olderBloodTest->id,
             'second' => $foreignBloodTest->id,
-        ], false)))->toBe(403);
+        ], false)))->toBe(404);
         expect(browserPostStatus($browser, route('consult-overview.index', [], false), [
             'blood_test_ids' => [$olderBloodTest->id, $foreignBloodTest->id],
             'include_attention' => '1',

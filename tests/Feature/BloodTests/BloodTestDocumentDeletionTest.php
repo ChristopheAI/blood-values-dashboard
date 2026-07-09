@@ -29,6 +29,18 @@ it('deleting blood test removes or blocks its lab pdf', function () {
         ->assertNotFound();
 });
 
+it('hides another users blood test deletion route as not found', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($owner)->create();
+
+    $this->actingAs($otherUser)
+        ->delete(route('blood-tests.destroy', $bloodTest))
+        ->assertNotFound();
+
+    expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue();
+});
+
 it('keeps the stored lab pdf when blood test deletion fails before the database delete', function () {
     Storage::fake('local');
 

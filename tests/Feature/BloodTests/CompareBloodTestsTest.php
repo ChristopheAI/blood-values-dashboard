@@ -70,7 +70,7 @@ it('user cannot compare another users blood tests', function () {
 
     $this->actingAs($otherUser)
         ->get(route('blood-tests.compare', ['first' => $ownersBloodTest, 'second' => $otherUsersBloodTest]))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 it('does not compare confirmed results linked to another users biomarker', function () {

@@ -39,9 +39,10 @@ class StoreContextNoteController extends Controller
             return null;
         }
 
-        $bloodTest = BloodTest::query()->whereKey((int) $bloodTestId)->firstOrFail();
-
-        abort_unless($bloodTest->user_id === Auth::id(), 403);
+        $bloodTest = BloodTest::query()
+            ->where('user_id', Auth::id())
+            ->whereKey((int) $bloodTestId)
+            ->firstOrFail();
 
         return $bloodTest->id;
     }

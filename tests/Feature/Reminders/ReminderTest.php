@@ -99,11 +99,11 @@ it('keeps reminder reads and mutations owner scoped', function () {
             'note' => 'Should not save.',
             'completed' => '1',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->actingAs($otherUser)
         ->delete(route('reminders.destroy', $ownedReminder))
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->assertDatabaseHas('reminders', [
         'id' => $ownedReminder->id,

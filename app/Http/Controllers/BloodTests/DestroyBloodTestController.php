@@ -12,9 +12,12 @@ use RuntimeException;
 
 class DestroyBloodTestController extends Controller
 {
-    public function __invoke(BloodTest $bloodTest): RedirectResponse
+    public function __invoke(string $bloodTest): RedirectResponse
     {
-        abort_unless($bloodTest->user_id === Auth::id(), 403);
+        $bloodTest = BloodTest::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($bloodTest)
+            ->firstOrFail();
 
         $documents = $bloodTest->documents()
             ->get(['id', 'storage_disk', 'storage_path']);

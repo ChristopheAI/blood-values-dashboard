@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\Auth;
 
 class UnpinBiomarkerController extends Controller
 {
-    public function __invoke(Biomarker $biomarker): RedirectResponse
+    public function __invoke(string $biomarker): RedirectResponse
     {
-        abort_unless($biomarker->user_id === Auth::id(), 403);
+        $biomarker = Biomarker::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($biomarker)
+            ->firstOrFail();
 
         $biomarker->pins()
             ->where('user_id', Auth::id())

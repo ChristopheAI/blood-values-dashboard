@@ -468,7 +468,7 @@ it('blocks deleting another users document', function () {
 
     $this->actingAs($otherUser)
         ->delete(route('blood-test-documents.destroy', $document))
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
     Storage::disk('local')->assertExists($document->storage_path);

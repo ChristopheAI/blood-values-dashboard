@@ -18,10 +18,14 @@ class CompareBloodTestsController extends Controller
             'second' => ['required', 'integer'],
         ]);
 
-        $first = BloodTest::query()->whereKey((int) $validated['first'])->firstOrFail();
-        $second = BloodTest::query()->whereKey((int) $validated['second'])->firstOrFail();
-
-        abort_unless($first->user_id === Auth::id() && $second->user_id === Auth::id(), 403);
+        $first = BloodTest::query()
+            ->where('user_id', Auth::id())
+            ->whereKey((int) $validated['first'])
+            ->firstOrFail();
+        $second = BloodTest::query()
+            ->where('user_id', Auth::id())
+            ->whereKey((int) $validated['second'])
+            ->firstOrFail();
 
         return view('blood-tests.compare', [
             'first' => $first,
