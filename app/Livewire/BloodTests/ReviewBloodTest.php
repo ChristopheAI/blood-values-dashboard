@@ -5,8 +5,6 @@ namespace App\Livewire\BloodTests;
 use App\Domain\Biomarkers\DetectionLimitValue;
 use App\Domain\Biomarkers\DetermineBiomarkerStatus;
 use App\Domain\Biomarkers\QualitativeLabValue;
-use App\Domain\BloodTests\BuildLongitudinalChanges;
-use App\Domain\BloodTests\LongitudinalChange;
 use App\Domain\Dashboard\BuildLatestUploadSummary;
 use App\Enums\BiomarkerStatus;
 use App\Models\Biomarker;
@@ -14,6 +12,7 @@ use App\Models\BiomarkerResult;
 use App\Models\BloodTest;
 use App\Support\Format;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -272,73 +271,42 @@ class ReviewBloodTest extends Component
             403,
         );
 
+        $bloodTestOverview = app(BuildLatestUploadSummary::class)->forBloodTest(Auth::user(), $bloodTest);
+
         return view('livewire.blood-tests.review-blood-test', [
             'bloodTest' => $bloodTest,
-            'bloodTestOverview' => app(BuildLatestUploadSummary::class)->forBloodTest(Auth::user(), $bloodTest),
+            'bloodTestOverview' => $bloodTestOverview,
             'biomarkers' => Biomarker::query()
                 ->where('user_id', Auth::id())
                 ->orderBy('name')
                 ->get(),
-            'trendSummaries' => $this->trendSummaries($bloodTest, app(BuildLongitudinalChanges::class)),
+            'trendSummaries' => $this->trendSummariesFromOverview($bloodTestOverview),
         ]);
     }
 
     /**
+     * @param  array{rows: Collection<int, array{resultId: int, trendKind: string, trendLabel: string, trendDetail: string|null}>}|null  $bloodTestOverview
      * @return array<int, array{state: string, label: string, detail: string|null}>
      */
-    private function trendSummaries(BloodTest $bloodTest, BuildLongitudinalChanges $buildLongitudinalChanges): array
+    private function trendSummariesFromOverview(?array $bloodTestOverview): array
     {
-        $confirmedResults = $bloodTest->results
-            ->whereNotNull('confirmed_at')
-            ->filter(fn (BiomarkerResult $result): bool => $result->biomarker_id !== null);
-
-        if ($confirmedResults->isEmpty()) {
+        if ($bloodTestOverview === null) {
             return [];
         }
 
-        $changesByResultId = $buildLongitudinalChanges
-            ->across(
-                Auth::user(),
-                Auth::user()->bloodTestsUpToAndIncluding($bloodTest),
-            )
-            ->filter(fn (LongitudinalChange $change): bool => $change->result?->blood_test_id === $bloodTest->id)
-            ->keyBy(fn (LongitudinalChange $change): int => (int) $change->result?->id);
-
-        return $confirmedResults
-            ->mapWithKeys(fn (BiomarkerResult $result): array => [
-                (int) $result->id => $this->trendSummaryFromChange($changesByResultId->get((int) $result->id)),
+        return $bloodTestOverview['rows']
+            ->mapWithKeys(fn (array $row): array => [
+                (int) $row['resultId'] => [
+                    'state' => match ($row['trendKind']) {
+                        'changed', 'unchanged' => 'compared',
+                        'not_comparable' => 'not-comparable',
+                        default => 'first',
+                    },
+                    'label' => (string) $row['trendLabel'],
+                    'detail' => $row['trendDetail'],
+                ],
             ])
             ->all();
-    }
-
-    /**
-     * @return array{state: string, label: string, detail: string|null}
-     */
-    private function trendSummaryFromChange(?LongitudinalChange $change): array
-    {
-        if (! $change instanceof LongitudinalChange || ! $change->previousResult instanceof BiomarkerResult) {
-            return [
-                'state' => 'first',
-                'label' => 'Eerste meting',
-                'detail' => null,
-            ];
-        }
-
-        $previousValue = trim($change->previousValue.' '.$change->previousUnit);
-
-        if (! $change->comparable) {
-            return [
-                'state' => 'not-comparable',
-                'label' => 'Niet vergelijkbaar',
-                'detail' => 'vorige '.$previousValue,
-            ];
-        }
-
-        return [
-            'state' => 'compared',
-            'label' => $change->direction === 'unchanged' ? 'Geen verandering' : (string) $change->changeLabel,
-            'detail' => 'vorige '.$previousValue,
-        ];
     }
 
     private function ownedBloodTest(int $bloodTestId): BloodTest

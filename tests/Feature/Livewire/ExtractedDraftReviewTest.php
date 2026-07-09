@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Enums\ContextNoteCategory;
 use App\Livewire\BloodTests\ReviewBloodTest;
 use App\Models\Biomarker;
@@ -9,6 +10,7 @@ use App\Models\BloodTestDocument;
 use App\Models\ContextNote;
 use App\Models\ExtractionRun;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Livewire\Livewire;
 
 it('shows extracted drafts and lets the owner confirm a draft through the review form', function () {
@@ -585,6 +587,53 @@ it('shows a compact trend summary for confirmed values on the result screen', fu
         ->assertSee('data-test="confirmed-value-trend" data-state="compared"', false)
         ->assertSee('+2 ug/L')
         ->assertSee('vorige 40 ug/L');
+});
+
+it('reuses the detail overview trend data for confirmed table labels', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $previousBloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => '2026-05-01',
+        'status' => 'confirmed',
+    ]);
+    $bloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => '2026-06-01',
+        'status' => 'confirmed',
+    ]);
+
+    BiomarkerResult::factory()->for($previousBloodTest)->for($biomarker)->create([
+        'value' => 40,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now()->subMonth(),
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+
+    $longitudinalChanges = new class extends BuildLongitudinalChanges
+    {
+        public int $acrossCalls = 0;
+
+        public function across(User $user, Collection $bloodTests): Collection
+        {
+            $this->acrossCalls++;
+
+            return parent::across($user, $bloodTests);
+        }
+    };
+
+    app()->instance(BuildLongitudinalChanges::class, $longitudinalChanges);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('data-test="confirmed-value-trend" data-state="compared"', false)
+        ->assertSee('+2 ug/L');
+
+    expect($longitudinalChanges->acrossCalls)->toBe(1);
 });
 
 it('shows source documents for the selected owned blood test without storage paths', function () {
