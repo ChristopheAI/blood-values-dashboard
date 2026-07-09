@@ -93,6 +93,19 @@ class SecurityTest extends TestCase
         ]);
     }
 
+    public function test_two_factor_qr_code_renders_without_theme_inversion_dependency(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        Livewire::test('pages::settings.two-factor-setup-modal', ['requiresConfirmation' => true])
+            ->call('startTwoFactorSetup')
+            ->assertSee('data-test="two-factor-qr-code"', false)
+            ->assertDontSee('$flux.appearance', false)
+            ->assertDontSee('filter: invert', false);
+    }
+
     public function test_password_can_be_updated(): void
     {
         $user = User::factory()->create([
