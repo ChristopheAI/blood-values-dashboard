@@ -17,15 +17,7 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
     $password = 'password';
 
     $this->browse(function (Browser $browser) use ($email, $password) {
-        $browser->visit('/register')
-            ->type('name', 'Browser Smoke')
-            ->type('email', $email)
-            ->type('password', $password)
-            ->type('password_confirmation', $password)
-            ->press('Create account')
-            ->waitForLocation('/dashboard')
-            ->assertPathIs('/dashboard')
-            ->assertAuthenticated();
+        registerVerifiedBrowserUser($browser, 'Browser Smoke', $email, $password);
 
         assertNoForbiddenMedicalCopyAppears($browser);
 
@@ -91,14 +83,7 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
     $password = 'password';
 
     $this->browse(function (Browser $browser) use ($email, $password) {
-        $browser->visit('/register')
-            ->type('name', 'Dropzone Smoke')
-            ->type('email', $email)
-            ->type('password', $password)
-            ->type('password_confirmation', $password)
-            ->press('Create account')
-            ->waitForLocation('/dashboard')
-            ->assertAuthenticated();
+        registerVerifiedBrowserUser($browser, 'Dropzone Smoke', $email, $password);
 
         $user = User::query()->where('email', $email)->firstOrFail();
         $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
@@ -611,6 +596,31 @@ JS,
     ));
 
     return (int) ($result[0] ?? 0);
+}
+
+function registerVerifiedBrowserUser(Browser $browser, string $name, string $email, string $password): void
+{
+    $verificationNoticePath = route('verification.notice', [], false);
+
+    $browser->visit('/register')
+        ->type('name', $name)
+        ->type('email', $email)
+        ->type('password', $password)
+        ->type('password_confirmation', $password)
+        ->press('Create account')
+        ->waitForLocation($verificationNoticePath)
+        ->assertPathIs($verificationNoticePath)
+        ->assertAuthenticated();
+
+    User::query()
+        ->where('email', $email)
+        ->firstOrFail()
+        ->forceFill(['email_verified_at' => now()])
+        ->save();
+
+    $browser->visit('/dashboard')
+        ->assertPathIs('/dashboard')
+        ->assertAuthenticated();
 }
 
 function assertNoForbiddenMedicalCopyAppears(Browser $browser): void
