@@ -136,6 +136,34 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
     });
 });
 
+test('an invalid dropzone upload shows the validation error instead of hanging on the progress panel', function () {
+    $email = 'browser-invalid-upload-'.Str::uuid().'@example.test';
+    $password = 'password';
+
+    $this->browse(function (Browser $browser) use ($email, $password) {
+        $browser->visit('/register')
+            ->type('name', 'Invalid Upload Smoke')
+            ->type('email', $email)
+            ->type('password', $password)
+            ->type('password_confirmation', $password)
+            ->press('Create account')
+            ->waitForLocation('/dashboard')
+            ->assertAuthenticated();
+
+        // A non-PDF fails server-side validation, which answers with a 302 back
+        // to the form. Regression guard for the stream fallback: the client must
+        // land back on the form with the error visible, never leave the intake
+        // progress panel stuck (which is what happened when the fetch silently
+        // followed the redirect to a 200 HTML page).
+        $browser->visit('/blood-tests')
+            ->waitFor('[data-test="lab-pdf-dropzone"]')
+            ->attach('document', base_path('tests/Fixtures/not-a-pdf.txt'))
+            ->waitFor('[data-test="upload-error"]')
+            ->assertPathIs('/blood-tests')
+            ->assertVisible('[data-test="upload-error"]');
+    });
+});
+
 test('synthetic qa scenario proves the full multi blood test follow up flow', function () {
     Artisan::call('app:seed-blood-test-demo');
 
