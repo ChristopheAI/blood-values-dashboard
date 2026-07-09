@@ -16,6 +16,8 @@
 .env.backup
 .env.dusk.*
 .env.production
+.env.railway
+.env.staging
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
