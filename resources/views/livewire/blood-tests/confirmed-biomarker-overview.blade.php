@@ -179,6 +179,10 @@
                                             <div class="absolute top-0 h-3.5 rounded border border-neutral-400/70 bg-white/70 dark:border-neutral-500 dark:bg-neutral-900/40" style="left: {{ $bar['normalStart'] }}%; width: {{ $bar['normalWidth'] }}%;"></div>
                                             <div class="absolute -top-0.5 h-4.5 w-0.5 -translate-x-1/2 rounded-sm bg-neutral-700 dark:bg-neutral-200" style="left: {{ $bar['position'] }}%;"></div>
                                         </div>
+                                        <div class="relative mt-1 h-3 text-[10px] tabular-nums text-neutral-500 dark:text-neutral-400" data-test="confirmed-range-bound-labels">
+                                            <span class="absolute -translate-x-1/2" style="left: {{ $bar['normalStart'] }}%;">{{ $bar['minLabel'] }}</span>
+                                            <span class="absolute -translate-x-1/2" style="left: {{ number_format((float) $bar['normalStart'] + (float) $bar['normalWidth'], 2, '.', '') }}%;">{{ $bar['maxLabel'] }}</span>
+                                        </div>
                                     @endif
                                 </div>
 
