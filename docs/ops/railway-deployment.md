@@ -40,6 +40,9 @@ Required before real data:
 - A real outbound mailer configured and tested with a synthetic user. Do not
   use Laravel's `log` mailer for staging or production accounts: password reset
   and verification messages must leave the app.
+- Railway alerting or an explicit log-review routine exists for the app,
+  worker, and scheduler services. The worker and scheduler restart
+  continuously, but restart policy is not failure notification.
 - `sh scripts/validate.sh` green before deploy.
 - Browser QA with synthetic data after deploy.
 
@@ -53,9 +56,11 @@ Required before real data:
   cache store on every deploy (see ADR-0014 evidence). Railpack caches at
   build time and re-optimizes at container start.
 - `railway/worker.railway.json` and `railway/run-worker.sh` - optional queue
-  worker service.
+  worker service. The worker uses Railway's `ALWAYS` restart policy so a crash
+  does not permanently stop background processing.
 - `railway/cron.railway.json` and `railway/run-cron.sh` - optional Laravel
-  scheduler service.
+  scheduler service. The scheduler uses Railway's `ALWAYS` restart policy so
+  the every-minute loop is restored after a process crash.
 - `.env.railway.example` - Railway variable template with placeholders only.
 - `docs/adr/0014-prepare-railway-staging-deployment.md` - deployment decision.
 
