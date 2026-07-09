@@ -118,6 +118,9 @@ it('groups rows by status with counts and keeps the display value as a string', 
         ->get(route('blood-results.overview'))
         ->assertOk()
         ->assertSeeInOrder(['laag', 'hoog', 'normaal', 'geen status'])
+        ->assertSee('data-test="confirmed-summary-count-high"', false)
+        ->assertSee('border-amber-300 bg-amber-50', false)
+        ->assertSee('data-test="confirmed-summary-count-unknown"', false)
         ->assertSee('data-test="confirmed-overview-attention"', false)
         ->assertSee('data-test="confirmed-overview-normal"', false)
         ->assertSee('data-test="confirmed-overview-unknown"', false);
