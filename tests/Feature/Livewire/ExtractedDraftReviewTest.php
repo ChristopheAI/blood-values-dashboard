@@ -31,7 +31,7 @@ it('shows extracted drafts and lets the owner confirm a draft through the review
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('Geextraheerd - bevestig eerst')
+        ->assertSee('Geëxtraheerd - bevestig eerst')
         ->assertSee('Ferritin')
         ->call('useDraft', $draft->id)
         ->assertSet('draftResultId', $draft->id)
@@ -237,7 +237,7 @@ it('frames the review form as extracted value review when drafts exist', functio
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('Geextraheerde waarden reviewen')
+        ->assertSee('Geëxtraheerde waarden reviewen')
         ->assertSee('Gelezen uit je PDF')
         ->assertDontSee('Waarden toevoegen');
 });
@@ -256,7 +256,7 @@ it('does not tell the owner to read from a deleted PDF when drafts remain', func
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertSee('Geen bronbestand gekoppeld.')
-        ->assertSee('Review de geextraheerde rijen; de bron-PDF is niet meer gekoppeld. Niets telt mee totdat je een rij bevestigt.')
+        ->assertSee('Review de geëxtraheerde rijen; de bron-PDF is niet meer gekoppeld. Niets telt mee totdat je een rij bevestigt.')
         ->assertDontSee('Gelezen uit je PDF');
 });
 
@@ -279,7 +279,7 @@ it('does not tell the owner nothing counts when auto-confirmed values are alread
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertSee('Bevestigde waarden')
-        ->assertSee('Geextraheerde waarden reviewen')
+        ->assertSee('Geëxtraheerde waarden reviewen')
         ->assertSee('Sommige waarden tellen al mee voor status en trends.')
         ->assertDontSee('niets telt mee totdat je elke waarde bevestigt');
 });
@@ -344,7 +344,7 @@ it('hides the review strip when extraction has no drafts left', function () {
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertDontSee('data-test="review-strip"', false)
-        ->assertDontSee('Geen geextraheerde drafts gevonden.')
+        ->assertDontSee('Geen geëxtraheerde drafts gevonden.')
         ->assertDontSee('No below-threshold rows need review.');
 });
 
@@ -487,7 +487,7 @@ it('shows auto-confirmed extracted values as auto-filled and lets the owner edit
         ->assertSee('Bevestigde waarden')
         ->assertSee('automatisch ingevuld uit PDF')
         ->assertDontSee('bron verwijderd')
-        ->assertDontSee('Geextraheerd - bevestig eerst')
+        ->assertDontSee('Geëxtraheerd - bevestig eerst')
         ->call('editConfirmedResult', $result->id)
         ->assertSet('resultForm.biomarker_id', $biomarker->id)
         ->assertSet('resultForm.value', '42')
