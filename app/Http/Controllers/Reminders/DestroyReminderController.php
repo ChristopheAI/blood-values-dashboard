@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\Auth;
 
 class DestroyReminderController extends Controller
 {
-    public function __invoke(Reminder $reminder): RedirectResponse
+    public function __invoke(string $reminder): RedirectResponse
     {
-        abort_unless($reminder->user_id === Auth::id(), 403);
+        $reminder = Reminder::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($reminder)
+            ->firstOrFail();
 
         $reminder->delete();
 

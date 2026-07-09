@@ -72,7 +72,7 @@ it('user cannot compare another users blood tests', function () {
 
     $this->actingAs($otherUser)
         ->get(route('blood-tests.compare', ['first' => $ownersBloodTest, 'second' => $otherUsersBloodTest]))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 it('renders a complete mobile comparison card instead of clipping the table', function () {

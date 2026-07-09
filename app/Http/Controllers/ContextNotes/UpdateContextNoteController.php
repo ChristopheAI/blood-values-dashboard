@@ -13,9 +13,12 @@ use Illuminate\Validation\Rule;
 
 class UpdateContextNoteController extends Controller
 {
-    public function __invoke(Request $request, ContextNote $contextNote): RedirectResponse
+    public function __invoke(Request $request, string $contextNote): RedirectResponse
     {
-        abort_unless($contextNote->user_id === Auth::id(), 403);
+        $contextNote = ContextNote::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($contextNote)
+            ->firstOrFail();
 
         $validated = $request->validate([
             'blood_test_id' => ['nullable', 'integer'],
@@ -40,9 +43,10 @@ class UpdateContextNoteController extends Controller
             return null;
         }
 
-        $bloodTest = BloodTest::query()->whereKey((int) $bloodTestId)->firstOrFail();
-
-        abort_unless($bloodTest->user_id === Auth::id(), 403);
+        $bloodTest = BloodTest::query()
+            ->where('user_id', Auth::id())
+            ->whereKey((int) $bloodTestId)
+            ->firstOrFail();
 
         return $bloodTest->id;
     }

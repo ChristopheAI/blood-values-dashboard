@@ -29,7 +29,7 @@ it('deleting blood test removes or blocks its lab pdf', function () {
         ->assertNotFound();
 });
 
-it('rejects deleting another users blood test', function () {
+it('hides another users blood test deletion route as not found', function () {
     Storage::fake('local');
 
     $owner = User::factory()->create();
@@ -43,7 +43,7 @@ it('rejects deleting another users blood test', function () {
 
     $this->actingAs($otherUser)
         ->delete(route('blood-tests.destroy', $bloodTest))
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue()
         ->and(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();

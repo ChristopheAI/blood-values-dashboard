@@ -983,7 +983,7 @@ it('blocks using another users extracted draft from a tampered livewire action',
     Livewire::actingAs($otherUser)
         ->test(ReviewBloodTest::class, ['bloodTest' => $otherUsersBloodTest])
         ->call('useDraft', $ownersDraft->id)
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 it('confirms a below-detection draft using the prefixed value from the review form', function () {

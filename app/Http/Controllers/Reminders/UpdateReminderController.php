@@ -10,9 +10,12 @@ use Illuminate\Support\Facades\Auth;
 
 class UpdateReminderController extends Controller
 {
-    public function __invoke(Request $request, Reminder $reminder): RedirectResponse
+    public function __invoke(Request $request, string $reminder): RedirectResponse
     {
-        abort_unless($reminder->user_id === Auth::id(), 403);
+        $reminder = Reminder::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($reminder)
+            ->firstOrFail();
 
         $validated = $request->validate([
             'due_date' => ['required', 'date'],

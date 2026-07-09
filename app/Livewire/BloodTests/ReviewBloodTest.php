@@ -40,9 +40,9 @@ class ReviewBloodTest extends Component
         'note' => null,
     ];
 
-    public function mount(BloodTest $bloodTest): void
+    public function mount(mixed $bloodTest): void
     {
-        abort_unless($bloodTest->user_id === Auth::id(), 403);
+        $bloodTest = $this->ownedBloodTest($bloodTest instanceof BloodTest ? $bloodTest->id : (int) $bloodTest);
 
         $this->bloodTestId = $bloodTest->id;
     }
@@ -343,9 +343,12 @@ class ReviewBloodTest extends Component
 
     private function ownedBloodTest(int $bloodTestId): BloodTest
     {
-        $bloodTest = BloodTest::query()->whereKey($bloodTestId)->firstOrFail();
+        $bloodTest = BloodTest::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($bloodTestId)
+            ->first();
 
-        abort_unless($bloodTest->user_id === Auth::id(), 403);
+        abort_unless($bloodTest instanceof BloodTest, 404);
 
         return $bloodTest;
     }
@@ -354,11 +357,12 @@ class ReviewBloodTest extends Component
     {
         $draft = BiomarkerResult::query()
             ->with('biomarker')
+            ->where('blood_test_id', $bloodTest->id)
             ->whereKey($draftResultId)
-            ->firstOrFail();
+            ->first();
 
-        abort_unless($draft->blood_test_id === $bloodTest->id, 403);
-        abort_unless($bloodTest->user_id === Auth::id(), 403);
+        abort_unless($draft instanceof BiomarkerResult, 404);
+
         abort_unless($draft->entry_source === 'extracted' && $draft->confirmed_at === null, 403);
         abort_unless($this->resultUsesOwnedBiomarker($draft), 403);
 
@@ -369,11 +373,12 @@ class ReviewBloodTest extends Component
     {
         $result = BiomarkerResult::query()
             ->with('biomarker')
+            ->where('blood_test_id', $bloodTest->id)
             ->whereKey($resultId)
-            ->firstOrFail();
+            ->first();
 
-        abort_unless($result->blood_test_id === $bloodTest->id, 403);
-        abort_unless($bloodTest->user_id === Auth::id(), 403);
+        abort_unless($result instanceof BiomarkerResult, 404);
+
         abort_unless($result->confirmed_at !== null, 403);
         abort_unless($this->resultUsesOwnedBiomarker($result), 403);
 
@@ -444,9 +449,12 @@ class ReviewBloodTest extends Component
     private function ownedBiomarker(array $form): ?Biomarker
     {
         if ($form['biomarker_id'] !== null) {
-            $biomarker = Biomarker::query()->whereKey((int) $form['biomarker_id'])->firstOrFail();
+            $biomarker = Biomarker::query()
+                ->where('user_id', Auth::id())
+                ->whereKey((int) $form['biomarker_id'])
+                ->first();
 
-            abort_unless($biomarker->user_id === Auth::id(), 403);
+            abort_unless($biomarker instanceof Biomarker, 404);
 
             return $biomarker;
         }

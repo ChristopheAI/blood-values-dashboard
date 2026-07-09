@@ -64,7 +64,7 @@ it('rejects another users blood test attachment and note mutation', function () 
             'category' => ContextNoteCategory::Stress->value,
             'body' => 'Cannot attach to another user.',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->actingAs($otherUser)
         ->patch(route('context-notes.update', $ownersNote), [
@@ -72,11 +72,11 @@ it('rejects another users blood test attachment and note mutation', function () 
             'category' => ContextNoteCategory::Food->value,
             'body' => 'Tampered update.',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->actingAs($otherUser)
         ->delete(route('context-notes.destroy', $ownersNote))
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->assertDatabaseHas('context_notes', [
         'id' => $ownersNote->id,

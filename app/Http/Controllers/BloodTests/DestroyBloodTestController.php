@@ -14,9 +14,12 @@ use RuntimeException;
 
 class DestroyBloodTestController extends Controller
 {
-    public function __invoke(Request $request, BloodTest $bloodTest): RedirectResponse
+    public function __invoke(Request $request, string $bloodTest): RedirectResponse
     {
-        abort_unless($bloodTest->user_id === Auth::id(), 403);
+        $bloodTest = BloodTest::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($bloodTest)
+            ->firstOrFail();
 
         $request->validate([
             'confirmation' => ['required', 'string', Rule::in(['DELETE TEST'])],
