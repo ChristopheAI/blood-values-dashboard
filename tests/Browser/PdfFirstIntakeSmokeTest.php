@@ -70,7 +70,7 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
             'first' => $bloodTests[0]->id,
             'second' => $bloodTests[1]->id,
         ], false))
-            ->waitForText('Compare blood tests')
+            ->waitForText('Bloedtesten vergelijken')
             ->assertSee('Ferritin')
             ->assertSee('+6')
             ->assertSee('normaal');

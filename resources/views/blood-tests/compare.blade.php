@@ -1,11 +1,11 @@
-<x-layouts::app :title="__('Compare blood tests')">
+<x-layouts::app :title="__('Bloedtesten vergelijken')">
     <section class="mx-auto flex w-full max-w-5xl flex-col gap-6">
         <header>
-            <flux:heading size="xl">{{ __('Compare blood tests') }}</flux:heading>
+            <flux:heading size="xl">{{ __('Bloedtesten vergelijken') }}</flux:heading>
             <flux:text>
-                {{ $first->test_date ? \App\Support\Format::dutchDate($first->test_date) : __('First test') }}
+                {{ $first->test_date ? \App\Support\Format::dutchDate($first->test_date) : __('Vorige bloedtest') }}
                 ·
-                {{ $second->test_date ? \App\Support\Format::dutchDate($second->test_date) : __('Second test') }}
+                {{ $second->test_date ? \App\Support\Format::dutchDate($second->test_date) : __('Huidige bloedtest') }}
             </flux:text>
         </header>
 
@@ -14,8 +14,8 @@
                 <thead class="bg-neutral-50 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
                     <tr>
                         <th class="p-3">{{ __('Biomarker') }}</th>
-                        <th class="p-3">{{ __('Previous') }}</th>
-                        <th class="p-3">{{ __('Current') }}</th>
+                        <th class="p-3">{{ __('Vorige') }}</th>
+                        <th class="p-3">{{ __('Huidige') }}</th>
                         <th class="p-3">{{ __('Delta') }}</th>
                         <th class="p-3">{{ __('Status') }}</th>
                     </tr>
@@ -31,7 +31,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('No confirmed values to compare.') }}</td>
+                            <td colspan="5" class="p-4 text-neutral-600 dark:text-neutral-400">{{ __('Geen bevestigde waarden om te vergelijken.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -62,6 +62,55 @@ it('compares two blood tests using confirmed values only', function () {
         ->assertDontSee('Unconfirmed');
 });
 
+it('shows a compare entry point on the blood tests index', function () {
+    $user = User::factory()->create();
+    $older = BloodTest::factory()->for($user)->create([
+        'title' => 'April test',
+        'test_date' => '2026-04-01',
+    ]);
+    $latest = BloodTest::factory()->for($user)->create([
+        'title' => 'Juni test',
+        'test_date' => '2026-06-01',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('blood-tests.index'))
+        ->assertOk()
+        ->assertSee('data-test="compare-blood-tests-form"', false)
+        ->assertSee('name="first"', false)
+        ->assertSee('name="second"', false)
+        ->assertSee('April test')
+        ->assertSee('Juni test')
+        ->assertSee('value="'.$older->id.'" selected', false)
+        ->assertSee('value="'.$latest->id.'" selected', false);
+});
+
+it('redirects a bare compare route back to the blood test list with a visible message', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('blood-tests.compare'))
+        ->assertRedirect(route('blood-tests.index'))
+        ->assertSessionHas('compare_error', 'Kies twee bloedtesten om te vergelijken.');
+
+    $this->actingAs($user)
+        ->withSession(['compare_error' => 'Kies twee bloedtesten om te vergelijken.'])
+        ->get(route('blood-tests.index'))
+        ->assertOk()
+        ->assertSee('data-test="compare-selection-message"', false)
+        ->assertSee('Kies twee bloedtesten om te vergelijken.');
+});
+
+it('redirects same-test comparisons back with a visible message', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+
+    $this->actingAs($user)
+        ->get(route('blood-tests.compare', ['first' => $bloodTest, 'second' => $bloodTest]))
+        ->assertRedirect(route('blood-tests.index'))
+        ->assertSessionHas('compare_error', 'Kies twee verschillende bloedtesten om te vergelijken.');
+});
+
 it('user cannot compare another users blood tests', function () {
     $owner = User::factory()->create();
     $otherUser = User::factory()->create();
