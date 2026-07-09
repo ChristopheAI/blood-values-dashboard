@@ -539,6 +539,38 @@ it('keeps auto-filled PDF trace when the owner edits an auto-confirmed value', f
         ->and($result->status)->toBe('normal');
 });
 
+it('preserves qualitative status and confirmation time when editing a confirmed value', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'PCR']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    $confirmedAt = now()->subMonths(2)->startOfSecond();
+    $result = BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 'Positief',
+        'unit' => 'kwalitatief',
+        'reference_min' => null,
+        'reference_max' => null,
+        'reference_unit' => 'kwalitatief',
+        'status' => 'high',
+        'entry_source' => 'pdf_reviewed',
+        'confirmed_at' => $confirmedAt,
+        'source_snippet' => null,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('editConfirmedResult', $result->id)
+        ->set('resultForm.note', 'Reviewed spelling only.')
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    $result->refresh();
+
+    expect($result->value)->toBe('Positief')
+        ->and($result->status)->toBe('high')
+        ->and($result->confirmed_at?->toDateTimeString())->toBe($confirmedAt->toDateTimeString())
+        ->and($result->note)->toBe('Reviewed spelling only.');
+});
+
 it('marks auto-filled values when the source PDF is gone', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
