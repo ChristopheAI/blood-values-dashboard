@@ -6,6 +6,12 @@
     $normalRows = $overview['normal'];
     $unknownRows = $overview['unknown'];
     $counts = $overview['counts'];
+    $attentionCountCardClass = fn (int $count): string => $count > 0
+        ? 'rounded-md border border-amber-300 bg-amber-50 px-3 py-2 ring-1 ring-amber-200 dark:border-amber-800 dark:bg-amber-950/30 dark:ring-amber-900'
+        : 'rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700';
+    $attentionCountValueClass = fn (int $count): string => $count > 0
+        ? 'font-bold tabular-nums text-amber-900 dark:text-amber-100'
+        : 'font-semibold tabular-nums text-neutral-900 dark:text-white';
 
     // Waarom deze rij geen status heeft — de ene zin die de schijnbare
     // tegenspraak ('<50' naast 'Referentie: ≤ 30') oplost. De builder bepaalt
@@ -46,19 +52,19 @@
                 </div>
 
                 <dl class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                    <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
+                    <div class="{{ $attentionCountCardClass((int) $counts['low']) }}" data-test="confirmed-summary-count-low">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('laag') }}</dt>
-                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['low'] }}</dd>
+                        <dd class="{{ $attentionCountValueClass((int) $counts['low']) }}">{{ $counts['low'] }}</dd>
                     </div>
-                    <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
+                    <div class="{{ $attentionCountCardClass((int) $counts['high']) }}" data-test="confirmed-summary-count-high">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('hoog') }}</dt>
-                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['high'] }}</dd>
+                        <dd class="{{ $attentionCountValueClass((int) $counts['high']) }}">{{ $counts['high'] }}</dd>
                     </div>
                     <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('normaal') }}</dt>
                         <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['normal'] }}</dd>
                     </div>
-                    <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
+                    <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700" data-test="confirmed-summary-count-unknown">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('geen status') }}</dt>
                         <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['unknown'] }}</dd>
                     </div>
