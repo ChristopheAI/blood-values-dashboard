@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Settings;
 
+use App\Models\BloodTest;
+use App\Models\BloodTestDocument;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -56,7 +59,19 @@ class ProfileUpdateTest extends TestCase
 
     public function test_user_can_delete_their_account(): void
     {
+        Storage::fake('local');
         $user = User::factory()->create();
+        $bloodTest = BloodTest::factory()
+            ->for($user)
+            ->create();
+        $document = BloodTestDocument::factory()
+            ->for($bloodTest)
+            ->create([
+                'storage_disk' => 'local',
+                'storage_path' => "blood-test-documents/{$user->id}/lab-result.pdf",
+            ]);
+
+        Storage::disk('local')->put($document->storage_path, '%PDF-1.4 synthetic');
 
         $this->actingAs($user);
 
@@ -69,6 +84,8 @@ class ProfileUpdateTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertNull($user->fresh());
+        $this->assertDatabaseMissing('blood_test_documents', ['id' => $document->id]);
+        Storage::disk('local')->assertMissing($document->storage_path);
         $this->assertFalse(auth()->check());
     }
 
