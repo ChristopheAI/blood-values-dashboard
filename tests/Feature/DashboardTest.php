@@ -198,9 +198,9 @@ class DashboardTest extends TestCase
             ->assertSee('data-test="dashboard-metric-sources"', false)
             ->assertSee('Bloedtesten')
             ->assertSee('Bevestigd')
-            ->assertSee('In review')
+            ->assertSee('Na te kijken')
             ->assertSee('Bron-PDF')
-            ->assertSee('Extracties die nog niet downstream mogen.')
+            ->assertSee('Deze waarden tellen pas mee nadat je ze bevestigd hebt.')
             ->assertDontSee('Werkstand')
             ->assertDontSee('Foreign test');
     }
