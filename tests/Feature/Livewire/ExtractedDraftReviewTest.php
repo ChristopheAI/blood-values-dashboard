@@ -818,6 +818,43 @@ it('renders the patient friendly overview for an older owned blood test', functi
         ->assertDontSee('Nieuwere bloedtest');
 });
 
+it('uses shared reference label formatting in the detail overview range bars', function () {
+    $user = User::factory()->create();
+    $minimumOnly = Biomarker::factory()->for($user)->create(['name' => 'Minimum only marker']);
+    $maximumOnly = Biomarker::factory()->for($user)->create(['name' => 'Maximum only marker']);
+    $bloodTest = BloodTest::factory()->for($user)->create([
+        'title' => 'One-sided reference labels',
+        'test_date' => '2026-04-08',
+        'status' => 'confirmed',
+    ]);
+
+    BiomarkerResult::factory()->for($bloodTest)->for($minimumOnly)->create([
+        'value' => 8,
+        'unit' => 'mg/L',
+        'reference_min' => 10,
+        'reference_max' => null,
+        'reference_unit' => 'mg/L',
+        'status' => 'low',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($maximumOnly)->create([
+        'value' => 15,
+        'unit' => 'kIU/L',
+        'reference_min' => null,
+        'reference_max' => 13,
+        'reference_unit' => 'kIU/L',
+        'status' => 'high',
+        'confirmed_at' => now(),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('Referentie: ≥ 10 mg/L')
+        ->assertSee('Referentie: ≤ 13 kIU/L')
+        ->assertDontSee('Referentie: vanaf 10 mg/L')
+        ->assertDontSee('Referentie: onder 13 kIU/L');
+});
+
 it('marks the values stage done when confirmed values already exist', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
