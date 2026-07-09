@@ -77,6 +77,12 @@
                     </div>
                 @endforelse
             </div>
+
+            @if ($openReminders->hasPages())
+                <div data-test="open-reminder-pagination">
+                    {{ $openReminders->links() }}
+                </div>
+            @endif
         </section>
 
         <section class="space-y-4">
@@ -97,6 +103,12 @@
                     </div>
                 @endforelse
             </div>
+
+            @if ($completedReminders->hasPages())
+                <div data-test="completed-reminder-pagination">
+                    {{ $completedReminders->links() }}
+                </div>
+            @endif
         </section>
     </section>
 </x-layouts::app>

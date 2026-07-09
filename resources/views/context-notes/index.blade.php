@@ -52,6 +52,12 @@
                     </div>
                 @endforelse
             </div>
+
+            @if ($contextNotes->hasPages())
+                <div data-test="context-note-pagination">
+                    {{ $contextNotes->links() }}
+                </div>
+            @endif
         </section>
     </section>
 </x-layouts::app>
