@@ -5,6 +5,7 @@ use App\Models\BloodTest;
 use App\Models\User;
 use Database\Seeders\BloodValuesQaScenarioSeeder;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Console\Command\Command;
 
 it('seeds a synthetic blood values qa scenario idempotently', function () {
     Storage::fake('local');
@@ -43,4 +44,21 @@ it('seeds a synthetic blood values qa scenario idempotently', function () {
 
     expect(Storage::disk('local')->exists('blood-test-documents/qa/qa-older-lab.pdf'))->toBeTrue()
         ->and(Storage::disk('local')->exists('blood-test-documents/qa/qa-current-lab.pdf'))->toBeTrue();
+});
+
+it('refuses to seed the fixed qa login in production unless forced', function () {
+    Storage::fake('local');
+    $this->app->detectEnvironment(fn (): string => 'production');
+
+    $this->artisan('app:seed-blood-test-demo')
+        ->expectsOutput('Refusing to seed the fixed synthetic QA login in production.')
+        ->expectsOutput('Run with --force only for a deliberate, temporary QA session.')
+        ->assertExitCode(Command::FAILURE);
+
+    expect(User::query()->where('email', BloodValuesQaScenarioSeeder::USER_EMAIL)->exists())->toBeFalse();
+
+    $this->artisan('app:seed-blood-test-demo --force')
+        ->assertExitCode(Command::SUCCESS);
+
+    expect(User::query()->where('email', BloodValuesQaScenarioSeeder::USER_EMAIL)->exists())->toBeTrue();
 });

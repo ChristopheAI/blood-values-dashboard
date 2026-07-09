@@ -13,6 +13,9 @@ php artisan app:seed-blood-test-demo
 The command is idempotent. Running it again updates the same synthetic user and
 records instead of creating duplicates.
 
+In `APP_ENV=production`, the command refuses to create the fixed QA login unless
+you pass `--force` for a deliberate, temporary QA session.
+
 ## Login
 
 ```text
