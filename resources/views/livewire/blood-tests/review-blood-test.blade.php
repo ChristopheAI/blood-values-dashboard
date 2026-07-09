@@ -225,7 +225,7 @@
                     @endphp
 
                     <article class="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40" data-test="extracted-draft-row" data-state="draft" data-confidence="{{ $confidenceLevel }}">
-                        <div class="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] sm:items-start">
+                        <div class="grid gap-3 sm:grid-cols-2 sm:items-start">
                             <div>
                                 <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Biomarker') }}</div>
                                 <div class="font-medium">{{ $draft->biomarker?->name ?? $draft->extracted_name ?? __('Onbekende marker') }}</div>
@@ -246,7 +246,7 @@
                                 <div class="text-neutral-700 dark:text-neutral-300">{{ __('Bevestiging nodig') }}</div>
                             </div>
 
-                            <div class="flex flex-wrap gap-2 sm:justify-end">
+                            <div class="flex flex-wrap gap-2 sm:col-span-2 sm:justify-end">
                                 <flux:button type="button" size="sm" wire:click="useDraft({{ $draft->id }})" data-test="use-draft-button">
                                     {{ __('Draft gebruiken') }}
                                 </flux:button>

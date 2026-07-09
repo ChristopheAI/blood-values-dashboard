@@ -147,6 +147,7 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertSee('Vitamin D')
             ->assertDontSee('Nog geen bevestigde waarden.');
 
+        assertReviewStripHasNoOverlapsAtDesktopWidth($browser);
         assertNoForbiddenMedicalCopyAppears($browser);
     });
 });
@@ -238,6 +239,7 @@ test('synthetic qa scenario proves the full multi blood test follow up flow', fu
             ->assertSee('Bevestiging nodig')
             ->assertPresent('[data-test="extracted-draft-row"][data-state="draft"][data-confidence="low"]');
 
+        assertReviewStripHasNoOverlapsAtDesktopWidth($browser);
         assertNoForbiddenMedicalCopyAppears($browser);
 
         $browser->visit(route('blood-tests.compare', [
@@ -618,6 +620,62 @@ function assertNoForbiddenMedicalCopyAppears(Browser $browser): void
     foreach (forbiddenMedicalCopyTerms() as $term) {
         $browser->assertDontSee($term, true);
     }
+}
+
+function assertReviewStripHasNoOverlapsAtDesktopWidth(Browser $browser): void
+{
+    $result = $browser
+        ->resize(1440, 900)
+        ->waitFor('[data-test="extracted-draft-row"]')
+        ->script(<<<'JS'
+const row = document.querySelector('[data-test="extracted-draft-row"]');
+
+if (!row) {
+    return 'missing-row';
+}
+
+const targets = [
+    '[data-test="draft-value"]',
+    '[data-test="draft-reference"]',
+    '[data-test="draft-review-state"]',
+    '[data-test="use-draft-button"]',
+    '[data-test="delete-draft-button"]',
+];
+
+const boxes = targets
+    .flatMap((selector) => Array.from(row.querySelectorAll(selector)))
+    .map((element) => {
+        const box = element.getBoundingClientRect();
+
+        return {
+            selector: element.getAttribute('data-test'),
+            left: box.left,
+            right: box.right,
+            top: box.top,
+            bottom: box.bottom,
+            width: box.width,
+            height: box.height,
+        };
+    })
+    .filter((box) => box.width > 0 && box.height > 0);
+
+for (let first = 0; first < boxes.length; first += 1) {
+    for (let second = first + 1; second < boxes.length; second += 1) {
+        const horizontalOverlap = Math.min(boxes[first].right, boxes[second].right) - Math.max(boxes[first].left, boxes[second].left);
+        const verticalOverlap = Math.min(boxes[first].bottom, boxes[second].bottom) - Math.max(boxes[first].top, boxes[second].top);
+
+        if (horizontalOverlap > 1 && verticalOverlap > 1) {
+            return `${boxes[first].selector} overlaps ${boxes[second].selector}`;
+        }
+    }
+}
+
+return 'ok';
+JS);
+
+    expect($result[0] ?? null)->toBe('ok');
+
+    $browser->resize(1920, 1080);
 }
 
 /**
