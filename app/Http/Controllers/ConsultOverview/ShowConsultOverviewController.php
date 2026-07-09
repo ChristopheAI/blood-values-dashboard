@@ -20,6 +20,31 @@ class ShowConsultOverviewController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
+        // A bare GET (sidebar entry, no query string) starts from the latest
+        // consult-ready blood test instead of a dead empty pack. Only then:
+        // an explicit submission with nothing selected must stay empty — see
+        // ConsultOverviewEmptySelectionTest, which forbids widening a chosen
+        // empty selection to owned data.
+        if ($request->isMethod('get') && $request->query() === [] && $filters['blood_test_ids'] === []) {
+            $latestConsultReady = BloodTest::query()
+                ->where('user_id', $user->id)
+                ->whereHas('results', fn ($query) => $query
+                    ->whereNotNull('confirmed_at')
+                    ->whereHas('biomarker', fn ($biomarker) => $biomarker->where('user_id', $user->id)))
+                ->latest('test_date')
+                ->first();
+
+            if ($latestConsultReady) {
+                // Mirror the dashboard consult-handoff defaults so the bare
+                // entry shows a usable pack, not test metadata without values.
+                $filters['blood_test_ids'] = [(int) $latestConsultReady->id];
+                $filters['include_attention'] = true;
+                $filters['include_normal'] = true;
+                $filters['include_trends'] = true;
+                $filters['include_source_documents'] = true;
+            }
+        }
+
         return view('consult-overview.index', [
             'availableBloodTests' => BloodTest::query()
                 ->where('user_id', $user->id)

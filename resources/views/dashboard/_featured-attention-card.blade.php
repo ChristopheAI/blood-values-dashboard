@@ -48,5 +48,14 @@
                 {{ $row['valueLabel'] }} · {{ $row['range']['label'] }} · {{ $row['trendLabel'] }}@if (!empty($row['trendDetail'])) ({{ $row['trendDetail'] }})@endif
             </div>
         @endif
+
+        {{-- Een kalme volgende stap op het moment van het signaal: geen
+             urgentie, geen duiding — alleen de bestaande consultroute. --}}
+        <p class="border-t border-amber-200/70 pt-3 text-sm text-neutral-700 dark:border-amber-900/70 dark:text-neutral-300" data-test="attention-next-step">
+            {{ __('Bespreek deze waarde met je arts.') }}
+            <a href="{{ route('consult-overview.index', ['blood_test_ids' => [$summary['bloodTest']->id]]) }}" class="font-medium underline">
+                {{ __('Zet hem klaar op je consultlijst') }}
+            </a>
+        </p>
     </div>
 </article>

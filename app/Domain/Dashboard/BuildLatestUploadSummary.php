@@ -2,6 +2,7 @@
 
 namespace App\Domain\Dashboard;
 
+use App\Domain\Biomarkers\DetectionLimitValue;
 use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Domain\BloodTests\LongitudinalChange;
 use App\Enums\BiomarkerStatus;
@@ -217,39 +218,32 @@ class BuildLatestUploadSummary
      */
     private function buildRange(BiomarkerResult $result): array
     {
+        // A detection limit ('<40') or qualitative value ('Negatief') must
+        // never be float-cast onto the bar: the marker would plot a bound or
+        // a word as an exact measurement at position 0.
+        if (DetectionLimitValue::fromStoredResult($result) instanceof DetectionLimitValue) {
+            return $this->unavailableRange('Meetgrens van het lab');
+        }
+
+        if (! is_numeric($result->value)) {
+            return $this->unavailableRange('Geen numerieke waarde');
+        }
+
         $value = (float) $result->value;
         $min = $this->toFloatOrNull($result->reference_min);
         $max = $this->toFloatOrNull($result->reference_max);
 
         if ($min === null && $max === null) {
-            return [
-                'available' => false,
-                'position' => null,
-                'normalStart' => null,
-                'normalWidth' => null,
-                'label' => 'Geen volledige referentie',
-            ];
+            return $this->unavailableRange('Geen volledige referentie');
         }
 
         if ($result->reference_unit && $result->reference_unit !== $result->unit) {
-            return [
-                'available' => false,
-                'position' => null,
-                'normalStart' => null,
-                'normalWidth' => null,
-                'label' => 'Referentie-eenheid verschilt',
-            ];
+            return $this->unavailableRange('Referentie-eenheid verschilt');
         }
 
         if ($min !== null && $max !== null) {
             if ($max <= $min) {
-                return [
-                    'available' => false,
-                    'position' => null,
-                    'normalStart' => null,
-                    'normalWidth' => null,
-                    'label' => 'Geen volledige referentie',
-                ];
+                return $this->unavailableRange('Geen volledige referentie');
             }
 
             $scale = RangeBarScale::twoSided($value, $min, $max);
@@ -289,6 +283,20 @@ class BuildLatestUploadSummary
             scaleMax: $scaleMax,
             label: 'Referentie: onder '.Format::number($max).' '.$result->unit,
         );
+    }
+
+    /**
+     * @return array{available: false, position: null, normalStart: null, normalWidth: null, label: string}
+     */
+    private function unavailableRange(string $label): array
+    {
+        return [
+            'available' => false,
+            'position' => null,
+            'normalStart' => null,
+            'normalWidth' => null,
+            'label' => $label,
+        ];
     }
 
     /**

@@ -200,7 +200,7 @@ class DashboardTest extends TestCase
             ->assertSee('Bevestigd')
             ->assertSee('In review')
             ->assertSee('Bron-PDF')
-            ->assertSee('Extracties die nog niet downstream mogen.')
+            ->assertSee('Uit je PDF gehaald, maar nog niet door jou bevestigd.')
             ->assertDontSee('Werkstand')
             ->assertDontSee('Foreign test');
     }
@@ -316,6 +316,68 @@ class DashboardTest extends TestCase
             ->assertSee('Current dated blood test')
             ->assertSee('Afname 15 juni 2026')
             ->assertDontSee('Older but later created record · 1 bevestigde waarde');
+    }
+
+    public function test_dashboard_puts_the_latest_test_verdict_above_the_process_banner_and_counters(): void
+    {
+        $user = User::factory()->create();
+        $biomarker = Biomarker::factory()->for($user)->create(['name' => 'CRP']);
+        $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+        BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+            'value' => 7.8,
+            'unit' => 'mg/L',
+            'reference_min' => 0,
+            'reference_max' => 5,
+            'status' => 'high',
+            'confirmed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'data-test="dashboard-latest-blood-test"',
+                'data-test="dashboard-next-step"',
+                'data-test="dashboard-metrics"',
+            ], false);
+    }
+
+    public function test_upload_summary_never_plots_a_detection_limit_or_qualitative_value_on_the_range_bar(): void
+    {
+        $user = User::factory()->create();
+        $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+
+        $cmv = Biomarker::factory()->for($user)->create(['name' => 'CMV IgM']);
+        BiomarkerResult::factory()->for($bloodTest)->for($cmv)->create([
+            'value' => 50,
+            'value_comparator' => '<',
+            'unit' => 'U/L',
+            'reference_max' => 30,
+            'status' => 'unknown',
+            'confirmed_at' => now(),
+        ]);
+
+        $hiv = Biomarker::factory()->for($user)->create(['name' => 'HIV-antistoffen']);
+        BiomarkerResult::factory()->for($bloodTest)->for($hiv)->create([
+            'value' => 'Negatief',
+            'unit' => '',
+            'status' => 'unknown',
+            'confirmed_at' => now(),
+        ]);
+
+        $summary = app(BuildLatestUploadSummary::class)->forBloodTest($user, $bloodTest);
+
+        $this->assertNotNull($summary);
+
+        $cmvRange = $summary['rows']->firstWhere('name', 'CMV IgM')['range'];
+        $this->assertFalse($cmvRange['available']);
+        $this->assertNull($cmvRange['position']);
+        $this->assertSame('Meetgrens van het lab', $cmvRange['label']);
+
+        $hivRange = $summary['rows']->firstWhere('name', 'HIV-antistoffen')['range'];
+        $this->assertFalse($hivRange['available']);
+        $this->assertNull($hivRange['position']);
+        $this->assertSame('Geen numerieke waarde', $hivRange['label']);
     }
 
     public function test_upload_summary_compares_against_previous_blood_test_only(): void

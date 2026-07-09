@@ -1,26 +1,28 @@
 <x-layouts::app :title="__('Dashboard')">
     <section class="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        @include('dashboard._workstand-summary', ['workstand' => $dashboardOverview['workstand']])
+        {{-- Gezondheid vóór boekhouding: het antwoord op "hoe sta ik ervoor?"
+             (laatste test met aandachtswaarden) staat boven de procesbanner en
+             de tellers, zodat een echte afwijkende waarde nooit wordt
+             overschreeuwd door een routineuze review-stap. --}}
+        @if (! $recentBloodTests->isEmpty())
+            @include('dashboard._latest-blood-test', [
+                'bloodTests' => $dashboardOverview['bloodTests'],
+                'latestUploadSummary' => $latestUploadSummary,
+            ])
+        @endif
 
         @include('dashboard._next-step', [
             'nextStep' => $dashboardOverview['nextStep'],
             'readiness' => $dashboardOverview['readiness'],
         ])
 
+        @include('dashboard._workstand-summary', ['workstand' => $dashboardOverview['workstand']])
+
         @if ($recentBloodTests->isEmpty())
             @include('blood-tests._upload-dropzone')
         @endif
 
-        @if (! $recentBloodTests->isEmpty())
-            @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])
-
-            @include('dashboard._latest-blood-test', [
-                'bloodTests' => $dashboardOverview['bloodTests'],
-                'latestUploadSummary' => $latestUploadSummary,
-            ])
-        @else
-            @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])
-        @endif
+        @include('dashboard._blood-test-timeline', ['bloodTests' => $dashboardOverview['bloodTests']])
 
         <div class="grid gap-4 md:grid-cols-3" data-test="dashboard-supporting-links">
             <section class="space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" data-test="dashboard-pinned-biomarkers">
@@ -62,7 +64,7 @@
                     <flux:button :href="route('context-notes.index')" variant="outline">{{ __('Contextnotitie toevoegen') }}</flux:button>
                     <flux:button :href="route('reminders.index')" variant="outline">{{ __('Herinnering toevoegen') }}</flux:button>
                     <flux:text class="text-sm text-neutral-600 dark:text-neutral-400">
-                        {{ __('Consultlijst start via de banner bovenaan zodra je bevestigde waarden hebt.') }}
+                        {{ __('Consultlijst opent met je laatste bloedtest al voorgeselecteerd.') }}
                     </flux:text>
                 </div>
             </section>

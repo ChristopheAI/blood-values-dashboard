@@ -1,4 +1,11 @@
 <section class="space-y-6" data-test="consult-pack">
+    @if (count($overview['bloodTests']) === 0)
+        {{-- Geen dode acties: exporteren/printen werkt op de selectie, dus
+             zonder selectie tonen we de reden in plaats van de knoppen. --}}
+        <p class="text-sm text-neutral-600 print:hidden dark:text-neutral-400" data-test="consult-actions-disabled">
+            {{ __('Selecteer eerst een bloedtest — exporteren en printen werken op je selectie.') }}
+        </p>
+    @else
     <div class="flex flex-wrap gap-3 print:hidden">
         <form method="POST" action="{{ route('consult-overview.csv') }}" data-test="export-consult-csv-form">
             @csrf
@@ -44,6 +51,7 @@
 
         <flux:button type="button" variant="outline" onclick="window.print()" data-test="print-consult-pack-button">{{ __('Consultlijst printen') }}</flux:button>
     </div>
+    @endif
 
     @if ($filters['include_attention'])
         <section class="space-y-4 rounded-lg border border-amber-200 bg-amber-50/40 p-5 dark:border-amber-900 dark:bg-amber-950/20" data-test="consult-attention-values">

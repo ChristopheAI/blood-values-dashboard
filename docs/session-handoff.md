@@ -35,10 +35,29 @@ The project is following the `ChristopheAI/Codex` starter-kit workflow:
 
 Update this section after each meaningful session.
 
-- Branch: `feat/blood-results-overview` (the earlier durable checkpoint for
-  `codex/v2-clean-autoconfirm` is preserved below)
+- Branch: `main` — `feat/blood-results-overview` was merged via PR #55 on
+  2026-07-07 and the local branch deleted; 321 tests green on main after the
+  merge. (The earlier durable checkpoint for `codex/v2-clean-autoconfirm` is
+  preserved below.)
 - Worktree:
   `/Users/christophe/Projects/Laravel 1st project`
+- Signal-to-consult slice (2026-07-07, `feat/signal-to-consult`, UX audit #54):
+  - Dashboard leads with health: the latest-test verdict sits above the
+    review banner and the KPI tiles; KPI help texts rewritten in lay Dutch.
+  - The featured attention card carries a calm next step ("Bespreek deze
+    waarde met je arts" + consultlijst link with the blood test preselected).
+  - A bare GET on the consult overview preselects the latest consult-ready
+    blood test with the dashboard-handoff include defaults; explicit
+    submissions with an empty selection stay empty (no-widening invariant
+    preserved and re-tested); export/print hide behind an explanation until
+    a selection exists.
+  - Dashboard range bars decline detection-limit and qualitative values with
+    a factual label instead of plotting them at position 0.
+  - Review strip: five grid tracks only from xl (fixes the 1440px overlap);
+    'Geëxtraheerd' regained its trema.
+  - Verified: 326 Pest tests, Pint, PHPStan green; browser QA on the seeded
+    scenario for dashboard order, consult bare-visit preselection, and the
+    attention next-step link.
 - Blood results overview slice (2026-07-06, `feat/blood-results-overview`):
   - The confirmed-only overview page (`GET /blood-results`) is implemented
     around the lay reading model: one row per biomarker with its measurement
@@ -384,7 +403,7 @@ Update this section after each meaningful session.
 
 | Marker | Type | Meaning | How To Resume |
 | --- | --- | --- | --- |
-| feat/blood-results-overview | project state | Confirmed-only blood results overview page built around the lay reading model; grouping/status logic lives in `BuildBloodResultsOverview::overview()`; ADR-0013 still Proposed pending owner review. | Read `docs/adr/0013-blood-results-overview.md`, `docs/blood-results-overview-spec.md`, `docs/superpowers/plans/2026-07-02-blood-results-overview-slice.md`, latest git log/status, then run `sh scripts/validate.sh`. |
+| blood-results-overview-merged | project state | Confirmed-only overview merged to main via PR #55 (2026-07-07); ADR-0013 and ADR-0015 Accepted; dark mode restored app-wide. Next: first Railway staging deploy per the runbook, then the remaining #54 medium items. | Read `docs/adr/0013-blood-results-overview.md`, `docs/adr/0015-use-railway-volume-for-private-documents.md`, `docs/ops/railway-deployment.md`, issue #54, then run `sh scripts/validate.sh`. |
 | v2-clean-autoconfirm | project state | V2 clean extraction, confidence-gated auto-confirm, upload-first intake, and hardening follow-ups are implemented on `codex/v2-clean-autoconfirm`; ADR-0011 live gate passed with review remainder, and owner code review remains before merge. | Read `README.md`, `AGENTS.md`, `docs/session-handoff.md`, `docs/v2-spec.md`, `docs/adr/0011-clean-extraction-and-confidence-gated-auto-confirm.md`, `docs/codex-v2-clean-autoconfirm-kickoff.md`, latest git log/status, then run `sh scripts/validate.sh`. |
 
 ## Handoff Prompt For A New Codex Thread

@@ -31,7 +31,7 @@ it('shows extracted drafts and lets the owner confirm a draft through the review
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('Geextraheerd - bevestig eerst')
+        ->assertSee('Geëxtraheerd - bevestig eerst')
         ->assertSee('Ferritin')
         ->call('useDraft', $draft->id)
         ->assertSet('draftResultId', $draft->id)
@@ -237,7 +237,7 @@ it('frames the review form as extracted value review when drafts exist', functio
 
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
-        ->assertSee('Geextraheerde waarden reviewen')
+        ->assertSee('Geëxtraheerde waarden reviewen')
         ->assertSee('Gelezen uit je PDF')
         ->assertDontSee('Waarden toevoegen');
 });
@@ -279,7 +279,7 @@ it('does not tell the owner nothing counts when auto-confirmed values are alread
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
         ->assertSee('Bevestigde waarden')
-        ->assertSee('Geextraheerde waarden reviewen')
+        ->assertSee('Geëxtraheerde waarden reviewen')
         ->assertSee('Sommige waarden tellen al mee voor status en trends.')
         ->assertDontSee('niets telt mee totdat je elke waarde bevestigt');
 });
@@ -487,7 +487,7 @@ it('shows auto-confirmed extracted values as auto-filled and lets the owner edit
         ->assertSee('Bevestigde waarden')
         ->assertSee('automatisch ingevuld uit PDF')
         ->assertDontSee('bron verwijderd')
-        ->assertDontSee('Geextraheerd - bevestig eerst')
+        ->assertDontSee('Geëxtraheerd - bevestig eerst')
         ->call('editConfirmedResult', $result->id)
         ->assertSet('resultForm.biomarker_id', $biomarker->id)
         ->assertSet('resultForm.value', '42')
@@ -807,6 +807,8 @@ it('renders the patient friendly overview for an older owned blood test', functi
         ->assertSee('1/3 waarde is normaal')
         ->assertSee('2 waarden vragen aandacht')
         ->assertSee('data-test="featured-attention-card"', false)
+        ->assertSee('data-test="attention-next-step"', false)
+        ->assertSee('Zet hem klaar op je consultlijst')
         ->assertSee('data-test="compact-normal-row"', false)
         ->assertSee('data-test="compact-review-row"', false)
         ->assertSee('+7 ug/L')

@@ -257,8 +257,8 @@ test('synthetic qa scenario proves the full multi blood test follow up flow', fu
 
         $browser->visit(route('consult-overview.index', [], false))
             ->waitForText('Consultlijst')
-            ->check("input[name='blood_test_ids[]'][value='{$olderBloodTest->id}']")
-            ->check("input[name='blood_test_ids[]'][value='{$currentBloodTest->id}']")
+            ->check("[data-test='consult-blood-test-checkbox'][value='{$olderBloodTest->id}']")
+            ->assertChecked("[data-test='consult-blood-test-checkbox'][value='{$currentBloodTest->id}']")
             ->check('[data-test="include-pinned-checkbox"]')
             ->check('[data-test="include-attention-checkbox"]')
             ->check('[data-test="include-normal-checkbox"]')

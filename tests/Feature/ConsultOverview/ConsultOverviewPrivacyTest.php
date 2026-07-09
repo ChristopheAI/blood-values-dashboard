@@ -65,6 +65,12 @@ it('does not carry consult questions in generated get urls', function () {
     $user = User::factory()->create();
     $secretQuestion = 'Could we discuss the training context privately?';
 
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42, 'unit' => 'ug/L', 'status' => 'normal', 'confirmed_at' => now(),
+    ]);
+
     $this->actingAs($user)
         ->post(route('consult-overview.index'), [
             'from' => '2026-06-01',
@@ -92,9 +98,16 @@ it('does not carry consult questions into the csv export form', function () {
     $user = User::factory()->create();
     $secretQuestion = 'Could we discuss the training context privately?';
 
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42, 'unit' => 'ug/L', 'status' => 'normal', 'confirmed_at' => now(),
+    ]);
+
     $this->actingAs($user)
         ->post(route('consult-overview.index'), [
             'include_context' => '1',
+            'blood_test_ids' => [$bloodTest->id],
             'questions' => $secretQuestion,
         ])
         ->assertOk()
