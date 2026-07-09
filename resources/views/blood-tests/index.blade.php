@@ -60,6 +60,12 @@
                     {{ __('Nog geen bloedtesten. Upload een lab-PDF om de reviewflow te starten.') }}
                 </div>
             @endforelse
+
+            @if ($bloodTests->hasPages())
+                <div data-test="blood-test-pagination">
+                    {{ $bloodTests->links() }}
+                </div>
+            @endif
         </div>
     </section>
 </x-layouts::app>

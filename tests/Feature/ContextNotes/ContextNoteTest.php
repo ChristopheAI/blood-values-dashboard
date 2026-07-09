@@ -141,6 +141,30 @@ it('does not show a foreign linked blood test on an owned context note', functio
         ->assertDontSee(route('blood-tests.show', $otherBloodTest, false));
 });
 
+it('paginates owned context notes', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 16) as $day) {
+        ContextNote::factory()->for($user)->create([
+            'note_date' => sprintf('2026-01-%02d', $day),
+            'body' => sprintf('Paged context note %02d', $day),
+        ]);
+    }
+
+    $this->actingAs($user)
+        ->get(route('context-notes.index'))
+        ->assertOk()
+        ->assertSee('Paged context note 16')
+        ->assertDontSee('Paged context note 01')
+        ->assertSee('data-test="context-note-pagination"', false);
+
+    $this->actingAs($user)
+        ->get(route('context-notes.index', ['page' => 2]))
+        ->assertOk()
+        ->assertSee('Paged context note 01')
+        ->assertDontSee('Paged context note 16');
+});
+
 it('stores medication and supplement context as descriptive user text', function () {
     $user = User::factory()->create();
     $body = 'Medication noted: 25mg at breakfast. Supplement noted: magnesium in evening.';

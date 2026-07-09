@@ -23,7 +23,7 @@ class IndexContextNotesController extends Controller
                 ->where('user_id', Auth::id())
                 ->with(['bloodTest' => fn ($query) => $query->where('user_id', Auth::id())])
                 ->latest('note_date')
-                ->get(),
+                ->paginate(15),
         ]);
     }
 }

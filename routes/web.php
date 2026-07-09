@@ -7,6 +7,7 @@ use App\Http\Controllers\BloodTests\CompareBloodTestsController;
 use App\Http\Controllers\BloodTests\DestroyBloodTestController;
 use App\Http\Controllers\BloodTests\DestroyBloodTestDocumentController;
 use App\Http\Controllers\BloodTests\DownloadBloodTestDocumentController;
+use App\Http\Controllers\BloodTests\IndexBloodTestsController;
 use App\Http\Controllers\BloodTests\StoreBloodTestController;
 use App\Http\Controllers\BloodTests\UpdateBloodTestController;
 use App\Http\Controllers\ConsultOverview\ExportConsultOverviewCsvController;
@@ -31,7 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('blood-results', ConfirmedBiomarkerOverview::class)->name('blood-results.overview');
 
-    Route::view('blood-tests', 'blood-tests.index')->name('blood-tests.index');
+    Route::get('blood-tests', IndexBloodTestsController::class)->name('blood-tests.index');
     Route::post('blood-tests', StoreBloodTestController::class)->name('blood-tests.store');
     Route::get('blood-tests/compare', CompareBloodTestsController::class)->name('blood-tests.compare');
     Route::get('blood-tests/{bloodTest}', ReviewBloodTest::class)->name('blood-tests.show');

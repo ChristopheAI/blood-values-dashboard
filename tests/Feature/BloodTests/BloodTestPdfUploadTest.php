@@ -137,6 +137,30 @@ it('lists blood tests by most recent blood test date first', function () {
         ->toBeLessThan(strpos($content, 'Older but later created record'));
 });
 
+it('paginates the blood test index', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 16) as $day) {
+        BloodTest::factory()->for($user)->create([
+            'title' => sprintf('Paged blood test %02d', $day),
+            'test_date' => sprintf('2026-01-%02d', $day),
+        ]);
+    }
+
+    $this->actingAs($user)
+        ->get(route('blood-tests.index'))
+        ->assertOk()
+        ->assertSee('Paged blood test 16')
+        ->assertDontSee('Paged blood test 01')
+        ->assertSee('data-test="blood-test-pagination"', false);
+
+    $this->actingAs($user)
+        ->get(route('blood-tests.index', ['page' => 2]))
+        ->assertOk()
+        ->assertSee('Paged blood test 01')
+        ->assertDontSee('Paged blood test 16');
+});
+
 it('renders the dropzone choose control as a button and keeps the input pdf only', function () {
     $user = User::factory()->create();
 
