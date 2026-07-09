@@ -198,13 +198,14 @@ class DashboardTest extends TestCase
             ->assertSee('data-test="dashboard-metric-sources"', false)
             ->assertSee('Bloedtesten')
             ->assertSee('Bevestigd')
-            ->assertSee('Te reviewen')
+            ->assertSee('Na te kijken')
             ->assertSee('Bron-PDF')
             ->assertSee('Extracties die nog niet downstream mogen.')
             ->assertSee('Bevestigde waarden blijven beschikbaar')
             ->assertSee('1 waarde wacht op review en blijft buiten consult.')
             ->assertSee('data-test="dashboard-consult-handoff-form"', false)
             ->assertSee('Consultlijst maken')
+            ->assertSee('Deze waarden tellen pas mee nadat je ze bevestigd hebt.')
             ->assertDontSee('Werkstand')
             ->assertDontSee('Foreign test');
     }
