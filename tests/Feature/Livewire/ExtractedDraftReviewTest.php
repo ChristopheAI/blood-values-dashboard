@@ -281,7 +281,12 @@ it('does not tell the owner nothing counts when auto-confirmed values are alread
         ->assertSee('Bevestigde waarden')
         ->assertSee('Geextraheerde waarden reviewen')
         ->assertSee('Sommige waarden tellen al mee voor status en trends.')
-        ->assertDontSee('niets telt mee totdat je elke waarde bevestigt');
+        ->assertDontSee('niets telt mee totdat je elke waarde bevestigt')
+        // Stable wire:key on both the confirmed-values table rows and the draft
+        // review rows so a Livewire re-render keeps row state pinned to the right
+        // BiomarkerResult — a dropped key reintroduces the row-identity bug.
+        ->assertSee('wire:key="confirmed-result-', false)
+        ->assertSee('wire:key="draft-result-', false);
 });
 
 it('marks below auto-confirm threshold drafts as low confidence in the review strip', function () {
