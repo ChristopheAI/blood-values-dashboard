@@ -98,7 +98,7 @@
                             ];
                         @endphp
 
-                        <tr class="border-t border-neutral-200 dark:border-neutral-700" data-test="confirmed-value-row">
+                        <tr wire:key="confirmed-result-{{ $result->id }}" class="border-t border-neutral-200 dark:border-neutral-700" data-test="confirmed-value-row">
                             <td class="p-3">{{ $result->biomarker->name }}</td>
                             <td class="p-3">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator) }} {{ $result->unit }}</td>
                             <td class="p-3 text-neutral-600 dark:text-neutral-400">
@@ -160,7 +160,7 @@
             <flux:heading size="lg">{{ __('Bronbestand') }}</flux:heading>
 
             @forelse ($bloodTest->documents as $document)
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-test="source-document-row">
+                <div wire:key="source-document-{{ $document->id }}" class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-test="source-document-row">
                     <a class="inline-flex text-sm font-medium text-blue-700 underline dark:text-blue-300" href="{{ route('blood-test-documents.download', $document) }}">
                         {{ $document->original_filename }}
                     </a>
@@ -208,7 +208,7 @@
                             : 'standard';
                     @endphp
 
-                    <article class="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40" data-test="extracted-draft-row" data-state="draft" data-confidence="{{ $confidenceLevel }}">
+                    <article wire:key="draft-result-{{ $draft->id }}" class="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40" data-test="extracted-draft-row" data-state="draft" data-confidence="{{ $confidenceLevel }}">
                         <div class="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] sm:items-start">
                             <div>
                                 <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Biomarker') }}</div>
@@ -291,7 +291,7 @@
             <flux:select wire:model="resultForm.biomarker_id" :label="__('Bestaande biomarker')" data-test="existing-biomarker-select">
                 <option value="">{{ __('Nieuwe aanmaken') }}</option>
                 @foreach ($biomarkers as $biomarker)
-                    <option value="{{ $biomarker->id }}">{{ $biomarker->name }}</option>
+                    <option wire:key="biomarker-option-{{ $biomarker->id }}" value="{{ $biomarker->id }}">{{ $biomarker->name }}</option>
                 @endforeach
             </flux:select>
 
@@ -327,7 +327,7 @@
 
         <div class="space-y-3">
             @forelse ($bloodTest->contextNotes as $note)
-                <article class="rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="blood-test-context-note-row">
+                <article wire:key="context-note-{{ $note->id }}" class="rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="blood-test-context-note-row">
                     <div class="font-medium">{{ \App\Support\Format::dutchDate($note->note_date) }} · {{ ucfirst($note->category->value) }}</div>
                     <p class="mt-2 text-neutral-700 dark:text-neutral-300">{{ $note->body }}</p>
                 </article>

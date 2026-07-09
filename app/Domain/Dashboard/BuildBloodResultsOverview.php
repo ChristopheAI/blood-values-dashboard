@@ -150,7 +150,7 @@ final class BuildBloodResultsOverview
     }
 
     /**
-     * @return array{label: string, value: string, valueLabel: string, valueWithUnit: string, unit: string|null, status: string, statusLabel: string, reference: string, reference_unit_mismatch: bool, date: string|null, is_detection_limit: bool, beyond: array{direction: string, label: string}|null, no_status_reason: string|null, bar: array{position: string, normalStart: string, normalWidth: string, minLabel: string, maxLabel: string}|null, history: array{previousLabel: string, previousDate: string|null, delta: string|null}|null}
+     * @return array{resultId: int, label: string, value: string, valueLabel: string, valueWithUnit: string, unit: string|null, status: string, statusLabel: string, reference: string, reference_unit_mismatch: bool, date: string|null, is_detection_limit: bool, beyond: array{direction: string, label: string}|null, no_status_reason: string|null, bar: array{position: string, normalStart: string, normalWidth: string, minLabel: string, maxLabel: string}|null, history: array{previousLabel: string, previousDate: string|null, delta: string|null}|null}
      */
     private function row(BiomarkerResult $result): array
     {
@@ -188,6 +188,7 @@ final class BuildBloodResultsOverview
         $valueLabel = Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator);
 
         return [
+            'resultId' => (int) $result->id,
             'label' => $result->biomarker->name,
             'value' => (string) $result->value,
             'valueLabel' => $valueLabel,
