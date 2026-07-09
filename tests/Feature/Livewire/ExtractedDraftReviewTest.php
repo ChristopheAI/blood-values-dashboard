@@ -802,7 +802,7 @@ it('renders the patient friendly overview for an older owned blood test', functi
     Livewire::actingAs($user)
         ->test(ReviewBloodTest::class, ['bloodTest' => $olderBloodTest])
         ->assertSee('data-test="blood-results-overview"', false)
-        ->assertSee('Je bloedresultaten')
+        ->assertSeeInOrder(['Bloedafname april', 'Je bloedresultaten'])
         ->assertSee('Afname 8 april 2026')
         ->assertSee('Bloedafname april')
         ->assertSee('1/3 waarde is normaal')
