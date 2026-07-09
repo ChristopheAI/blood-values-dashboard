@@ -106,7 +106,7 @@ class ReviewBloodTest extends Component
         $status = $qualitative instanceof QualitativeLabValue
             ? $this->qualitativeStatus(
                 qualitative: $qualitative,
-                draft: $draft,
+                sourceResult: $draft ?? $editingResult,
             )
             : ($detectionLimit instanceof DetectionLimitValue
             ? $statusCalculator->forDetectionLimit(
@@ -135,7 +135,9 @@ class ReviewBloodTest extends Component
             'reference_max' => $form['reference_max'],
             'reference_unit' => $form['reference_unit'] ?: $form['unit'],
             'status' => $status->value,
-            'confirmed_at' => now(),
+            'confirmed_at' => $editingResult instanceof BiomarkerResult
+                ? $editingResult->confirmed_at
+                : now(),
             'note' => $form['note'],
         ];
 
@@ -513,13 +515,21 @@ class ReviewBloodTest extends Component
         return $result->biomarker?->user_id === Auth::id();
     }
 
-    private function qualitativeStatus(QualitativeLabValue $qualitative, ?BiomarkerResult $draft): BiomarkerStatus
+    private function qualitativeStatus(QualitativeLabValue $qualitative, ?BiomarkerResult $sourceResult): BiomarkerStatus
     {
-        $sourceSnippet = $draft === null ? '' : (string) ($draft->source_snippet ?? '');
+        $sourceSnippet = $sourceResult === null ? '' : (string) ($sourceResult->source_snippet ?? '');
         $referenceQualitative = null;
 
         if ($sourceSnippet !== '' && preg_match('/\s'.preg_quote($qualitative->storedValue(), '/').'\s+(?<reference>[A-Za-z ]+?)\s*</u', $sourceSnippet, $match)) {
             $referenceQualitative = QualitativeLabValue::parse(trim($match['reference']));
+        }
+
+        $existingQualitative = $sourceResult instanceof BiomarkerResult
+            ? QualitativeLabValue::fromResult($sourceResult)
+            : null;
+
+        if ($sourceResult instanceof BiomarkerResult && $sourceSnippet === '' && $existingQualitative?->token === $qualitative->token) {
+            return BiomarkerStatus::tryFrom((string) $sourceResult->status) ?? BiomarkerStatus::Unknown;
         }
 
         return $qualitative->statusAgainstReference(
