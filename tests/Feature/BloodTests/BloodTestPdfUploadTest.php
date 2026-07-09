@@ -52,6 +52,25 @@ it('uses the sanitized pdf filename as the upload-first title when no metadata i
         ->and($bloodTest->lab_name)->toBeNull();
 });
 
+it('rejects future blood test dates before storing the pdf', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $file = UploadedFile::fake()->create('future-lab-result.pdf', 64, 'application/pdf');
+
+    $this->actingAs($user)
+        ->post(route('blood-tests.store'), [
+            'document' => $file,
+            'test_date' => now()->addDay()->toDateString(),
+        ])
+        ->assertSessionHasErrors('test_date');
+
+    expect(BloodTest::query()->count())->toBe(0)
+        ->and(BloodTestDocument::query()->count())->toBe(0);
+
+    Storage::disk('local')->assertMissing('blood-test-documents/'.$user->id);
+});
+
 it('renders an upload-first empty intake dropzone without metadata or account fields', function () {
     $user = User::factory()->create();
 
