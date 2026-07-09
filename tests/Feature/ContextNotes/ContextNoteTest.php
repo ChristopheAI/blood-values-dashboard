@@ -141,6 +141,23 @@ it('does not show a foreign linked blood test on an owned context note', functio
         ->assertDontSee(route('blood-tests.show', $otherBloodTest, false));
 });
 
+it('renders context and reminder navigation with dutch category labels', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('context-notes.index'))
+        ->assertOk()
+        ->assertSee(route('context-notes.index'), false)
+        ->assertSee(route('reminders.index'), false)
+        ->assertSee('Context')
+        ->assertSee('Herinneringen')
+        ->assertSee('Slaap')
+        ->assertSee('Medicatie')
+        ->assertSee('Anders')
+        ->assertDontSee('Sleep')
+        ->assertDontSee('Medication');
+});
+
 it('stores medication and supplement context as descriptive user text', function () {
     $user = User::factory()->create();
     $body = 'Medication noted: 25mg at breakfast. Supplement noted: magnesium in evening.';

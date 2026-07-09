@@ -437,7 +437,7 @@ function addContextNote(Browser $browser, int $bloodTestId): void
 function addReminder(Browser $browser): void
 {
     $browser->visit('/reminders')
-        ->waitForText('Reminders')
+        ->waitForText('Herinneringen')
         ->value('input[name="due_date"]', '2026-07-15')
         ->type('title', 'Plan next blood test')
         ->type('note', 'Check calendar for a morning slot.')

@@ -13,7 +13,7 @@
 
                 <flux:select name="category" :label="__('Categorie')" required data-test="context-note-category-select">
                     @foreach ($categories as $category)
-                        <option value="{{ $category->value }}">{{ ucfirst($category->value) }}</option>
+                        <option value="{{ $category->value }}">{{ $category->dutchLabel() }}</option>
                     @endforeach
                 </flux:select>
 
@@ -36,7 +36,7 @@
                 @forelse ($contextNotes as $note)
                     <article class="rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="context-note-row">
                         <div class="font-medium">
-                            {{ \App\Support\Format::dutchDate($note->note_date) }} · {{ ucfirst($note->category->value) }}
+                            {{ \App\Support\Format::dutchDate($note->note_date) }} · {{ $note->category->dutchLabel() }}
                         </div>
                         <p class="mt-2 text-neutral-700 dark:text-neutral-300">{{ $note->body }}</p>
 

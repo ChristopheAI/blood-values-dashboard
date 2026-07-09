@@ -24,6 +24,12 @@
                     <flux:sidebar.item icon="book-open-text" :href="route('consult-overview.index')" :current="request()->routeIs('consult-overview.*')" wire:navigate>
                         {{ __('Consultlijst') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="book-open-text" :href="route('context-notes.index')" :current="request()->routeIs('context-notes.*')" wire:navigate>
+                        {{ __('Context') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="bell" :href="route('reminders.index')" :current="request()->routeIs('reminders.*')" wire:navigate>
+                        {{ __('Herinneringen') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
