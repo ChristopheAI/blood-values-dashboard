@@ -1,27 +1,55 @@
 <x-layouts::app :title="$biomarker->name">
     <section class="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <header class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <a href="{{ route('blood-results.overview') }}" class="text-sm font-medium text-blue-700 underline dark:text-blue-300" data-test="back-to-blood-results">
+            {{ __('Terug naar bloedwaarden') }}
+        </a>
+
+        <header class="flex flex-col gap-2">
             <div>
                 <flux:heading size="xl">{{ $biomarker->name }}</flux:heading>
-                <flux:text>{{ __('Bevestigde waarden door de tijd — bespreek je waarden met je arts.') }}</flux:text>
+                <flux:text>{{ __('Bevestigde waarden door de tijd. Alleen bevestigde waarden tellen mee in deze geschiedenis.') }}</flux:text>
+            </div>
+        </header>
+
+        <section class="grid gap-3 rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700 md:grid-cols-[1fr_1fr_minmax(14rem,0.8fr)]" data-test="biomarker-trend-context">
+            <div>
+                <div class="font-medium text-neutral-700 dark:text-neutral-200">{{ __('Referentie') }}</div>
+                <div class="text-neutral-600 dark:text-neutral-400">
+                    {{ \App\Support\Format::referenceRange(
+                        $biomarker->reference_min !== null ? (float) $biomarker->reference_min : null,
+                        $biomarker->reference_max !== null ? (float) $biomarker->reference_max : null,
+                        $biomarker->reference_unit ?: $biomarker->default_unit,
+                    ) }}
+                </div>
             </div>
 
-            @if ($pin)
-                <form method="POST" action="{{ route('biomarkers.unpin', $biomarker) }}">
-                    @csrf
-                    @method('DELETE')
+            <div>
+                <div class="font-medium text-neutral-700 dark:text-neutral-200">{{ __('Status') }}</div>
+                <div class="text-neutral-600 dark:text-neutral-400">
+                    {{ __('Laag, normaal, hoog of geen status komen uit de opgeslagen referentie en eenheid.') }}
+                </div>
+            </div>
 
-                    <flux:button type="submit" variant="outline" data-test="unpin-biomarker-button">{{ __('Losmaken') }}</flux:button>
-                </form>
-            @else
-                <form method="POST" action="{{ route('biomarkers.pin', $biomarker) }}" class="flex flex-col gap-2 md:min-w-64">
-                    @csrf
+            <div class="flex flex-col gap-2">
+                <div class="font-medium text-neutral-700 dark:text-neutral-200">{{ __('Vastzetten') }}</div>
 
-                    <flux:input name="note" :label="__('Notitie (optioneel)')" data-test="pin-note-input" />
-                    <flux:button type="submit" variant="primary" data-test="pin-biomarker-button">{{ __('Vastzetten') }}</flux:button>
-                </form>
-            @endif
-        </header>
+                @if ($pin)
+                    <form method="POST" action="{{ route('biomarkers.unpin', $biomarker) }}">
+                        @csrf
+                        @method('DELETE')
+
+                        <flux:button type="submit" variant="outline" size="sm" data-test="unpin-biomarker-button">{{ __('Losmaken') }}</flux:button>
+                    </form>
+                @else
+                    <form method="POST" action="{{ route('biomarkers.pin', $biomarker) }}" class="flex flex-col gap-2">
+                        @csrf
+
+                        <flux:input name="note" :label="__('Notitie (optioneel)')" data-test="pin-note-input" />
+                        <flux:button type="submit" variant="primary" size="sm" data-test="pin-biomarker-button">{{ __('Vastzetten') }}</flux:button>
+                    </form>
+                @endif
+            </div>
+        </section>
 
         <div class="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700" data-test="biomarker-history-table">
             <table class="w-full text-left text-sm">
