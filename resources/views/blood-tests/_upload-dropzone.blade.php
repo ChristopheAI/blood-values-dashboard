@@ -139,7 +139,7 @@
                     });
 
                     if (! response.ok || ! response.body) {
-                        form.submit();
+                        this.redirectToIndex(form);
                         return;
                     }
 
@@ -167,7 +167,7 @@
                         redirected = this.handleProgressLine(buffer) || redirected;
                     }
                 } catch (error) {
-                    form.submit();
+                    this.redirectToIndex(form);
                     return;
                 } finally {
                     if (! redirected) {
@@ -179,6 +179,9 @@
                 this.isUploading = false;
                 this.$refs.chooseButton.disabled = false;
             },
+            redirectToIndex(form) {
+                window.location.href = form.action;
+            },
             handleProgressLine(line) {
                 const trimmed = line.trim();
 
@@ -186,7 +189,13 @@
                     return false;
                 }
 
-                const payload = JSON.parse(trimmed);
+                let payload;
+
+                try {
+                    payload = JSON.parse(trimmed);
+                } catch (error) {
+                    return false;
+                }
 
                 if (payload.stage && payload.state) {
                     this.progressStages[payload.stage] = payload.state;
