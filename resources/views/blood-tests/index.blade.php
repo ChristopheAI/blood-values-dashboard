@@ -11,6 +11,12 @@
 @endphp
 
 <x-layouts::app :title="__('Bloedtesten')">
+    @php
+        $bloodTests = auth()->user()->bloodTests()->recentFirst()->get();
+        $latestBloodTest = $bloodTests->first();
+        $previousBloodTest = $bloodTests->skip(1)->first();
+    @endphp
+
     <section class="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header class="flex flex-col gap-2">
             <flux:heading size="xl">{{ __('Bloedtesten') }}</flux:heading>
@@ -18,6 +24,10 @@
         </header>
 
         @include('blood-tests._upload-dropzone')
+
+        @if (session('compare_error'))
+            <flux:text class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100" data-test="compare-selection-message">{{ session('compare_error') }}</flux:text>
+        @endif
 
         @if ($bloodTests->count() >= 2)
             <form method="GET" action="{{ route('blood-tests.compare') }}" class="grid gap-4 rounded-lg border border-neutral-200 p-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end dark:border-neutral-700" data-test="blood-test-compare-form">
