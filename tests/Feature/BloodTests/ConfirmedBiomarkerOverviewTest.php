@@ -214,8 +214,11 @@ it('positions the number line marker from the float value', function () {
         ->get(route('blood-results.overview'))
         ->assertOk()
         ->assertSee('data-test="confirmed-range-bar"', false)
+        ->assertSee('data-test="confirmed-range-bound-labels"', false)
         ->assertSee('left: 59.23%', false)
         ->assertSee('left: 11.54%; width: 76.92%', false)
+        ->assertSee('left: 11.54%;">0.5', false)
+        ->assertSee('left: 88.46%;">1', false)
         ->assertSee('0.81 mg/dL');
 });
 
