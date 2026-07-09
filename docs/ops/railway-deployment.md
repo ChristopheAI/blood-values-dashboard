@@ -21,6 +21,9 @@ Required before real data:
   documented (keep used volume space under 50% — Railway caps a manual backup
   at half the volume size).
 - `APP_DEBUG=false`, `LOG_LEVEL=warning`, and no sensitive values in logs.
+- A real outbound mailer configured and tested with a synthetic user. Do not
+  use Laravel's `log` mailer for staging or production accounts: password reset
+  and verification messages must leave the app.
 - `sh scripts/validate.sh` green before deploy.
 - Browser QA with synthetic data after deploy.
 
@@ -66,6 +69,9 @@ still untracked or only local.
    - `APP_URL` only if using a custom domain instead of Railway's generated
      public domain
    - `DB_URL` if the Postgres service is not named `Postgres`
+   - `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`,
+     `MAIL_ENCRYPTION`, and `MAIL_FROM_ADDRESS` for a real mail transport with
+     a verified sender
 6. Set the public domain only after variables are present.
 7. Keep the Railway healthcheck path at `/up`.
 
@@ -179,6 +185,8 @@ Then run the synthetic QA flow in the hosted app:
 4. Confirm drafts stay out of dashboard, consult, export, and trends.
 5. Confirm source document download uses the authorized route and does not show
    generated private storage paths.
+6. Trigger password reset or email verification for a synthetic account and
+   confirm the message arrives through the configured mailer.
 
 ## Rollback
 
