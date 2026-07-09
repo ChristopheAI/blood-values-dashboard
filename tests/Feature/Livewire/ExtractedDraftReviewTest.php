@@ -810,6 +810,8 @@ it('renders the patient friendly overview for an older owned blood test', functi
         ->assertSee('data-test="featured-attention-card"', false)
         ->assertSee('data-test="attention-next-step"', false)
         ->assertSee('Neem deze waarde mee in je consultlijst.')
+        ->assertSee('bg-amber-100 text-amber-950 ring-1 ring-amber-300', false)
+        ->assertDontSee('bg-amber-500 text-white', false)
         ->assertSee('data-test="compact-normal-row"', false)
         ->assertSee('data-test="compact-review-row"', false)
         ->assertSee('+7 ug/L')
