@@ -125,6 +125,9 @@ it('renders the dropzone choose control as a button and keeps the input pdf only
         ->toContain('data-test="upload-trust-notice"')
         ->toContain("'Accept': 'application/x-ndjson'")
         ->toContain("'X-Intake-Stream': '1'")
+        // A validation 302 must not be silently followed to a 200 HTML page,
+        // or the invalid-file error is swallowed and the panel hangs.
+        ->toContain("redirect: 'manual'")
         ->toContain('progressStages[payload.stage] = payload.state')
         ->toContain('window.location.href = payload.redirect')
         ->toContain('this.redirectToIndex(form)')

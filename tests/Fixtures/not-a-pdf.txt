@@ -1,0 +1,1 @@
+This is not a PDF. It exists only to exercise the invalid-upload validation path in browser QA.
