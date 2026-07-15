@@ -1,102 +1,57 @@
-# Persoonlijk Bloedwaarden-Dashboard
+# Blood values dashboard
 
-Laravel workspace for a private personal dashboard for uploading lab-result
-PDFs, turning reviewed biomarker values into structured data, tracking context
-notes, trends, comparisons, reminders, documents, and consult preparation.
+**Personal Laravel app** I built to turn **lab-result PDFs** into structured biomarker history: upload → review uncertain values → confirmed-only dashboard, trends, compare, consult prep, export.
 
-This is not a diagnosis machine and must not provide medical advice.
+Not a diagnosis product. No medical advice.
 
-## Current Phase
+**Builder:** [ChristopheAI](https://github.com/ChristopheAI) · Portfolio: [vastpakt.be](https://vastpakt.be)
 
-V2 clean-by-default CMA intake with confidence-gated auto-confirm.
+## Why it exists
 
-The Laravel Livewire scaffold exists. Current work is local deterministic
-PDF-first intake, compact review for uncertain rows, and confirmed-only
-downstream behavior. ADR-0011 is accepted for the reviewed local CMA trust policy
-after synthetic tests, automated checks, full validation, and a 2026-06-24
-owner-led local upload that passed with review remainder.
+Lab PDFs are hard to track over time. This app keeps **my** results private, structured, and comparable — with an explicit review step so bad extractions do not silently become “truth”.
 
-Keep new work inside the reviewed PDF-first/V2 boundary unless a spec, ADR, and
-task plan explicitly expand it. Do not add runtime AI interpretation,
-unreviewed OCR, provider integrations, wearable sync, external processing, or
-medical-advice features to this slice.
+## What it does (current focus)
 
-## Read First
+- Auth + private document storage  
+- **PDF-first intake** of blood test reports  
+- Deterministic, **confidence-gated** extraction (local CMA layout path)  
+- Review UI for uncertain rows; **confirmed-only** downstream  
+- Biomarker catalog + status  
+- History, compare two tests, consult-oriented overview  
+- Privacy actions (export / delete health data)  
 
-- `AGENTS.md`
-- `docs/project-brief.md`
-- `docs/codex-prd.md`
-- `docs/agent-efficiency-playbook.md`
-- `docs/v1-spec.md`
-- `docs/product-system-check.md`
-- `docs/evidence/source-index.md`
-- `docs/adr/`
-- `docs/research/laravel-stack-decision.md`
-- `docs/research/ai-architect-program-transfer.md`
-- `docs/research/2026-06-18-blood-values-workflow-value-evidence.md`
-- `docs/superpowers/plans/2026-06-17-pdf-first-intake-slice.md`
-- `docs/superpowers/plans/2026-06-16-first-vertical-slice.md` (superseded)
-- `docs/session-handoff.md`
-- `docs/validation-protocol.md`
-- `docs/ops/production-checklist.md`
-- `docs/reviews/pre-scaffold-review-request.md`
-- `docs/reviews/pre-scaffold-review-scorecard.md`
+Explicitly **out of scope** for this slice: runtime AI medical interpretation, unreviewed OCR as source of truth, wearables, third-party clinical integrations.
 
-## Workflow
+## Stack
 
-```text
-brief -> evidence -> ADR -> spec -> task plan -> baseline commit -> build -> verify -> review -> handoff
-```
+- **Laravel** + Livewire (PHP)  
+- Domain modules under `app/Domain/` (Intake, Biomarkers, BloodTests, Dashboard, Consult, Privacy)  
+- Tests + `sh scripts/validate.sh`  
+- CI workflow in `.github/workflows/`  
+- Specs / ADRs under `docs/`  
 
-The current implementation target is the V2 follow-up flow:
-
-- auth;
-- PDF-first blood test intake;
-- private lab-document storage;
-- deterministic confidence-gated auto-confirm for trusted local CMA extraction;
-- review/confirmation of uncertain biomarker values from the uploaded document;
-- small biomarker catalog;
-- status calculation;
-- biomarker history;
-- compare two blood tests;
-- confirmed-only dashboard/detail/consult/export surfaces.
+Built with the same **agentic coding** workflow I use elsewhere: agents implement; I set rules (AGENTS.md, ADRs) and review until it is safe to run on real uploads.
 
 ## Validation
-
-Current implementation-stage validation:
 
 ```bash
 sh scripts/validate.sh
 ```
 
-This currently proves scaffold integrity, runs the Laravel test/quality suite,
-builds frontend assets, and checks whitespace.
+## Docs map
 
-## QA Scenario
+| Start here | Purpose |
+|---|---|
+| `AGENTS.md` | Hard rules for agents working in this repo |
+| `docs/project-brief.md` | Product intent |
+| `docs/adr/` | Architecture decisions |
+| `docs/ops/production-checklist.md` | Ops checklist |
+| `docs/session-handoff.md` | Current handoff |
 
-Seed a stable synthetic browser-QA dataset:
+## Privacy
 
-```bash
-php artisan app:seed-blood-test-demo
-```
+Personal health data must not land in public issues, screenshots, or sample fixtures beyond synthetic/test PDFs already in `tests/Fixtures/`.
 
-Login with `qa@example.com` / `password`. See
-`docs/testing/qa-seed-scenario.md`.
+## License / use
 
-## Product Boundary
-
-In scope:
-
-- personal organization and follow-up of blood values;
-- plain status labels based on entered reference ranges;
-- context preservation;
-- doctor-consult preparation;
-- privacy, export, and deletion controls.
-
-Out of scope:
-
-- medical diagnosis;
-- treatment advice;
-- supplement/diet/training recommendations;
-- AI interpretation;
-- unreviewed OCR/lab-provider integrations in the first slice.
+Personal project. Not offered as a medical device or clinical tool.
