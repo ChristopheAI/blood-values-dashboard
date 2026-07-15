@@ -196,3 +196,14 @@ ready.
   correct next step.
 - Prefer minimal, verifiable changes over broad rewrites.
 - Do not claim completion without fresh validation evidence.
+
+## Data discipline (public git)
+
+This repository is public. Agents and humans must:
+
+- never add real lab PDFs, exports, screenshots of real results, or `.env` secrets;
+- only use synthetic fixtures under `tests/Fixtures/`;
+- run `sh scripts/check-data-discipline.sh` before finishing a change that touches files or docs;
+- treat private health processing as local-only unless an ADR says otherwise.
+
+See `docs/ops/data-discipline.md` and `SECURITY.md`.

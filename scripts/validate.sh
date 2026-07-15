@@ -1,4 +1,8 @@
 #!/bin/sh
+
+# Data discipline (public repo: no real health data / secrets)
+sh scripts/check-data-discipline.sh
+
 set -eu
 
 DUSK_ENV_CREATED=0

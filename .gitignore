@@ -30,3 +30,23 @@ yarn-error.log
 /.zed
 __pycache__/
 *.pyc
+
+# --- Data discipline: never commit real personal health data ---
+# Synthetic fixtures under tests/Fixtures/ are allowed (explicit allowlist in CI).
+/storage/app/private/
+/storage/app/public/
+/storage/logs/*
+!/storage/logs/.gitignore
+*.sqlite
+*.sqlite-journal
+database/database.sqlite
+/tmp/
+/private-data/
+/personal/
+/lab-pdfs/
+/real-uploads/
+# Accidental exports / dumps
+*.sql.gz
+*.dump
+# Real lab PDFs outside fixtures (block common personal names patterns via CI)
+# Keep tests/Fixtures/*.pdf only

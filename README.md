@@ -48,6 +48,15 @@ sh scripts/validate.sh
 | `docs/ops/production-checklist.md` | Ops checklist |
 | `docs/session-handoff.md` | Current handoff |
 
+
+## Data discipline (public repo)
+
+This repository is public. **Real lab PDFs and personal health exports must never be committed.**
+
+- Rules: [`docs/ops/data-discipline.md`](docs/ops/data-discipline.md)  
+- Check: `sh scripts/check-data-discipline.sh` (also in validate + CI)  
+- Only small **synthetic** PDFs under `tests/Fixtures/`  
+
 ## Privacy
 
 Personal health data must not land in public issues, screenshots, or sample fixtures beyond synthetic/test PDFs already in `tests/Fixtures/`.
