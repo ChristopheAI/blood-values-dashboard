@@ -1,3 +1,7 @@
+@php
+    $biomarkerStatusLabel = fn (string $status): string => (\App\Enums\BiomarkerStatus::tryFrom($status) ?? \App\Enums\BiomarkerStatus::Unknown)->dutchLabel();
+@endphp
+
 <section class="space-y-6" data-test="consult-pack">
     <div class="flex flex-wrap gap-3 print:hidden">
         <form method="POST" action="{{ route('consult-overview.csv') }}" data-test="export-consult-csv-form">
@@ -66,7 +70,7 @@
                                 <td class="p-3">{{ $result->bloodTest->test_date ? \App\Support\Format::dutchDate($result->bloodTest->test_date) : __('Geen datum') }}</td>
                                 <td class="p-3 font-medium">{{ $result->biomarker->name }}</td>
                                 <td class="p-3 tabular-nums">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator) }} {{ $result->unit }}</td>
-                                <td class="p-3">{{ $result->status }}</td>
+                                <td class="p-3">{{ $biomarkerStatusLabel($result->status) }}</td>
                                 <td class="p-3 text-neutral-600 dark:text-neutral-400">
                                     <div>{{ __('Bron: :source', ['source' => $result->bloodTest->title ?: __('Bloedtest zonder titel')]) }}</div>
                                     <div>{{ __('Bevestigd: :date', ['date' => $result->confirmed_at ? \App\Support\Format::dutchDate($result->confirmed_at) : __('onbekend')]) }}</div>
@@ -118,7 +122,7 @@
                             </div>
                         </div>
                         <div class="tabular-nums">{{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator) }} {{ $result->unit }}</div>
-                        <div class="text-neutral-600 dark:text-neutral-400">{{ $result->status }}</div>
+                        <div class="text-neutral-600 dark:text-neutral-400">{{ $biomarkerStatusLabel($result->status) }}</div>
                     </div>
                 @empty
                     <div class="p-4 text-sm text-neutral-600 dark:text-neutral-400">{{ __('Geen normale bevestigde waarden in deze selectie.') }}</div>
@@ -159,7 +163,7 @@
                         {{ $result->bloodTest->test_date ? \App\Support\Format::dutchDate($result->bloodTest->test_date) : __('Geen datum') }}
                         · {{ $result->biomarker->name }}
                         · {{ \App\Support\Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator) }} {{ $result->unit }}
-                        · {{ $result->status }}
+                        · {{ $biomarkerStatusLabel($result->status) }}
                     </div>
                 @empty
                     <flux:text>{{ __('Geen bevestigde waarden in deze selectie.') }}</flux:text>
