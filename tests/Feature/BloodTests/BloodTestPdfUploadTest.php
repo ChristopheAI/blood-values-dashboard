@@ -61,12 +61,15 @@ it('renders an upload-first empty intake dropzone without metadata or account fi
     $response
         ->assertOk()
         ->assertSee('Sleep je lab-PDF hierheen')
+        ->assertSee('of kies hieronder een bestand')
         ->assertSee('Alleen PDF')
-        ->assertSee('data-test="upload-trust-notice"', false)
-        ->assertSee('Lokaal gelezen uit de tekstlaag van de PDF. Geen externe verwerking.')
-        ->assertSee('Waarden tellen pas mee voor status en trends nadat ze bevestigd zijn.')
+        ->assertSee('Geen externe verwerking')
+        ->assertSee('Eerst bevestigen')
+        ->assertSee('data-test="upload-mark"', false)
+        ->assertSee('data-test="upload-trust-signals"', false)
         ->assertSee('data-test="lab-pdf-dropzone"', false)
         ->assertSee('data-test="intake-progress"', false)
+        ->assertDontSee('data-test="upload-trust-notice"', false)
         ->assertDontSee('data-test="upload-pdf-button"', false)
         ->assertDontSee('data-test="blood-test-date-input"', false)
         ->assertDontSee('data-test="blood-test-lab-input"', false)
@@ -75,6 +78,7 @@ it('renders an upload-first empty intake dropzone without metadata or account fi
         ->assertDontSee('name="account"', false);
 
     expect($html)
+        ->toContain('data-density="compact"')
         ->toContain('data-test="intake-progress-stage-extract"')
         ->toContain(':data-state="progressStages.extract"')
         ->toContain('data-test="intake-progress-stage-values"')
@@ -83,6 +87,7 @@ it('renders an upload-first empty intake dropzone without metadata or account fi
         ->toContain(':data-state="progressStages.status"')
         ->toContain('data-test="intake-progress-stage-trend"')
         ->toContain(':data-state="progressStages.trend"')
+        ->not->toContain('min-h-[22rem]')
         ->not->toContain('data-state="pending"');
 });
 
@@ -121,8 +126,9 @@ it('renders the dropzone choose control as a button and keeps the input pdf only
 
     expect($html)
         ->toContain('data-test="lab-pdf-dropzone"')
+        ->toContain('data-density="compact"')
+        ->toContain('data-test="upload-trust-signals"')
         ->toContain('fetch(form.action')
-        ->toContain('data-test="upload-trust-notice"')
         ->toContain("'Accept': 'application/x-ndjson'")
         ->toContain("'X-Intake-Stream': '1'")
         ->toContain('progressStages[payload.stage] = payload.state')
@@ -130,6 +136,8 @@ it('renders the dropzone choose control as a button and keeps the input pdf only
         ->toContain('@drop.prevent="dragging = false; setFiles($event.dataTransfer.files); if (fileName) $nextTick(() => $el.closest(\'form\').requestSubmit())"')
         ->toContain('@change="fileName = $event.target.files[0]?.name ?? \'\'; if (fileName) $nextTick(() => $el.form.requestSubmit())"')
         ->toContain('data-test="selected-file-name"')
+        ->not->toContain('data-test="upload-trust-notice"')
+        ->not->toContain('min-h-[22rem]')
         ->toMatch('/<button\s+[^>]*type="button"[^>]*data-test="choose-pdf-button"/s')
         ->toMatch('/<input\s+[^>]*name="document"[^>]*accept="application\/pdf"[^>]*data-test="lab-pdf-input"/s');
 });
@@ -209,9 +217,8 @@ it('streams a safe failed extract stage when enhanced pdf parsing fails', functi
     expect($events)->sequence(
         fn ($event) => $event->toMatchArray(['stage' => 'extract', 'state' => 'active']),
         fn ($event) => $event->toMatchArray(['stage' => 'extract', 'state' => 'failed']),
+        fn ($event) => $event->toHaveKey('redirect'),
     );
-
-    expect(collect($events)->contains(fn (array $event): bool => array_key_exists('redirect', $event)))->toBeFalse();
 
     expect($content)
         ->not->toContain('malformed-lab.pdf')
@@ -223,7 +230,8 @@ it('streams a safe failed extract stage when enhanced pdf parsing fails', functi
 
     expect($run->status)->toBe('failed')
         ->and($run->candidate_count)->toBe(0)
-        ->and($bloodTest->refresh()->status)->toBe('reviewing');
+        ->and($bloodTest->refresh()->status)->toBe('reviewing')
+        ->and(collect($events)->last()['redirect'])->toBe(route('blood-tests.show', $bloodTest, false));
 });
 
 it('redirects failed non-stream uploads back to the intake index', function () {
