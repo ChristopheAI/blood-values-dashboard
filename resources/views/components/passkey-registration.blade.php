@@ -44,7 +44,7 @@
     }"
 >
     <template x-if="!supported">
-        <flux:text>{{ __('Passkeys are not supported in this browser.') }}</flux:text>
+        <flux:text>{{ __('Je browser ondersteunt geen passkeys.') }}</flux:text>
     </template>
 
     <template x-if="supported && !showForm">
@@ -54,7 +54,7 @@
                 icon="plus"
                 x-on:click="showForm = true"
             >
-                {{ __('Add passkey') }}
+                {{ __('Passkey toevoegen') }}
             </flux:button>
         </div>
     </template>
@@ -62,14 +62,14 @@
     <template x-if="supported && showForm">
         <div class="space-y-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-4">
             <flux:input
-                label="{{ __('Passkey name') }}"
+                label="{{ __('Naam voor passkey') }}"
                 x-model="name"
-                placeholder="{{ __('e.g., MacBook Pro, iPhone') }}"
+                placeholder="{{ __('bv. MacBook Pro of iPhone') }}"
                 x-on:keydown.enter.prevent="register()"
                 x-ref="passkeyNameInput"
                 x-init="$nextTick(() => $refs.passkeyNameInput?.focus())"
             />
-            <flux:text class="!mt-1">{{ __('Give this passkey a name to help you identify it later.') }}</flux:text>
+            <flux:text class="!mt-1">{{ __('Geef deze passkey een naam om hem later te herkennen.') }}</flux:text>
 
             <p x-show="error" x-text="error" x-cloak class="text-sm text-red-600 dark:text-red-400"></p>
 
@@ -79,14 +79,14 @@
                     x-on:click="register()"
                     x-bind:disabled="loading || !name.trim()"
                 >
-                    <span x-show="!loading">{{ __('Register passkey') }}</span>
-                    <span x-show="loading" x-cloak>{{ __('Registering...') }}</span>
+                    <span x-show="!loading">{{ __('Passkey registreren') }}</span>
+                    <span x-show="loading" x-cloak>{{ __('Bezig met registreren...') }}</span>
                 </flux:button>
                 <flux:button
                     variant="ghost"
                     x-on:click="cancel()"
                 >
-                    {{ __('Cancel') }}
+                    {{ __('Annuleren') }}
                 </flux:button>
             </div>
         </div>

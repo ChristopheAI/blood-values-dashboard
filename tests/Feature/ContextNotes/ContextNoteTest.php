@@ -159,3 +159,20 @@ it('stores medication and supplement context as descriptive user text', function
         'body' => $body,
     ]);
 });
+
+it('renders Dutch category labels and safe edit and delete controls for a saved context note', function () {
+    $user = User::factory()->create();
+    $note = ContextNote::factory()->for($user)->create([
+        'category' => ContextNoteCategory::Sleep->value,
+        'body' => 'Synthetische observatie.',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('context-notes.index'))
+        ->assertOk()
+        ->assertSee('Slaap')
+        ->assertSee('data-test="edit-context-note-form"', false)
+        ->assertSee('data-test="delete-context-note-button"', false)
+        ->assertSee('action="'.route('context-notes.update', $note).'"', false)
+        ->assertSee('action="'.route('context-notes.destroy', $note).'"', false);
+});

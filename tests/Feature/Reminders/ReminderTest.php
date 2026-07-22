@@ -131,7 +131,7 @@ it('renders open and completed reminders on the index page', function () {
     $this->actingAs($user)
         ->get(route('reminders.index'))
         ->assertOk()
-        ->assertSee('Reminders')
+        ->assertSee('Herinneringen')
         ->assertSee('Open reminder')
         ->assertSee('Open note.')
         ->assertSee('Completed reminder')
