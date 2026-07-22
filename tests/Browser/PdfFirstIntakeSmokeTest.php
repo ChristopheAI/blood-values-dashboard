@@ -141,14 +141,7 @@ test('an invalid dropzone upload shows the validation error instead of hanging o
     $password = 'password';
 
     $this->browse(function (Browser $browser) use ($email, $password) {
-        $browser->visit('/register')
-            ->type('name', 'Invalid Upload Smoke')
-            ->type('email', $email)
-            ->type('password', $password)
-            ->type('password_confirmation', $password)
-            ->press('button[data-test="register-user-button"]')
-            ->waitForLocation('/dashboard')
-            ->assertAuthenticated();
+        registerVerifiedBrowserUser($browser, 'Invalid Upload Smoke', $email, $password);
 
         // A non-PDF fails server-side validation, which answers with a 302 back
         // to the form. Regression guard for the stream fallback: the client must
