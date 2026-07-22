@@ -146,7 +146,7 @@ test('an invalid dropzone upload shows the validation error instead of hanging o
             ->type('email', $email)
             ->type('password', $password)
             ->type('password_confirmation', $password)
-            ->press('Create account')
+            ->press('button[data-test="register-user-button"]')
             ->waitForLocation('/dashboard')
             ->assertAuthenticated();
 
@@ -635,7 +635,7 @@ function registerVerifiedBrowserUser(Browser $browser, string $name, string $ema
         ->type('email', $email)
         ->type('password', $password)
         ->type('password_confirmation', $password)
-        ->press('Create account')
+        ->press('button[data-test="register-user-button"]')
         ->waitForLocation($verificationNoticePath)
         ->assertPathIs($verificationNoticePath)
         ->assertAuthenticated();
