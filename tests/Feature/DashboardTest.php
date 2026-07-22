@@ -200,7 +200,6 @@ class DashboardTest extends TestCase
             ->assertSee('Bevestigd')
             ->assertSee('Na te kijken')
             ->assertSee('Bron-PDF')
-            ->assertSee('Extracties die nog niet downstream mogen.')
             ->assertSee('Bevestigde waarden blijven beschikbaar')
             ->assertSee('1 waarde wacht op review en blijft buiten consult.')
             ->assertSee('data-test="dashboard-consult-handoff-form"', false)

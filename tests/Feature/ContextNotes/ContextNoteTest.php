@@ -153,7 +153,7 @@ it('renders context and reminder navigation with dutch category labels', functio
         ->assertSee('Herinneringen')
         ->assertSee('Slaap')
         ->assertSee('Medicatie')
-        ->assertSee('Anders')
+        ->assertSee('Andere')
         ->assertDontSee('Sleep')
         ->assertDontSee('Medication');
 });
