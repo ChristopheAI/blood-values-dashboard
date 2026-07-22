@@ -175,7 +175,6 @@ class BuildDataExport
                 'entry_source' => $result->entry_source,
                 'extracted_name' => $result->extracted_name,
                 'extraction_confidence' => $result->extraction_confidence,
-                'source_snippet' => $result->source_snippet,
                 'confirmed_at' => $result->confirmed_at?->toISOString(),
                 'note' => $result->note,
                 'created_at' => $result->created_at?->toISOString(),

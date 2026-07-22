@@ -55,6 +55,22 @@
         </header>
     @endif
 
+    <details class="rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="edit-blood-test-metadata-form">
+        <summary class="cursor-pointer font-medium text-neutral-900 dark:text-white">{{ __('Testgegevens aanpassen') }}</summary>
+        <form method="POST" action="{{ route('blood-tests.update', $bloodTest) }}" class="mt-5 space-y-4">
+            @csrf
+            @method('PATCH')
+
+            <div class="grid gap-4 sm:grid-cols-3">
+                <flux:input name="test_date" type="date" :label="__('Datum')" :value="$bloodTest->test_date?->toDateString()" />
+                <flux:input name="lab_name" :label="__('Labo')" :value="$bloodTest->lab_name" />
+                <flux:input name="title" :label="__('Titel')" :value="$bloodTest->title" />
+            </div>
+
+            <flux:button type="submit" variant="outline" data-test="save-blood-test-metadata-button">{{ __('Testgegevens bewaren') }}</flux:button>
+        </form>
+    </details>
+
     <section class="rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="intake-progress">
         <div class="grid gap-3 text-sm sm:grid-cols-4">
             <div class="rounded-md p-3 font-medium {{ $progressStageClass($extractStageState) }}" data-test="intake-progress-stage-extract" data-state="{{ $extractStageState }}">{{ __('extract') }}</div>
@@ -139,7 +155,7 @@
                                     <flux:button type="button" size="sm" wire:click="editConfirmedResult({{ $result->id }})" data-test="edit-confirmed-value-button">
                                         {{ __('Bewerken') }}
                                     </flux:button>
-                                    <flux:button type="button" variant="danger" size="sm" wire:click="deleteConfirmedResult({{ $result->id }})" data-test="delete-confirmed-value-button">
+                                    <flux:button type="button" variant="danger" size="sm" wire:click="deleteConfirmedResult({{ $result->id }})" wire:confirm="{{ __('Deze bevestigde waarde verwijderen?') }}" data-test="delete-confirmed-value-button">
                                         {{ __('Verwijderen') }}
                                     </flux:button>
                                 </div>
@@ -165,7 +181,7 @@
                         {{ $document->original_filename }}
                     </a>
 
-                    <form method="POST" action="{{ route('blood-test-documents.destroy', $document) }}">
+                    <form method="POST" action="{{ route('blood-test-documents.destroy', $document) }}" onsubmit="return confirm('{{ __('Dit bronbestand verwijderen?') }}');">
                         @csrf
                         @method('DELETE')
 
@@ -234,7 +250,7 @@
                                 <flux:button type="button" size="sm" wire:click="useDraft({{ $draft->id }})" data-test="use-draft-button">
                                     {{ __('Draft gebruiken') }}
                                 </flux:button>
-                                <flux:button type="button" variant="danger" size="sm" wire:click="deleteDraft({{ $draft->id }})" data-test="delete-draft-button">
+                                <flux:button type="button" variant="danger" size="sm" wire:click="deleteDraft({{ $draft->id }})" wire:confirm="{{ __('Deze draft verwijderen?') }}" data-test="delete-draft-button">
                                     {{ __('Draft verwijderen') }}
                                 </flux:button>
                             </div>
@@ -328,7 +344,7 @@
         <div class="space-y-3">
             @forelse ($bloodTest->contextNotes as $note)
                 <article class="rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-700" data-test="blood-test-context-note-row">
-                    <div class="font-medium">{{ \App\Support\Format::dutchDate($note->note_date) }} · {{ ucfirst($note->category->value) }}</div>
+                    <div class="font-medium">{{ \App\Support\Format::dutchDate($note->note_date) }} · {{ $note->category->dutchLabel() }}</div>
                     <p class="mt-2 text-neutral-700 dark:text-neutral-300">{{ $note->body }}</p>
                 </article>
             @empty
@@ -337,5 +353,20 @@
                 </div>
             @endforelse
         </div>
+    </section>
+
+    <section class="space-y-4 rounded-lg border border-red-200 p-5 dark:border-red-900" data-test="delete-blood-test-section">
+        <div class="space-y-1">
+            <flux:heading size="lg">{{ __('Bloedtest verwijderen') }}</flux:heading>
+            <flux:text>{{ __('Dit verwijdert de test, gekoppelde waarden en bronbestanden definitief.') }}</flux:text>
+        </div>
+
+        <form method="POST" action="{{ route('blood-tests.destroy', $bloodTest) }}" class="flex flex-col gap-4 sm:flex-row sm:items-end" data-test="delete-blood-test-form">
+            @csrf
+            @method('DELETE')
+
+            <flux:input name="confirmation" :label="__('Typ DELETE TEST om te bevestigen')" autocomplete="off" required />
+            <flux:button type="submit" variant="danger" data-test="confirm-delete-blood-test-button">{{ __('Bloedtest verwijderen') }}</flux:button>
+        </form>
     </section>
 </section>

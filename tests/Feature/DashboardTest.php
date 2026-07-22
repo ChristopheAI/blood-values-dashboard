@@ -198,9 +198,13 @@ class DashboardTest extends TestCase
             ->assertSee('data-test="dashboard-metric-sources"', false)
             ->assertSee('Bloedtesten')
             ->assertSee('Bevestigd')
-            ->assertSee('In review')
+            ->assertSee('Te reviewen')
             ->assertSee('Bron-PDF')
             ->assertSee('Extracties die nog niet downstream mogen.')
+            ->assertSee('Bevestigde waarden blijven beschikbaar')
+            ->assertSee('1 waarde wacht op review en blijft buiten consult.')
+            ->assertSee('data-test="dashboard-consult-handoff-form"', false)
+            ->assertSee('Consultlijst maken')
             ->assertDontSee('Werkstand')
             ->assertDontSee('Foreign test');
     }
@@ -646,5 +650,16 @@ class DashboardTest extends TestCase
             ->assertSee('Ferritine')
             ->assertSee('18')
             ->assertSee('Consult handoff test');
+    }
+
+    public function test_sidebar_links_to_reminders_and_context_notes(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('>'.__('Herinneringen').'<', false)
+            ->assertSee('>'.__('Contextnotities').'<', false);
     }
 }

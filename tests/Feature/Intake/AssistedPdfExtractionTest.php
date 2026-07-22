@@ -2115,7 +2115,7 @@ it('keeps extracted drafts out of confirmed-only workflows and export until conf
     $this->actingAs($user)
         ->get(route('blood-tests.compare', ['first' => $first, 'second' => $second]))
         ->assertOk()
-        ->assertSee('not measured')
+        ->assertSee('Niet gemeten')
         ->assertDontSee('+7');
 
     $this->actingAs($user)

@@ -8,6 +8,7 @@ use App\Http\Controllers\BloodTests\DestroyBloodTestController;
 use App\Http\Controllers\BloodTests\DestroyBloodTestDocumentController;
 use App\Http\Controllers\BloodTests\DownloadBloodTestDocumentController;
 use App\Http\Controllers\BloodTests\StoreBloodTestController;
+use App\Http\Controllers\BloodTests\UpdateBloodTestController;
 use App\Http\Controllers\ConsultOverview\ExportConsultOverviewCsvController;
 use App\Http\Controllers\ConsultOverview\ShowConsultOverviewController;
 use App\Http\Controllers\ContextNotes\DestroyContextNoteController;
@@ -34,6 +35,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('blood-tests', StoreBloodTestController::class)->name('blood-tests.store');
     Route::get('blood-tests/compare', CompareBloodTestsController::class)->name('blood-tests.compare');
     Route::get('blood-tests/{bloodTest}', ReviewBloodTest::class)->name('blood-tests.show');
+    Route::patch('blood-tests/{bloodTest}', UpdateBloodTestController::class)->name('blood-tests.update');
     Route::delete('blood-tests/{bloodTest}', DestroyBloodTestController::class)->name('blood-tests.destroy');
 
     Route::get('blood-test-documents/{bloodTestDocument}/download', DownloadBloodTestDocumentController::class)

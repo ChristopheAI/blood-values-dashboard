@@ -1,3 +1,15 @@
+@php
+    $bloodTests = auth()->user()->bloodTests()->recentFirst()->get();
+    $statusLabel = fn (string $status): string => match ($status) {
+        'uploaded' => __('Geüpload'),
+        'reviewing' => __('Review nodig'),
+        'confirmed' => __('Bevestigd'),
+        default => __('Onbekend'),
+    };
+    $selectedFirstId = (int) old('first', $bloodTests->last()?->id);
+    $selectedSecondId = (int) old('second', $bloodTests->first()?->id);
+@endphp
+
 <x-layouts::app :title="__('Bloedtesten')">
     <section class="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header class="flex flex-col gap-2">
@@ -7,16 +19,40 @@
 
         @include('blood-tests._upload-dropzone')
 
+        @if ($bloodTests->count() >= 2)
+            <form method="GET" action="{{ route('blood-tests.compare') }}" class="grid gap-4 rounded-lg border border-neutral-200 p-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end dark:border-neutral-700" data-test="blood-test-compare-form">
+                <flux:select name="first" :label="__('Eerste bloedtest')" required>
+                    @foreach ($bloodTests as $bloodTest)
+                        <option value="{{ $bloodTest->id }}" @selected($bloodTest->id === $selectedFirstId)>{{ $bloodTest->title ?: __('Bloedtest zonder titel') }} · {{ $bloodTest->test_date ? \App\Support\Format::dutchDate($bloodTest->test_date) : __('Geen datum') }}</option>
+                    @endforeach
+                </flux:select>
+
+                <flux:select name="second" :label="__('Tweede bloedtest')" required>
+                    @foreach ($bloodTests as $bloodTest)
+                        <option value="{{ $bloodTest->id }}" @selected($bloodTest->id === $selectedSecondId)>{{ $bloodTest->title ?: __('Bloedtest zonder titel') }} · {{ $bloodTest->test_date ? \App\Support\Format::dutchDate($bloodTest->test_date) : __('Geen datum') }}</option>
+                    @endforeach
+                </flux:select>
+
+                <flux:button type="submit" variant="outline" data-test="compare-blood-tests-button">{{ __('Bloedtesten vergelijken') }}</flux:button>
+
+                @error('comparison')
+                    <flux:text class="sm:col-span-3 text-sm text-red-600 dark:text-red-400" data-test="compare-blood-tests-error">{{ $message }}</flux:text>
+                @enderror
+            </form>
+        @elseif ($bloodTests->isNotEmpty())
+            <flux:text class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('Upload nog een bloedtest om waarden naast elkaar te vergelijken.') }}</flux:text>
+        @endif
+
         <div class="space-y-3">
             <flux:heading size="lg">{{ __('Recente bloedtesten') }}</flux:heading>
 
-            @forelse (auth()->user()->bloodTests()->recentFirst()->get() as $bloodTest)
+            @forelse ($bloodTests as $bloodTest)
                 <a href="{{ route('blood-tests.show', $bloodTest) }}" class="block rounded-lg border border-neutral-200 p-4 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-900" data-test="blood-test-link">
                     <div class="font-medium">{{ $bloodTest->title ?: __('Bloedtest zonder titel') }}</div>
                     <div class="text-sm text-neutral-600 dark:text-neutral-400">
                         {{ $bloodTest->test_date ? \App\Support\Format::dutchDate($bloodTest->test_date) : __('Nog geen datum') }}
                         · {{ $bloodTest->lab_name ?: __('Onbekend labo') }}
-                        · {{ $bloodTest->status }}
+                        · {{ $statusLabel($bloodTest->status) }}
                     </div>
                 </a>
             @empty

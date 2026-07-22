@@ -73,7 +73,7 @@ class ReviewBloodTest extends Component
             ?? QualitativeLabValue::parse((string) $form['value'])?->storedValue();
 
         if ($storedValue === null) {
-            $this->addError('resultForm.value', 'The value must be a number, a detection-limit value such as <10, or a qualitative result such as Negatief.');
+            $this->addError('resultForm.value', 'De waarde moet een getal, detectielimiet zoals <10, of kwalitatief resultaat zoals Negatief zijn.');
 
             return;
         }
@@ -90,7 +90,7 @@ class ReviewBloodTest extends Component
         if ($this->hasOtherResultForBiomarker($bloodTest, $biomarker, $currentResultId)) {
             $this->addError(
                 $this->duplicateBiomarkerErrorField($form),
-                'This biomarker already has a value for this blood test.',
+                'Deze biomarker heeft al een waarde voor deze bloedtest.',
             );
 
             return;
@@ -461,7 +461,7 @@ class ReviewBloodTest extends Component
         }
 
         if (count($matchingBiomarkers) > 1) {
-            $this->addError('resultForm.name', 'This biomarker name matches multiple catalog entries. Choose one from the catalog.');
+            $this->addError('resultForm.name', 'Deze biomarkernaam komt meerdere keren voor in je catalogus. Kies een biomarker uit de catalogus.');
 
             return null;
         }

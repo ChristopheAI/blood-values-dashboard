@@ -51,10 +51,11 @@ class BuildDashboardReadiness
             ];
         }
 
-        if ($reviewDraftCount > 0) {
-            $reviewLabel = $reviewDraftCount === 1
-                ? '1 waarde wacht op review en blijft buiten consult.'
-                : $reviewDraftCount.' waarden wachten op review en blijven buiten consult.';
+        $reviewLabel = $reviewDraftCount === 1
+            ? '1 waarde wacht op review en blijft buiten consult.'
+            : $reviewDraftCount.' waarden wachten op review en blijven buiten consult.';
+
+        if ($reviewDraftCount > 0 && $confirmedValueCount === 0) {
 
             return [
                 'headline' => 'Eerst review afronden',
@@ -147,9 +148,18 @@ class BuildDashboardReadiness
             ],
         ];
 
+        if ($reviewDraftCount > 0) {
+            array_unshift($items, [
+                'state' => 'blocked',
+                'label' => $reviewLabel,
+            ]);
+        }
+
         return [
-            'headline' => 'Klaar voor je consult?',
-            'variant' => 'success',
+            'headline' => $reviewDraftCount > 0
+                ? 'Bevestigde waarden blijven beschikbaar'
+                : 'Klaar voor je consult?',
+            'variant' => $reviewDraftCount > 0 ? 'review' : 'success',
             'items' => $items,
             'consultBloodTestId' => $latestBloodTest?->id,
             'showConsultPost' => $latestBloodTest !== null,

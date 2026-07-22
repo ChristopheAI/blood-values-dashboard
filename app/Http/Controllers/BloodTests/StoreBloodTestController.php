@@ -107,7 +107,7 @@ class StoreBloodTestController extends Controller
                 },
             );
 
-            if ($run->status === 'done') {
+            if (in_array($run->status, ['done', 'failed'], true)) {
                 $emit(['redirect' => route('blood-tests.show', $bloodTest, false)]);
             }
         }, 200, [

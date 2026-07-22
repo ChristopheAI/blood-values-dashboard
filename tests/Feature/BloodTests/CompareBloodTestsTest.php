@@ -55,10 +55,12 @@ it('compares two blood tests using confirmed values only', function () {
         ->assertSee('24 ng/mL')
         ->assertSee('60 nmol/L')
         ->assertDontSee('24 nmol/L')
-        ->assertSee('not comparable')
+        ->assertSee('Niet vergelijkbaar')
+        ->assertDontSee('not comparable')
         ->assertSee('CRP')
-        ->assertSee('not measured')
-        ->assertDontSee('not measured mg/L')
+        ->assertSee('Niet gemeten')
+        ->assertDontSee('not measured')
+        ->assertDontSee('Niet gemeten mg/L')
         ->assertDontSee('Unconfirmed');
 });
 
@@ -71,6 +73,34 @@ it('user cannot compare another users blood tests', function () {
     $this->actingAs($otherUser)
         ->get(route('blood-tests.compare', ['first' => $ownersBloodTest, 'second' => $otherUsersBloodTest]))
         ->assertForbidden();
+});
+
+it('renders a complete mobile comparison card instead of clipping the table', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritine']);
+    $first = BloodTest::factory()->for($user)->create(['test_date' => '2026-05-01']);
+    $second = BloodTest::factory()->for($user)->create(['test_date' => '2026-06-01']);
+
+    BiomarkerResult::factory()->for($first)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'µg/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+    BiomarkerResult::factory()->for($second)->for($biomarker)->create([
+        'value' => 48,
+        'unit' => 'µg/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('blood-tests.compare', ['first' => $first, 'second' => $second]))
+        ->assertOk()
+        ->assertSee('Vergelijk bloedtesten')
+        ->assertSee('data-test="blood-test-comparison-mobile-card"', false)
+        ->assertSee('Vorige waarde')
+        ->assertSee('Huidige waarde');
 });
 
 it('does not compare confirmed results linked to another users biomarker', function () {
