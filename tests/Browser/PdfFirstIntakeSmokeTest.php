@@ -22,7 +22,7 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
             ->type('email', $email)
             ->type('password', $password)
             ->type('password_confirmation', $password)
-            ->press('Create account')
+            ->press('Account aanmaken')
             ->waitForLocation('/dashboard')
             ->assertPathIs('/dashboard')
             ->assertAuthenticated();
@@ -33,7 +33,7 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
             ->visit('/login')
             ->type('email', $email)
             ->type('password', $password)
-            ->press('Log in')
+            ->press('Inloggen')
             ->waitForLocation('/dashboard')
             ->assertPathIs('/dashboard')
             ->assertAuthenticated();
@@ -70,7 +70,7 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
             'first' => $bloodTests[0]->id,
             'second' => $bloodTests[1]->id,
         ], false))
-            ->waitForText('Compare blood tests')
+            ->waitForText('Vergelijk bloedtesten')
             ->assertSee('Ferritin')
             ->assertSee('+6')
             ->assertSee('normaal');
@@ -96,7 +96,7 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->type('email', $email)
             ->type('password', $password)
             ->type('password_confirmation', $password)
-            ->press('Create account')
+            ->press('Account aanmaken')
             ->waitForLocation('/dashboard')
             ->assertAuthenticated();
 
@@ -437,7 +437,7 @@ function addContextNote(Browser $browser, int $bloodTestId): void
 function addReminder(Browser $browser): void
 {
     $browser->visit('/reminders')
-        ->waitForText('Reminders')
+        ->waitForText('Herinneringen')
         ->value('input[name="due_date"]', '2026-07-15')
         ->type('title', 'Plan next blood test')
         ->type('note', 'Check calendar for a morning slot.')
@@ -492,8 +492,8 @@ function downloadDataExport(Browser $browser, string $password, bool $assertExpe
             ->waitForLocation('/settings/data');
     }
 
-    $browser->waitForText('Data and privacy')
-        ->assertSee('Download my data')
+    $browser->waitForText('Gegevens en privacy')
+        ->assertSee('Mijn gegevens downloaden')
         ->click('[data-test="download-data-button"]');
 
     $browser->waitUsing(10, 100, function (): bool {
@@ -523,10 +523,10 @@ function downloadDataExport(Browser $browser, string $password, bool $assertExpe
 function deleteAllHealthData(Browser $browser): void
 {
     $browser->visit(route('data.edit', [], false))
-        ->waitForText('Data and privacy')
+        ->waitForText('Gegevens en privacy')
         ->type('[data-test="delete-all-confirmation-input"]', 'DELETE ALL')
         ->click('[data-test="delete-all-health-data-button"]')
-        ->waitForText('Your personal tracking records were deleted.')
+        ->waitForText('Je persoonlijke opvolggegevens zijn verwijderd.')
         ->visit('/dashboard')
         ->waitFor('[data-test="lab-pdf-dropzone"]')
         ->assertPresent('[data-test="dashboard-next-step"]')

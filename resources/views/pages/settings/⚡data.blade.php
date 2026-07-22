@@ -3,26 +3,26 @@
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Data and privacy')] class extends Component {}; ?>
+new #[Title('Gegevens en privacy')] class extends Component {}; ?>
 
 <section class="w-full">
     @include('partials.settings-heading')
 
-    <flux:heading class="sr-only">{{ __('Data and privacy') }}</flux:heading>
+    <flux:heading class="sr-only">{{ __('Gegevens en privacy') }}</flux:heading>
 
-    <x-pages::settings.layout :heading="__('Data and privacy')" :subheading="__('Export or delete your personal tracking records')">
+    <x-pages::settings.layout :heading="__('Gegevens en privacy')" :subheading="__('Exporteer of verwijder je persoonlijke opvolggegevens.')">
         <div class="my-6 space-y-10">
             @if (session('status') === 'health-data-deleted')
                 <div class="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
-                    {{ __('Your personal tracking records were deleted. Your account remains active.') }}
+                    {{ __('Je persoonlijke opvolggegevens zijn verwijderd. Je account blijft actief.') }}
                 </div>
             @endif
 
             <section class="space-y-4">
                 <div>
-                    <flux:heading>{{ __('Download my data') }}</flux:heading>
+                    <flux:heading>{{ __('Mijn gegevens downloaden') }}</flux:heading>
                     <flux:subheading>
-                        {{ __('Export structured personal tracking data as JSON. Lab PDFs are listed by document metadata only.') }}
+                        {{ __('Exporteer je gestructureerde opvolggegevens als JSON. Lab-PDF’s staan enkel als documentmetadata in de export.') }}
                     </flux:subheading>
                 </div>
 
@@ -30,7 +30,7 @@ new #[Title('Data and privacy')] class extends Component {}; ?>
                     @csrf
 
                     <flux:button type="submit" variant="primary" data-test="download-data-button">
-                        {{ __('Download data') }}
+                        {{ __('Gegevens downloaden') }}
                     </flux:button>
                 </form>
             </section>
@@ -39,9 +39,9 @@ new #[Title('Data and privacy')] class extends Component {}; ?>
 
             <section class="space-y-4">
                 <div>
-                    <flux:heading>{{ __('Delete all health data') }}</flux:heading>
+                    <flux:heading>{{ __('Alle gezondheidsgegevens verwijderen') }}</flux:heading>
                     <flux:subheading>
-                        {{ __('This cannot be undone. It removes blood tests, confirmed values, context notes, pinned biomarkers, biomarker catalog records, and private lab PDFs while keeping your account.') }}
+                        {{ __('Dit kan niet ongedaan worden gemaakt. Bloedtesten, bevestigde waarden, contextnotities, gevolgde biomarkers, biomarkercatalogus en private lab-PDF’s worden verwijderd; je account blijft bestaan.') }}
                     </flux:subheading>
                 </div>
 
@@ -51,7 +51,7 @@ new #[Title('Data and privacy')] class extends Component {}; ?>
 
                     <flux:input
                         name="confirmation"
-                        :label="__('Type DELETE ALL to confirm')"
+                        :label="__('Typ DELETE ALL om te bevestigen')"
                         autocomplete="off"
                         data-test="delete-all-confirmation-input"
                     />
@@ -61,7 +61,7 @@ new #[Title('Data and privacy')] class extends Component {}; ?>
                     @enderror
 
                     <flux:button type="submit" variant="danger" data-test="delete-all-health-data-button">
-                        {{ __('Delete all health data') }}
+                        {{ __('Alle gezondheidsgegevens verwijderen') }}
                     </flux:button>
                 </form>
             </section>

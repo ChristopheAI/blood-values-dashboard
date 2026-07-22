@@ -90,7 +90,7 @@ class BuildDashboardReadinessTest extends TestCase
         $this->assertFalse($readiness['showConsultPost']);
     }
 
-    public function test_readiness_blocks_consult_post_when_review_drafts_remain_alongside_confirmed_values(): void
+    public function test_readiness_keeps_confirmed_values_available_when_review_drafts_remain(): void
     {
         $user = User::factory()->create();
         $bloodTest = BloodTest::factory()->for($user)->create(['title' => 'Mixed review test']);
@@ -123,10 +123,12 @@ class BuildDashboardReadinessTest extends TestCase
             confirmedValueCount: 1,
         );
 
-        $this->assertSame('Eerst review afronden', $readiness['headline']);
-        $this->assertFalse($readiness['showConsultPost']);
+        $this->assertSame('Bevestigde waarden blijven beschikbaar', $readiness['headline']);
+        $this->assertSame('review', $readiness['variant']);
+        $this->assertTrue($readiness['showConsultPost']);
+        $this->assertSame($bloodTest->id, $readiness['consultBloodTestId']);
         $this->assertSame('1 waarde wacht op review en blijft buiten consult.', $readiness['items'][0]['label']);
-        $this->assertSame('1 bevestigde waarde blijft beschikbaar', $readiness['items'][1]['label']);
+        $this->assertSame('Bloedtesten bevestigd', $readiness['items'][1]['label']);
     }
 
     public function test_readiness_uses_most_recent_confirmed_blood_test_outside_timeline_slice(): void

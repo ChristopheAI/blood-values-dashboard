@@ -12,4 +12,18 @@ enum ContextNoteCategory: string
     case Complaint = 'complaint';
     case Stress = 'stress';
     case Other = 'other';
+
+    public function dutchLabel(): string
+    {
+        return match ($this) {
+            self::Sleep => 'Slaap',
+            self::Food => 'Voeding',
+            self::Training => 'Training',
+            self::Supplement => 'Supplement',
+            self::Medication => 'Medicatie',
+            self::Complaint => 'Klacht',
+            self::Stress => 'Stress',
+            self::Other => 'Andere',
+        };
+    }
 }

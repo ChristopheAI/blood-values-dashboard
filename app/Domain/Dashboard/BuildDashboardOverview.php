@@ -101,7 +101,7 @@ class BuildDashboardOverview
                 ],
                 [
                     'key' => 'review',
-                    'label' => 'In review',
+                    'label' => 'Te reviewen',
                     'count' => $reviewDraftCount,
                     'summary' => $this->countLabel($reviewDraftCount, 'reviewpunt', 'reviewpunten'),
                     'help' => 'Extracties die nog niet downstream mogen.',

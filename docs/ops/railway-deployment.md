@@ -20,7 +20,23 @@ Required before real data:
 - Scheduled volume backups configured, and one restore drill performed and
   documented (keep used volume space under 50% — Railway caps a manual backup
   at half the volume size).
+- An off-platform backup configured and drill-tested: a periodic export of
+  the Postgres database and the private files to a location outside Railway
+  that the owner controls. Railway's volume backups die with the volume
+  ("wiping a volume deletes all backups", restore only into the same
+  project + environment, max 3 months retention) and Railway itself has had
+  account-level loss of access (GCP suspension, May 2026) — coupled backups
+  do not survive platform loss. See ADR-0015 amendment.
 - `APP_DEBUG=false`, `LOG_LEVEL=warning`, and no sensitive values in logs.
+- A written pre-mortem: "it is 12 months from now and the private lab data on
+  Railway was lost or leaked — what caused it?" covering data loss, leak
+  paths, and operational failure modes, each with a mitigation or an explicit
+  acceptance.
+- A single-point-of-failure map including the human SPOFs: this project has
+  exactly one operator, so one person holds the Railway account, the
+  `APP_KEY`, the backup knowledge, and the restore procedure. Record where a
+  second copy of each lives (password manager, printed recovery notes) before
+  real data exists only behind them.
 - `sh scripts/validate.sh` green before deploy.
 - Browser QA with synthetic data after deploy.
 

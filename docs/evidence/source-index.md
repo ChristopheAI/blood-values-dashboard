@@ -216,3 +216,12 @@ Relevant transfer:
 - Claim type: fact
 - Summary: ADRs should be short, stored near the code, and retained or
   superseded rather than silently rewritten.
+
+- Source: `https://dev.to/devprompts/10-claude-prompts-for-better-architecture-decisions-with-examples-12lg`
+- Claim type: inference
+- Summary: Ten reusable architecture-decision prompts. Adopted here: a
+  "Revisit Triggers" section makes every ADR reversible by design (added to
+  the ADR template); a pre-mortem ("12 months later, it failed — why?") and a
+  single-point-of-failure map that includes human SPOFs are the opening
+  ritual before the Railway real-data step (added to the deployment runbook).
+  Trade-off analyses should always score reversibility as a dimension.

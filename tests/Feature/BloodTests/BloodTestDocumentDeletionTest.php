@@ -19,7 +19,7 @@ it('deleting blood test removes or blocks its lab pdf', function () {
     Storage::disk('local')->put($document->storage_path, 'pdf bytes');
 
     $this->actingAs($user)
-        ->delete(route('blood-tests.destroy', $bloodTest))
+        ->delete(route('blood-tests.destroy', $bloodTest), ['confirmation' => 'DELETE TEST'])
         ->assertRedirect(route('blood-tests.index'));
 
     Storage::disk('local')->assertMissing($document->storage_path);
@@ -48,7 +48,7 @@ it('keeps the stored lab pdf when blood test deletion fails before the database 
     try {
         $this->withoutExceptionHandling()
             ->actingAs($user)
-            ->delete(route('blood-tests.destroy', $bloodTest));
+            ->delete(route('blood-tests.destroy', $bloodTest), ['confirmation' => 'DELETE TEST']);
     } catch (RuntimeException $exception) {
         $caught = $exception;
     } finally {
@@ -80,7 +80,7 @@ it('keeps the blood test and document record when blood test pdf deletion fails'
         ->andReturn($disk);
 
     $this->actingAs($user)
-        ->delete(route('blood-tests.destroy', $bloodTest))
+        ->delete(route('blood-tests.destroy', $bloodTest), ['confirmation' => 'DELETE TEST'])
         ->assertServerError();
 
     expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue()
@@ -111,7 +111,7 @@ it('preserves every health record when a later document of a multi-document bloo
     Storage::shouldReceive('disk')->with('local')->andReturn($disk);
 
     $this->actingAs($user)
-        ->delete(route('blood-tests.destroy', $bloodTest))
+        ->delete(route('blood-tests.destroy', $bloodTest), ['confirmation' => 'DELETE TEST'])
         ->assertServerError();
 
     expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue()

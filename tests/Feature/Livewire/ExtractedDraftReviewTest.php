@@ -629,7 +629,7 @@ it('shows context notes for the selected blood test only', function () {
 
     ContextNote::factory()->for($user)->for($bloodTest)->create([
         'note_date' => '2026-06-02',
-        'category' => ContextNoteCategory::Other,
+        'category' => ContextNoteCategory::Medication,
         'body' => 'Selected blood-test context note',
     ]);
     ContextNote::factory()->for($user)->for($otherOwnedBloodTest)->create([
@@ -651,7 +651,8 @@ it('shows context notes for the selected blood test only', function () {
         ->assertSee('data-test="blood-test-context-note-row"', false)
         ->assertSee('Selected blood-test context note')
         ->assertSee('2 juni 2026')
-        ->assertSee('Other')
+        ->assertSee('Medicatie')
+        ->assertDontSee('Medication')
         ->assertDontSee('Other owned blood-test note')
         ->assertDontSee('Foreign corrupted context note');
 });

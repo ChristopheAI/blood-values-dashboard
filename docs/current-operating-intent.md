@@ -90,6 +90,13 @@ comparison -> context -> consult/export.
   `/dashboard`, `/blood-tests/3`, consult opened from detail, and mobile consult
   at 390x844 with no starter-kit noise, forbidden medical copy, storage-path
   leak, or horizontal overflow.
+- Latest user-journey hardening on 2026-07-10: account deletion invokes the
+  health-data/PDF cleanup boundary and purges database-backed sessions; exports
+  exclude source snippets; deletion and comparison flows have server-side
+  confirmation/ownership checks; and Dutch interface/validation/auth copy is
+  the default. A dashboard with both confirmed and draft rows keeps its
+  confirmed-only consult path available while explicitly warning that drafts
+  remain outside downstream use.
 - Local app route used for browser QA: `http://127.0.0.1:8000`.
 - Known unrelated local artifacts: ignored `.codex/` and `.omo/`; scratch
   `bloed-overzicht.tsx` should stay outside this repo.

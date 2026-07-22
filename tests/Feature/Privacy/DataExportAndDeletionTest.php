@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Privacy\BuildDataExport;
+use App\Domain\Privacy\DeleteAllHealthData;
 use App\Enums\ContextNoteCategory;
 use App\Models\Biomarker;
 use App\Models\BiomarkerCategory;
@@ -182,7 +183,8 @@ it('exports trace metadata for confirmed auto-filled values without exporting dr
     expect($result['entry_source'])->toBe('extracted')
         ->and($result['extracted_name'])->toBe('Ferritin')
         ->and((float) $result['extraction_confidence'])->toBe(0.95)
-        ->and($result['source_snippet'])->toBe('Ferritin 42 ug/L ref 30-150 ug/L')
+        ->and($result)->not->toHaveKey('source_snippet')
+        ->and(json_encode($export, JSON_THROW_ON_ERROR))->not->toContain('Ferritin 42 ug/L ref 30-150 ug/L')
         ->and($result['value'])->not->toBe(999);
 });
 
@@ -374,6 +376,10 @@ it('keeps owned health data records when delete all cannot remove a private docu
     ]);
     $disk = Mockery::mock(Filesystem::class);
 
+    $disk->shouldReceive('exists')
+        ->once()
+        ->with($document->storage_path)
+        ->andReturnTrue();
     $disk->shouldReceive('delete')
         ->once()
         ->with($document->storage_path)
@@ -392,7 +398,7 @@ it('keeps owned health data records when delete all cannot remove a private docu
         ->and(BloodTestDocument::query()->whereKey($document->id)->exists())->toBeTrue();
 });
 
-it('keeps all owned health data when delete all cannot remove every private document', function () {
+it('keeps owner records when delete all cannot remove every private document', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create();
     $firstDocument = BloodTestDocument::factory()->for($bloodTest)->create([
@@ -405,8 +411,8 @@ it('keeps all owned health data when delete all cannot remove every private docu
     ]);
     $disk = Mockery::mock(Filesystem::class);
 
-    // First file deletes, second fails: the whole transaction rolls back, so every
-    // owned health record is preserved for a safe retry rather than partially lost.
+    $disk->shouldReceive('exists')->with($firstDocument->storage_path)->once()->andReturnTrue();
+    $disk->shouldReceive('exists')->with($secondDocument->storage_path)->once()->andReturnTrue();
     $disk->shouldReceive('delete')->with($firstDocument->storage_path)->andReturnTrue();
     $disk->shouldReceive('delete')->with($secondDocument->storage_path)->andReturnFalse();
     Storage::shouldReceive('disk')->with('local')->andReturn($disk);
@@ -419,6 +425,46 @@ it('keeps all owned health data when delete all cannot remove every private docu
     expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue()
         ->and(BloodTestDocument::query()->whereKey($firstDocument->id)->exists())->toBeTrue()
         ->and(BloodTestDocument::query()->whereKey($secondDocument->id)->exists())->toBeTrue();
+});
+
+it('completes a retry after an earlier private document was already removed', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $firstDocument = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => 'blood-test-documents/retry-first.pdf',
+    ]);
+    $secondDocument = BloodTestDocument::factory()->for($bloodTest)->create([
+        'storage_disk' => 'local',
+        'storage_path' => 'blood-test-documents/retry-second.pdf',
+    ]);
+    $disk = Mockery::mock(Filesystem::class);
+
+    $disk->shouldReceive('exists')
+        ->with($firstDocument->storage_path)
+        ->twice()
+        ->andReturn(true, false);
+    $disk->shouldReceive('exists')
+        ->with($secondDocument->storage_path)
+        ->twice()
+        ->andReturnTrue();
+    $disk->shouldReceive('delete')->with($firstDocument->storage_path)->once()->andReturnTrue();
+    $disk->shouldReceive('delete')
+        ->with($secondDocument->storage_path)
+        ->twice()
+        ->andReturn(false, true);
+    Storage::shouldReceive('disk')->with('local')->times(4)->andReturn($disk);
+
+    expect(fn () => app(DeleteAllHealthData::class)($user))
+        ->toThrow(RuntimeException::class, 'Failed to delete stored lab PDF.');
+
+    expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeTrue();
+
+    app(DeleteAllHealthData::class)($user);
+
+    expect(BloodTest::query()->whereKey($bloodTest->id)->exists())->toBeFalse()
+        ->and(BloodTestDocument::query()->whereKey($firstDocument->id)->exists())->toBeFalse()
+        ->and(BloodTestDocument::query()->whereKey($secondDocument->id)->exists())->toBeFalse();
 });
 
 it('requires explicit typed confirmation before delete all removes health data', function () {
@@ -481,7 +527,7 @@ it('renders the password confirmed settings data page with export and delete con
         ->withSession(['auth.password_confirmed_at' => time()])
         ->get(route('data.edit'))
         ->assertOk()
-        ->assertSee('Data and privacy')
+        ->assertSee('Gegevens en privacy')
         ->assertSee('action="'.route('data.export').'"', false)
         ->assertSee('action="'.route('data.destroy').'"', false)
         ->assertSee('method="POST"', false)

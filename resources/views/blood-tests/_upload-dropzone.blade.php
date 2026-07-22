@@ -16,15 +16,24 @@
         :class="dragging
             ? 'border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-neutral-800/80'
             : 'border-neutral-300 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900'"
-        class="grid min-h-[22rem] place-items-center rounded-lg border border-dashed p-8 text-center transition"
+        class="flex min-h-64 flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-6 text-center transition sm:p-8"
+        data-density="compact"
         data-test="lab-pdf-dropzone"
     >
-        <div class="flex w-full max-w-2xl flex-col items-center gap-4 rounded-lg border border-neutral-200 bg-white p-8 shadow-xs dark:border-neutral-700 dark:bg-neutral-800">
-            <span class="text-2xl font-semibold text-neutral-900 dark:text-white">{{ __('Sleep je lab-PDF hierheen') }}</span>
-            <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('Alleen PDF') }}</span>
-            <div class="max-w-md space-y-1 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300" data-test="upload-trust-notice">
-                <p>{{ __('Lokaal gelezen uit de tekstlaag van de PDF. Geen externe verwerking.') }}</p>
-                <p>{{ __('Waarden tellen pas mee voor status en trends nadat ze bevestigd zijn.') }}</p>
+        <div class="flex w-full max-w-xl flex-col items-center gap-4">
+            <span
+                aria-hidden="true"
+                class="grid size-12 place-items-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950 dark:text-blue-200 dark:ring-blue-900"
+                data-test="upload-mark"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4.25A1.75 1.75 0 0 0 6.75 20h10.5A1.75 1.75 0 0 0 19 18.25V14" />
+                </svg>
+            </span>
+
+            <div class="space-y-1">
+                <p class="text-xl font-semibold text-neutral-900 dark:text-white sm:text-2xl">{{ __('Sleep je lab-PDF hierheen') }}</p>
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('of kies hieronder een bestand') }}</p>
             </div>
 
             <input
@@ -44,15 +53,21 @@
                 x-ref="chooseButton"
                 :disabled="isUploading"
                 @click="$refs.input.click()"
-                class="inline-flex h-10 cursor-pointer items-center rounded-lg bg-neutral-900 px-4 text-sm font-medium text-white dark:bg-white dark:text-neutral-900"
+                class="inline-flex h-10 cursor-pointer items-center rounded-lg bg-neutral-900 px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-neutral-900"
                 data-test="choose-pdf-button"
             >{{ __('PDF kiezen') }}</button>
 
             <span x-show="fileName" x-text="fileName" class="text-sm text-neutral-600 dark:text-neutral-400" data-test="selected-file-name"></span>
+
+            <ul class="flex flex-wrap justify-center gap-2 text-xs text-neutral-700 dark:text-neutral-300" data-test="upload-trust-signals">
+                <li class="rounded-full border border-neutral-200 bg-white px-3 py-1.5 dark:border-neutral-700 dark:bg-neutral-800">{{ __('Alleen PDF') }}</li>
+                <li class="rounded-full border border-neutral-200 bg-white px-3 py-1.5 dark:border-neutral-700 dark:bg-neutral-800">{{ __('Geen externe verwerking') }}</li>
+                <li class="rounded-full border border-neutral-200 bg-white px-3 py-1.5 dark:border-neutral-700 dark:bg-neutral-800">{{ __('Eerst bevestigen') }}</li>
+            </ul>
         </div>
 
         @error('document')
-            <flux:text class="mt-4 text-red-600 dark:text-red-400">{{ $message }}</flux:text>
+            <flux:text class="text-red-600 dark:text-red-400">{{ $message }}</flux:text>
         @enderror
     </section>
 

@@ -55,6 +55,29 @@ it('shows only confirmed values and never extracted drafts', function () {
         ->assertDontSee('87654');
 });
 
+it('links every confirmed overview row to its biomarker history', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create();
+    $result = confirmedOverviewResult($user, $bloodTest, 'Ferritine', [
+        'value' => 42,
+        'unit' => 'µg/L',
+        'reference_min' => 20,
+        'reference_max' => 300,
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+
+    $row = app(BuildBloodResultsOverview::class)($user)->firstWhere('label', 'Ferritine');
+
+    expect($row['biomarker_id'])->toBe($result->biomarker_id);
+
+    $this->actingAs($user)
+        ->get(route('blood-results.overview'))
+        ->assertOk()
+        ->assertSee(route('biomarkers.show', $result->biomarker_id))
+        ->assertSee('data-test="open-biomarker-history"', false);
+});
+
 it('never shows values owned by another user', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
@@ -436,7 +459,7 @@ it('captions the reference in its own unit when it differs from the value unit',
         ->assertSee('andere eenheid dan de meting');
 });
 
-it('shows the reference-context reassurance line once when a value is out of range', function () {
+it('shows factual reference context without medical direction when a value is out of range', function () {
     $user = User::factory()->create();
     $bloodTest = BloodTest::factory()->for($user)->create();
 
@@ -450,8 +473,9 @@ it('shows the reference-context reassurance line once when a value is out of ran
     expect(substr_count($response->getContent(), 'data-test="confirmed-reference-context"'))->toBe(1);
 
     $response
-        ->assertSee('ook gezonde mensen er soms buiten vallen')
-        ->assertSee('data-test="confirmed-reference-context"', false);
+        ->assertSee('Referentiewaarden verschillen per lab. De status gebruikt alleen de ingevoerde referentierange.')
+        ->assertSee('data-test="confirmed-reference-context"', false)
+        ->assertDontSee('bespreek je waarden met je arts');
 });
 
 it('does not show the reassurance line when nothing is out of range', function () {
@@ -577,5 +601,26 @@ it('shows an empty state without any values', function () {
         ->get(route('blood-results.overview'))
         ->assertOk()
         ->assertSee('data-test="confirmed-overview-empty"', false)
-        ->assertSee('Nog geen bevestigde waarden');
+        ->assertSee('Nog geen bevestigde waarden')
+        ->assertSee(route('blood-tests.index'))
+        ->assertSee('data-test="upload-first-blood-test-button"', false);
+});
+
+it('marks an undated latest measurement as having no date instead of hiding it', function () {
+    $user = User::factory()->create();
+    $bloodTest = BloodTest::factory()->for($user)->create(['test_date' => null]);
+
+    confirmedOverviewResult($user, $bloodTest, 'CRP', [
+        'value' => 20,
+        'unit' => 'mg/L',
+        'reference_min' => 0,
+        'reference_max' => 5,
+        'status' => 'high',
+        'confirmed_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('blood-results.overview'))
+        ->assertOk()
+        ->assertSee('Geen datum');
 });

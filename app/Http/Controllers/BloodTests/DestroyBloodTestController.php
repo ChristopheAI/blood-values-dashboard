@@ -5,16 +5,22 @@ namespace App\Http\Controllers\BloodTests;
 use App\Http\Controllers\Controller;
 use App\Models\BloodTest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use RuntimeException;
 
 class DestroyBloodTestController extends Controller
 {
-    public function __invoke(BloodTest $bloodTest): RedirectResponse
+    public function __invoke(Request $request, BloodTest $bloodTest): RedirectResponse
     {
         abort_unless($bloodTest->user_id === Auth::id(), 403);
+
+        $request->validate([
+            'confirmation' => ['required', 'string', Rule::in(['DELETE TEST'])],
+        ]);
 
         $documents = $bloodTest->documents()
             ->get(['id', 'storage_disk', 'storage_path']);

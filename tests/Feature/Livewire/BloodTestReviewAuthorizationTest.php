@@ -288,8 +288,8 @@ it('rejects whitespace-only manual biomarker names and units after trimming', fu
         ->set('resultForm.unit', '   ')
         ->call('confirmResult')
         ->assertHasErrors([
-            'resultForm.name' => 'required_without',
-            'resultForm.unit' => 'required',
+            'resultForm.name' => 'Vul een biomarkernaam in wanneer je geen bestaande biomarker kiest.',
+            'resultForm.unit' => 'Het veld eenheid is verplicht.',
         ]);
 
     expect(Biomarker::query()->where('user_id', $user->id)->count())->toBe(0)

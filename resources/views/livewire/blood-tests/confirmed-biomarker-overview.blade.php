@@ -23,13 +23,14 @@
     <header class="flex flex-col gap-2">
         <flux:heading size="xl">{{ __('Bevestigde bloedwaarden') }}</flux:heading>
         <flux:text>
-            {{ __('Persoonlijk overzicht van al je bevestigde waarden. Status op basis van de ingevoerde referentierange — bespreek je waarden met je arts.') }}
+            {{ __('Persoonlijk overzicht van al je bevestigde waarden. Status op basis van de ingevoerde referentierange.') }}
         </flux:text>
     </header>
 
     @if ($counts['biomarkers'] === 0)
-        <div class="rounded-lg border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400" data-test="confirmed-overview-empty">
-            {{ __('Nog geen bevestigde waarden. Waarden verschijnen hier na bevestiging vanuit een bloedtest.') }}
+        <div class="flex flex-col items-center gap-4 rounded-lg border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-400" data-test="confirmed-overview-empty">
+            <span>{{ __('Nog geen bevestigde waarden. Waarden verschijnen hier na bevestiging vanuit een bloedtest.') }}</span>
+            <flux:button :href="route('blood-tests.index')" variant="outline" data-test="upload-first-blood-test-button">{{ __('Bloedtest uploaden') }}</flux:button>
         </div>
     @else
         <section class="rounded-lg border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-700 dark:bg-neutral-900" data-test="confirmed-overview-summary">
@@ -73,19 +74,21 @@
 
                 {{-- Geruststelling, één keer per sectie: wat een referentiewaarde ís (geen interpretatie van déze waarde). --}}
                 <p class="text-sm text-neutral-600 dark:text-neutral-400" data-test="confirmed-reference-context">
-                    {{ __('Referentiewaarden verschillen per lab en zijn zo gekozen dat ook gezonde mensen er soms buiten vallen. Bespreek je waarden met je arts.') }}
+                    {{ __('Referentiewaarden verschillen per lab. De status gebruikt alleen de ingevoerde referentierange.') }}
                 </p>
 
                 @foreach ($attentionRows as $row)
                     <article class="rounded-lg border border-amber-300 bg-amber-50 p-5 shadow-xs dark:border-amber-800 dark:bg-amber-950/30" data-test="confirmed-attention-card">
                         {{-- Leesmodel 1-2: naam, dan het pijltje + statuswoord, datum als context. --}}
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-                            <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">{{ $row['label'] }}</h3>
+                            <a href="{{ route('biomarkers.show', $row['biomarker_id']) }}" class="text-lg font-semibold text-blue-700 underline dark:text-blue-300" data-test="open-biomarker-history">{{ $row['label'] }}</a>
                             <span class="inline-flex items-center rounded-full border-2 border-amber-400 px-2.5 py-0.5 text-sm font-bold text-amber-800 dark:border-amber-700 dark:text-amber-200">
                                 {{ $row['statusLabel'] }}
                             </span>
                             @if ($row['date'])
                                 <span class="ms-auto text-xs text-neutral-500 dark:text-neutral-400" data-test="confirmed-row-date">{{ __('Gemeten op') }} {{ $row['date'] }}</span>
+                            @else
+                                <span class="ms-auto text-xs text-neutral-500 dark:text-neutral-400" data-test="confirmed-row-date">{{ __('Geen datum') }}</span>
                             @endif
                         </div>
 
@@ -160,13 +163,15 @@
                             <div class="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(9rem,0.8fr)_auto] md:items-center">
                                 <div class="min-w-0 space-y-1">
                                     <div class="flex min-w-0 flex-wrap items-center gap-2">
-                                        <h3 class="font-semibold text-neutral-900 dark:text-white">{{ $row['label'] }}</h3>
+                                        <a href="{{ route('biomarkers.show', $row['biomarker_id']) }}" class="font-semibold text-blue-700 underline dark:text-blue-300" data-test="open-biomarker-history">{{ $row['label'] }}</a>
                                         <span class="inline-flex items-center rounded-full border border-emerald-400 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:border-emerald-700 dark:text-emerald-200">
                                             {{ $row['statusLabel'] }}
                                         </span>
                                     </div>
                                     @if ($row['date'])
                                         <p class="text-xs text-neutral-500 dark:text-neutral-400" data-test="confirmed-row-date">{{ __('Gemeten op') }} {{ $row['date'] }}</p>
+                                    @else
+                                        <p class="text-xs text-neutral-500 dark:text-neutral-400" data-test="confirmed-row-date">{{ __('Geen datum') }}</p>
                                     @endif
                                 </div>
 
@@ -206,13 +211,15 @@
                             <div class="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(9rem,0.8fr)_auto] md:items-center">
                                 <div class="min-w-0 space-y-1">
                                     <div class="flex min-w-0 flex-wrap items-center gap-2">
-                                        <h3 class="font-semibold text-neutral-900 dark:text-white">{{ $row['label'] }}</h3>
+                                        <a href="{{ route('biomarkers.show', $row['biomarker_id']) }}" class="font-semibold text-blue-700 underline dark:text-blue-300" data-test="open-biomarker-history">{{ $row['label'] }}</a>
                                         <span class="inline-flex items-center rounded-full border border-neutral-300 px-2 py-0.5 text-xs font-semibold text-neutral-600 dark:border-neutral-600 dark:text-neutral-300">
                                             {{ $row['statusLabel'] }}
                                         </span>
                                     </div>
                                     @if ($row['date'])
                                         <p class="text-xs text-neutral-500 dark:text-neutral-400" data-test="confirmed-row-date">{{ __('Gemeten op') }} {{ $row['date'] }}</p>
+                                    @else
+                                        <p class="text-xs text-neutral-500 dark:text-neutral-400" data-test="confirmed-row-date">{{ __('Geen datum') }}</p>
                                     @endif
                                 </div>
 
