@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\BloodTests\BuildLongitudinalChanges;
 use App\Enums\ContextNoteCategory;
 use App\Livewire\BloodTests\ReviewBloodTest;
 use App\Models\Biomarker;
@@ -9,6 +10,7 @@ use App\Models\BloodTestDocument;
 use App\Models\ContextNote;
 use App\Models\ExtractionRun;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Livewire\Livewire;
 
 it('shows extracted drafts and lets the owner confirm a draft through the review form', function () {
@@ -281,7 +283,12 @@ it('does not tell the owner nothing counts when auto-confirmed values are alread
         ->assertSee('Bevestigde waarden')
         ->assertSee('Geëxtraheerde waarden reviewen')
         ->assertSee('Sommige waarden tellen al mee voor status en trends.')
-        ->assertDontSee('niets telt mee totdat je elke waarde bevestigt');
+        ->assertDontSee('niets telt mee totdat je elke waarde bevestigt')
+        // Stable wire:key on both the confirmed-values table rows and the draft
+        // review rows so a Livewire re-render keeps row state pinned to the right
+        // BiomarkerResult — a dropped key reintroduces the row-identity bug.
+        ->assertSee('wire:key="confirmed-result-', false)
+        ->assertSee('wire:key="draft-result-', false);
 });
 
 it('marks below auto-confirm threshold drafts as low confidence in the review strip', function () {
@@ -537,6 +544,38 @@ it('keeps auto-filled PDF trace when the owner edits an auto-confirmed value', f
         ->and($result->status)->toBe('normal');
 });
 
+it('preserves qualitative status and confirmation time when editing a confirmed value', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'PCR']);
+    $bloodTest = BloodTest::factory()->for($user)->create(['status' => 'confirmed']);
+    $confirmedAt = now()->subMonths(2)->startOfSecond();
+    $result = BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 'Positief',
+        'unit' => 'kwalitatief',
+        'reference_min' => null,
+        'reference_max' => null,
+        'reference_unit' => 'kwalitatief',
+        'status' => 'high',
+        'entry_source' => 'pdf_reviewed',
+        'confirmed_at' => $confirmedAt,
+        'source_snippet' => null,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->call('editConfirmedResult', $result->id)
+        ->set('resultForm.note', 'Reviewed spelling only.')
+        ->call('confirmResult')
+        ->assertHasNoErrors();
+
+    $result->refresh();
+
+    expect($result->value)->toBe('Positief')
+        ->and($result->status)->toBe('high')
+        ->and($result->confirmed_at?->toDateTimeString())->toBe($confirmedAt->toDateTimeString())
+        ->and($result->note)->toBe('Reviewed spelling only.');
+});
+
 it('marks auto-filled values when the source PDF is gone', function () {
     $user = User::factory()->create();
     $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
@@ -588,6 +627,53 @@ it('shows a compact trend summary for confirmed values on the result screen', fu
         ->assertSee('data-test="confirmed-value-trend" data-state="compared"', false)
         ->assertSee('+2 ug/L')
         ->assertSee('vorige 40 ug/L');
+});
+
+it('reuses the detail overview trend data for confirmed table labels', function () {
+    $user = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
+    $previousBloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => '2026-05-01',
+        'status' => 'confirmed',
+    ]);
+    $bloodTest = BloodTest::factory()->for($user)->create([
+        'test_date' => '2026-06-01',
+        'status' => 'confirmed',
+    ]);
+
+    BiomarkerResult::factory()->for($previousBloodTest)->for($biomarker)->create([
+        'value' => 40,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now()->subMonth(),
+    ]);
+    BiomarkerResult::factory()->for($bloodTest)->for($biomarker)->create([
+        'value' => 42,
+        'unit' => 'ug/L',
+        'status' => 'normal',
+        'confirmed_at' => now(),
+    ]);
+
+    $longitudinalChanges = new class extends BuildLongitudinalChanges
+    {
+        public int $acrossCalls = 0;
+
+        public function across(User $user, Collection $bloodTests): Collection
+        {
+            $this->acrossCalls++;
+
+            return parent::across($user, $bloodTests);
+        }
+    };
+
+    app()->instance(BuildLongitudinalChanges::class, $longitudinalChanges);
+
+    Livewire::actingAs($user)
+        ->test(ReviewBloodTest::class, ['bloodTest' => $bloodTest])
+        ->assertSee('data-test="confirmed-value-trend" data-state="compared"', false)
+        ->assertSee('+2 ug/L');
+
+    expect($longitudinalChanges->acrossCalls)->toBe(1);
 });
 
 it('shows source documents for the selected owned blood test without storage paths', function () {
@@ -1022,7 +1108,7 @@ it('blocks using another users extracted draft from a tampered livewire action',
     Livewire::actingAs($otherUser)
         ->test(ReviewBloodTest::class, ['bloodTest' => $otherUsersBloodTest])
         ->call('useDraft', $ownersDraft->id)
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 it('confirms a below-detection draft using the prefixed value from the review form', function () {

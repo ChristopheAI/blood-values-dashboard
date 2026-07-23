@@ -46,3 +46,13 @@ it('biomarker history uses confirmed values only and orders by test date', funct
         ->assertSeeInOrder(['19 mei 2025', '35', '19 mei 2026', '42'])
         ->assertDontSeeText('999');
 });
+
+it('hides another users biomarker history as not found', function () {
+    $owner = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $biomarker = Biomarker::factory()->for($owner)->create(['name' => 'Private marker']);
+
+    $this->actingAs($otherUser)
+        ->get(route('biomarkers.show', $biomarker))
+        ->assertNotFound();
+});

@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -25,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureRateLimiters();
     }
 
     /**
@@ -55,5 +59,20 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    /**
+     * Bound expensive or destructive health-data routes per authenticated user.
+     */
+    protected function configureRateLimiters(): void
+    {
+        RateLimiter::for('lab-pdf-uploads', fn (Request $request): Limit => Limit::perMinute(6)->by($this->rateLimitKey($request)));
+        RateLimiter::for('health-data-exports', fn (Request $request): Limit => Limit::perMinute(12)->by($this->rateLimitKey($request)));
+        RateLimiter::for('health-data-mutations', fn (Request $request): Limit => Limit::perMinute(30)->by($this->rateLimitKey($request)));
+    }
+
+    protected function rateLimitKey(Request $request): string
+    {
+        return (string) ($request->user()?->getAuthIdentifier() ?? $request->ip());
     }
 }

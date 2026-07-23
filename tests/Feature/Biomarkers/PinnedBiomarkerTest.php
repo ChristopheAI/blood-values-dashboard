@@ -57,7 +57,7 @@ it('rejects attempts to pin or unpin another users biomarker', function () {
 
     $this->actingAs($otherUser)
         ->post(route('biomarkers.pin', $biomarker))
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect(PinnedBiomarker::query()->where('biomarker_id', $biomarker->id)->exists())->toBeFalse();
 
@@ -65,7 +65,7 @@ it('rejects attempts to pin or unpin another users biomarker', function () {
 
     $this->actingAs($otherUser)
         ->delete(route('biomarkers.unpin', $biomarker))
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect(PinnedBiomarker::query()
         ->where('user_id', $owner->id)

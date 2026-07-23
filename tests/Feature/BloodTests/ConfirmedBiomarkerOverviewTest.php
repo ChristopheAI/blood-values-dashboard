@@ -146,7 +146,13 @@ it('groups rows by status with counts and keeps the display value as a string', 
         ->assertSee('data-test="confirmed-summary-count-unknown"', false)
         ->assertSee('data-test="confirmed-overview-attention"', false)
         ->assertSee('data-test="confirmed-overview-normal"', false)
-        ->assertSee('data-test="confirmed-overview-unknown"', false);
+        ->assertSee('data-test="confirmed-overview-unknown"', false)
+        // Stable wire:key on every repeated row so a Livewire re-render cannot
+        // shuffle DOM state between biomarkers — a dropped key reintroduces the
+        // row-identity bug this PR fixes.
+        ->assertSee('wire:key="confirmed-attention-', false)
+        ->assertSee('wire:key="confirmed-normal-', false)
+        ->assertSee('wire:key="confirmed-unknown-', false);
 });
 
 it('builds the grouped overview payload with counts the view renders verbatim', function () {

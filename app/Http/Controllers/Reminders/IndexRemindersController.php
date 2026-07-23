@@ -17,12 +17,12 @@ class IndexRemindersController extends Controller
                 ->open()
                 ->orderBy('due_date')
                 ->orderBy('id')
-                ->get(),
+                ->paginate(15, ['*'], 'open_page'),
             'completedReminders' => Reminder::query()
                 ->where('user_id', Auth::id())
                 ->whereNotNull('completed_at')
                 ->latest('completed_at')
-                ->get(),
+                ->paginate(15, ['*'], 'completed_page'),
         ]);
     }
 }

@@ -1,13 +1,13 @@
 @php
-    $bloodTests = auth()->user()->bloodTests()->recentFirst()->get();
     $statusLabel = fn (string $status): string => match ($status) {
         'uploaded' => __('Geüpload'),
         'reviewing' => __('Review nodig'),
         'confirmed' => __('Bevestigd'),
         default => __('Onbekend'),
     };
-    $selectedFirstId = (int) old('first', $bloodTests->last()?->id);
-    $selectedSecondId = (int) old('second', $bloodTests->first()?->id);
+    $compareCandidates = $bloodTests->getCollection();
+    $selectedFirstId = (int) old('first', $compareCandidates->last()?->id);
+    $selectedSecondId = (int) old('second', $compareCandidates->first()?->id);
 @endphp
 
 <x-layouts::app :title="__('Bloedtesten')">
@@ -70,6 +70,12 @@
                     {{ __('Nog geen bloedtesten. Upload een lab-PDF om de reviewflow te starten.') }}
                 </div>
             @endforelse
+
+            @if ($bloodTests->hasPages())
+                <div data-test="blood-test-pagination">
+                    {{ $bloodTests->links() }}
+                </div>
+            @endif
         </div>
     </section>
 </x-layouts::app>

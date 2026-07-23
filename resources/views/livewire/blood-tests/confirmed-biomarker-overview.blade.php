@@ -84,7 +84,7 @@
                 </p>
 
                 @foreach ($attentionRows as $row)
-                    <article class="rounded-lg border border-amber-300 bg-amber-50 p-5 shadow-xs dark:border-amber-800 dark:bg-amber-950/30" data-test="confirmed-attention-card">
+                    <article wire:key="confirmed-attention-{{ $row['resultId'] }}" class="rounded-lg border border-amber-300 bg-amber-50 p-5 shadow-xs dark:border-amber-800 dark:bg-amber-950/30" data-test="confirmed-attention-card">
                         {{-- Leesmodel 1-2: naam, dan het pijltje + statuswoord, datum als context. --}}
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
                             <a href="{{ route('biomarkers.show', $row['biomarker_id']) }}" class="text-lg font-semibold text-blue-700 underline dark:text-blue-300" data-test="open-biomarker-history">{{ $row['label'] }}</a>
@@ -165,7 +165,7 @@
 
                 <div class="overflow-hidden rounded-lg border border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20">
                     @foreach ($normalRows as $row)
-                        <article class="border-b border-emerald-100 p-4 last:border-b-0 dark:border-emerald-950" data-test="confirmed-normal-row">
+                        <article wire:key="confirmed-normal-{{ $row['resultId'] }}" class="border-b border-emerald-100 p-4 last:border-b-0 dark:border-emerald-950" data-test="confirmed-normal-row">
                             <div class="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(9rem,0.8fr)_auto] md:items-center">
                                 <div class="min-w-0 space-y-1">
                                     <div class="flex min-w-0 flex-wrap items-center gap-2">
@@ -217,7 +217,7 @@
 
                 <div class="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
                     @foreach ($unknownRows as $row)
-                        <article class="border-b border-neutral-200 p-4 last:border-b-0 dark:border-neutral-700" data-test="confirmed-unknown-row">
+                        <article wire:key="confirmed-unknown-{{ $row['resultId'] }}" class="border-b border-neutral-200 p-4 last:border-b-0 dark:border-neutral-700" data-test="confirmed-unknown-row">
                             <div class="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(9rem,0.8fr)_auto] md:items-center">
                                 <div class="min-w-0 space-y-1">
                                     <div class="flex min-w-0 flex-wrap items-center gap-2">

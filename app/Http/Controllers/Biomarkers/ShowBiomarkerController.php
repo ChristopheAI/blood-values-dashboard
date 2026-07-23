@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\Auth;
 
 class ShowBiomarkerController extends Controller
 {
-    public function __invoke(Biomarker $biomarker): View
+    public function __invoke(string $biomarker): View
     {
-        abort_unless($biomarker->user_id === Auth::id(), 403);
+        $biomarker = Biomarker::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($biomarker)
+            ->firstOrFail();
 
         $results = $biomarker->results()
             ->whereNotNull('confirmed_at')

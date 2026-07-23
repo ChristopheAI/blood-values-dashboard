@@ -26,12 +26,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('settings/data/export', DownloadDataExportController::class)
         ->middleware([
             'password.confirm',
+            'throttle:health-data-exports',
         ])
         ->name('data.export');
 
     Route::delete('settings/data', DestroyAllHealthDataController::class)
         ->middleware([
             'password.confirm',
+            'throttle:health-data-mutations',
         ])
         ->name('data.destroy');
 });

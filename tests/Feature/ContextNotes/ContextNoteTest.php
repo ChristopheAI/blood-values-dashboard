@@ -64,7 +64,7 @@ it('rejects another users blood test attachment and note mutation', function () 
             'category' => ContextNoteCategory::Stress->value,
             'body' => 'Cannot attach to another user.',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->actingAs($otherUser)
         ->patch(route('context-notes.update', $ownersNote), [
@@ -72,11 +72,11 @@ it('rejects another users blood test attachment and note mutation', function () 
             'category' => ContextNoteCategory::Food->value,
             'body' => 'Tampered update.',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->actingAs($otherUser)
         ->delete(route('context-notes.destroy', $ownersNote))
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->assertDatabaseHas('context_notes', [
         'id' => $ownersNote->id,
@@ -156,6 +156,30 @@ it('renders context and reminder navigation with dutch category labels', functio
         ->assertSee('Andere')
         ->assertDontSee('Sleep')
         ->assertDontSee('Medication');
+});
+
+it('paginates owned context notes', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 16) as $day) {
+        ContextNote::factory()->for($user)->create([
+            'note_date' => sprintf('2026-01-%02d', $day),
+            'body' => sprintf('Paged context note %02d', $day),
+        ]);
+    }
+
+    $this->actingAs($user)
+        ->get(route('context-notes.index'))
+        ->assertOk()
+        ->assertSee('Paged context note 16')
+        ->assertDontSee('Paged context note 01')
+        ->assertSee('data-test="context-note-pagination"', false);
+
+    $this->actingAs($user)
+        ->get(route('context-notes.index', ['page' => 2]))
+        ->assertOk()
+        ->assertSee('Paged context note 01')
+        ->assertDontSee('Paged context note 16');
 });
 
 it('stores medication and supplement context as descriptive user text', function () {

@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\Auth;
 
 class DestroyContextNoteController extends Controller
 {
-    public function __invoke(ContextNote $contextNote): RedirectResponse
+    public function __invoke(string $contextNote): RedirectResponse
     {
-        abort_unless($contextNote->user_id === Auth::id(), 403);
+        $contextNote = ContextNote::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($contextNote)
+            ->firstOrFail();
 
         $contextNote->delete();
 

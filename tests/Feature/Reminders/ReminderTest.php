@@ -99,11 +99,11 @@ it('keeps reminder reads and mutations owner scoped', function () {
             'note' => 'Should not save.',
             'completed' => '1',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->actingAs($otherUser)
         ->delete(route('reminders.destroy', $ownedReminder))
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->assertDatabaseHas('reminders', [
         'id' => $ownedReminder->id,
@@ -146,4 +146,44 @@ it('renders open and completed reminders on the index page', function () {
         ->assertDontSee('Due date')
         ->assertDontSee('Save reminder')
         ->assertDontSee('Completed reminders');
+});
+
+it('paginates open and completed reminder lists independently', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 16) as $day) {
+        Reminder::factory()->for($user)->create([
+            'due_date' => sprintf('2026-01-%02d', $day),
+            'title' => sprintf('Paged open reminder %02d', $day),
+            'completed_at' => null,
+        ]);
+
+        Reminder::factory()->for($user)->create([
+            'due_date' => sprintf('2026-02-%02d', $day),
+            'title' => sprintf('Paged completed reminder %02d', $day),
+            'completed_at' => sprintf('2026-03-%02d 12:00:00', $day),
+        ]);
+    }
+
+    $this->actingAs($user)
+        ->get(route('reminders.index'))
+        ->assertOk()
+        ->assertSee('Paged open reminder 01')
+        ->assertDontSee('Paged open reminder 16')
+        ->assertSee('Paged completed reminder 16')
+        ->assertDontSee('Paged completed reminder 01')
+        ->assertSee('data-test="open-reminder-pagination"', false)
+        ->assertSee('data-test="completed-reminder-pagination"', false);
+
+    $this->actingAs($user)
+        ->get(route('reminders.index', ['open_page' => 2]))
+        ->assertOk()
+        ->assertSee('Paged open reminder 16')
+        ->assertDontSee('Paged open reminder 01');
+
+    $this->actingAs($user)
+        ->get(route('reminders.index', ['completed_page' => 2]))
+        ->assertOk()
+        ->assertSee('Paged completed reminder 01')
+        ->assertDontSee('Paged completed reminder 16');
 });
