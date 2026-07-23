@@ -131,14 +131,21 @@ it('renders open and completed reminders on the index page', function () {
     $this->actingAs($user)
         ->get(route('reminders.index'))
         ->assertOk()
+        ->assertSee(route('context-notes.index'), false)
+        ->assertSee(route('reminders.index'), false)
         ->assertSee('Herinneringen')
+        ->assertSee('Open herinneringen')
+        ->assertSee('Afgewerkte herinneringen')
         ->assertSee('Open reminder')
         ->assertSee('Open note.')
         ->assertSee('Completed reminder')
         ->assertSee('Completed note.')
         ->assertSee('data-test="save-reminder-button"', false)
         ->assertSee('data-test="complete-reminder-button"', false)
-        ->assertSee('data-test="delete-reminder-button"', false);
+        ->assertSee('data-test="delete-reminder-button"', false)
+        ->assertDontSee('Due date')
+        ->assertDontSee('Save reminder')
+        ->assertDontSee('Completed reminders');
 });
 
 it('paginates open and completed reminder lists independently', function () {

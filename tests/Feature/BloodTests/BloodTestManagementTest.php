@@ -101,14 +101,12 @@ it('rejects a comparison that selects the same blood test twice', function () {
     $this->actingAs($user)
         ->get(route('blood-tests.compare', ['first' => $bloodTest, 'second' => $bloodTest]))
         ->assertRedirect(route('blood-tests.index'))
-        ->assertSessionHasErrors([
-            'comparison' => 'Kies twee verschillende bloedtesten.',
-        ]);
+        ->assertSessionHas('compare_error', 'Kies twee verschillende bloedtesten om te vergelijken.');
 
     $response = $this->followingRedirects()
         ->get(route('blood-tests.compare', ['first' => $bloodTest, 'second' => $bloodTest]))
         ->assertOk()
-        ->assertSee('data-test="compare-blood-tests-error"', false);
+        ->assertSee('data-test="compare-selection-message"', false);
 
-    expect(substr_count($response->getContent(), 'Kies twee verschillende bloedtesten.'))->toBe(1);
+    expect(substr_count($response->getContent(), 'Kies twee verschillende bloedtesten om te vergelijken.'))->toBe(1);
 });

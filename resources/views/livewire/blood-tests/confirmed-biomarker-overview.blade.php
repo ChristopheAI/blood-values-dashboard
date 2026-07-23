@@ -6,6 +6,12 @@
     $normalRows = $overview['normal'];
     $unknownRows = $overview['unknown'];
     $counts = $overview['counts'];
+    $attentionCountCardClass = fn (int $count): string => $count > 0
+        ? 'rounded-md border border-amber-300 bg-amber-50 px-3 py-2 ring-1 ring-amber-200 dark:border-amber-800 dark:bg-amber-950/30 dark:ring-amber-900'
+        : 'rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700';
+    $attentionCountValueClass = fn (int $count): string => $count > 0
+        ? 'font-bold tabular-nums text-amber-900 dark:text-amber-100'
+        : 'font-semibold tabular-nums text-neutral-900 dark:text-white';
 
     // Waarom deze rij geen status heeft — de ene zin die de schijnbare
     // tegenspraak ('<50' naast 'Referentie: ≤ 30') oplost. De builder bepaalt
@@ -46,19 +52,19 @@
                 </div>
 
                 <dl class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                    <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
+                    <div class="{{ $attentionCountCardClass((int) $counts['low']) }}" data-test="confirmed-summary-count-low">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('laag') }}</dt>
-                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['low'] }}</dd>
+                        <dd class="{{ $attentionCountValueClass((int) $counts['low']) }}">{{ $counts['low'] }}</dd>
                     </div>
-                    <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
+                    <div class="{{ $attentionCountCardClass((int) $counts['high']) }}" data-test="confirmed-summary-count-high">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('hoog') }}</dt>
-                        <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['high'] }}</dd>
+                        <dd class="{{ $attentionCountValueClass((int) $counts['high']) }}">{{ $counts['high'] }}</dd>
                     </div>
                     <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('normaal') }}</dt>
                         <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['normal'] }}</dd>
                     </div>
-                    <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700">
+                    <div class="rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700" data-test="confirmed-summary-count-unknown">
                         <dt class="text-neutral-600 dark:text-neutral-400">{{ __('geen status') }}</dt>
                         <dd class="font-semibold tabular-nums text-neutral-900 dark:text-white">{{ $counts['unknown'] }}</dd>
                     </div>
@@ -183,6 +189,10 @@
                                             <div class="absolute inset-x-0 top-1.5 h-0.5 rounded-full bg-neutral-300/70 dark:bg-neutral-700"></div>
                                             <div class="absolute top-0 h-3.5 rounded border border-neutral-400/70 bg-white/70 dark:border-neutral-500 dark:bg-neutral-900/40" style="left: {{ $bar['normalStart'] }}%; width: {{ $bar['normalWidth'] }}%;"></div>
                                             <div class="absolute -top-0.5 h-4.5 w-0.5 -translate-x-1/2 rounded-sm bg-neutral-700 dark:bg-neutral-200" style="left: {{ $bar['position'] }}%;"></div>
+                                        </div>
+                                        <div class="relative mt-1 h-3 text-[10px] tabular-nums text-neutral-500 dark:text-neutral-400" data-test="confirmed-range-bound-labels">
+                                            <span class="absolute -translate-x-1/2" style="left: {{ $bar['normalStart'] }}%;">{{ $bar['minLabel'] }}</span>
+                                            <span class="absolute -translate-x-1/2" style="left: {{ number_format((float) $bar['normalStart'] + (float) $bar['normalWidth'], 2, '.', '') }}%;">{{ $bar['maxLabel'] }}</span>
                                         </div>
                                     @endif
                                 </div>

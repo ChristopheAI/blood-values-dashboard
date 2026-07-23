@@ -141,6 +141,9 @@ it('groups rows by status with counts and keeps the display value as a string', 
         ->get(route('blood-results.overview'))
         ->assertOk()
         ->assertSeeInOrder(['laag', 'hoog', 'normaal', 'geen status'])
+        ->assertSee('data-test="confirmed-summary-count-high"', false)
+        ->assertSee('border-amber-300 bg-amber-50', false)
+        ->assertSee('data-test="confirmed-summary-count-unknown"', false)
         ->assertSee('data-test="confirmed-overview-attention"', false)
         ->assertSee('data-test="confirmed-overview-normal"', false)
         ->assertSee('data-test="confirmed-overview-unknown"', false)
@@ -217,8 +220,11 @@ it('positions the number line marker from the float value', function () {
         ->get(route('blood-results.overview'))
         ->assertOk()
         ->assertSee('data-test="confirmed-range-bar"', false)
+        ->assertSee('data-test="confirmed-range-bound-labels"', false)
         ->assertSee('left: 59.23%', false)
         ->assertSee('left: 11.54%; width: 76.92%', false)
+        ->assertSee('left: 11.54%;">0.5', false)
+        ->assertSee('left: 88.46%;">1', false)
         ->assertSee('0.81 mg/dL');
 });
 

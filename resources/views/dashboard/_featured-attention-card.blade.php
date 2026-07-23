@@ -1,6 +1,6 @@
 @php
     $markerClass = 'bg-amber-500 ring-amber-100 dark:ring-amber-950';
-    $valuePillClass = 'bg-amber-500 text-white';
+    $valuePillClass = 'bg-amber-100 text-amber-950 ring-1 ring-amber-300 dark:bg-amber-300 dark:text-amber-950 dark:ring-amber-200';
 @endphp
 
 <article class="rounded-lg border border-amber-300 bg-amber-50 p-5 shadow-xs dark:border-amber-800 dark:bg-amber-950/30" data-test="featured-attention-card">
@@ -8,6 +8,7 @@
         <div class="min-w-0 space-y-1">
             <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">{{ $row['name'] }}</h3>
             <p class="max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">{{ $row['takeaway'] }}</p>
+            <p class="max-w-3xl text-sm font-medium text-neutral-800 dark:text-neutral-200" data-test="attention-next-step">{{ __('Neem deze waarde mee in je consultlijst.') }}</p>
         </div>
 
         <div class="inline-flex w-fit shrink-0 rounded-md bg-amber-100 px-2.5 py-1 text-sm font-semibold text-amber-900 ring-1 ring-amber-200 dark:bg-amber-900/50 dark:text-amber-100 dark:ring-amber-800">

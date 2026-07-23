@@ -221,6 +221,7 @@ class BuildLatestUploadSummary
         $value = (float) $result->value;
         $min = $this->toFloatOrNull($result->reference_min);
         $max = $this->toFloatOrNull($result->reference_max);
+        $referenceUnit = $result->reference_unit ?: $result->unit;
 
         if ($min === null && $max === null) {
             return [
@@ -261,7 +262,7 @@ class BuildLatestUploadSummary
                 normalEndValue: $max,
                 scaleMin: $scale['scaleMin'],
                 scaleMax: $scale['scaleMax'],
-                label: 'Referentie: '.Format::number($min).' – '.Format::number($max).' '.$result->unit,
+                label: 'Referentie: '.Format::referenceRange($min, $max, $referenceUnit),
             );
         }
 
@@ -275,7 +276,7 @@ class BuildLatestUploadSummary
                 normalEndValue: $scaleMax,
                 scaleMin: $scaleMin,
                 scaleMax: $scaleMax,
-                label: 'Referentie: vanaf '.Format::number($min).' '.$result->unit,
+                label: 'Referentie: '.Format::referenceRange($min, $max, $referenceUnit),
             );
         }
 
@@ -288,7 +289,7 @@ class BuildLatestUploadSummary
             normalEndValue: $max,
             scaleMin: $scaleMin,
             scaleMax: $scaleMax,
-            label: 'Referentie: onder '.Format::number($max).' '.$result->unit,
+            label: 'Referentie: '.Format::referenceRange($min, $max, $referenceUnit),
         );
     }
 

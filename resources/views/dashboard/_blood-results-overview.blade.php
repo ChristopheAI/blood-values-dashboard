@@ -1,7 +1,8 @@
 <section class="space-y-8" data-test="blood-results-overview">
     <header class="flex flex-col gap-2">
-        <flux:heading size="xl">{{ __('Je bloedresultaten') }}</flux:heading>
+        <flux:heading size="xl">{{ $summary['bloodTest']->title ?: __('Bloedtest zonder titel') }}</flux:heading>
         <flux:text>
+            {{ __('Je bloedresultaten') }} ·
             {{ $summary['collectedLabel'] }}
             @if ($summary['bloodTest']->lab_name)
                 · {{ $summary['bloodTest']->lab_name }}

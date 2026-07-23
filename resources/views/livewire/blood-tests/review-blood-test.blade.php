@@ -225,7 +225,7 @@
                     @endphp
 
                     <article wire:key="draft-result-{{ $draft->id }}" class="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40" data-test="extracted-draft-row" data-state="draft" data-confidence="{{ $confidenceLevel }}">
-                        <div class="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] sm:items-start">
+                        <div class="grid gap-3 sm:grid-cols-2 sm:items-start">
                             <div>
                                 <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('Biomarker') }}</div>
                                 <div class="font-medium">{{ $draft->biomarker?->name ?? $draft->extracted_name ?? __('Onbekende marker') }}</div>
@@ -246,7 +246,7 @@
                                 <div class="text-neutral-700 dark:text-neutral-300">{{ __('Bevestiging nodig') }}</div>
                             </div>
 
-                            <div class="flex flex-wrap gap-2 sm:justify-end">
+                            <div class="flex flex-wrap gap-2 sm:col-span-2 sm:justify-end">
                                 <flux:button type="button" size="sm" wire:click="useDraft({{ $draft->id }})" data-test="use-draft-button">
                                     {{ __('Draft gebruiken') }}
                                 </flux:button>
@@ -257,7 +257,7 @@
                         </div>
 
                         <div class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                            {{ __('Geextraheerd - bevestig eerst') }}
+                            {{ __('Geëxtraheerd - bevestig eerst') }}
                             @if ($draft->extraction_confidence !== null && (float) $draft->extraction_confidence < \App\Domain\Intake\RunBloodTestExtraction::AUTO_CONFIRM_CONFIDENCE_THRESHOLD)
                                 · {{ __('Lage betrouwbaarheid') }}
                             @endif
@@ -265,9 +265,9 @@
                     </article>
                 @empty
                     @if ($latestExtractionRun === null)
-                        <flux:text>{{ __('Nog geen geextraheerde drafts.') }}</flux:text>
+                        <flux:text>{{ __('Nog geen geëxtraheerde drafts.') }}</flux:text>
                     @elseif ($latestExtractionRun->status === 'done' && (int) $latestExtractionRun->candidate_count > 0)
-                        <flux:text>{{ __('Geen geextraheerde drafts gevonden.') }}</flux:text>
+                        <flux:text>{{ __('Geen geëxtraheerde drafts gevonden.') }}</flux:text>
                     @endif
                 @endforelse
             </div>
@@ -284,12 +284,12 @@
             <form method="POST" wire:submit="confirmResult" class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-700" data-test="confirm-biomarker-form">
             @csrf
             <div class="space-y-2">
-                <flux:heading size="lg">{{ $hasDraftResults ? __('Geextraheerde waarden reviewen') : __('Waarden toevoegen') }}</flux:heading>
+                <flux:heading size="lg">{{ $hasDraftResults ? __('Geëxtraheerde waarden reviewen') : __('Waarden toevoegen') }}</flux:heading>
                 <flux:text>
                     @if ($hasDraftResults && $confirmedCount > 0)
-                        {{ __('Sommige waarden tellen al mee voor status en trends. Review alleen de resterende geextraheerde rijen.') }}
+                        {{ __('Sommige waarden tellen al mee voor status en trends. Review alleen de resterende geëxtraheerde rijen.') }}
                     @elseif ($hasDraftResults && ! $hasSourceDocuments)
-                        {{ __('Review de geextraheerde rijen; de bron-PDF is niet meer gekoppeld. Niets telt mee totdat je een rij bevestigt.') }}
+                        {{ __('Review de geëxtraheerde rijen; de bron-PDF is niet meer gekoppeld. Niets telt mee totdat je een rij bevestigt.') }}
                     @elseif ($hasDraftResults)
                         {{ __('Gelezen uit je PDF; niets telt mee totdat je elke waarde bevestigt.') }}
                     @elseif ($extractionFoundNoDrafts && $hasSourceDocuments)
