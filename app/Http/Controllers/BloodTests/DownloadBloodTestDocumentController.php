@@ -11,9 +11,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DownloadBloodTestDocumentController extends Controller
 {
-    public function __invoke(BloodTestDocument $bloodTestDocument): StreamedResponse|Response
+    public function __invoke(string $bloodTestDocument): StreamedResponse|Response
     {
-        abort_unless($bloodTestDocument->bloodTest->user_id === Auth::id(), 403);
+        $bloodTestDocument = BloodTestDocument::query()
+            ->whereHas('bloodTest', fn ($query) => $query->where('user_id', Auth::id()))
+            ->whereKey($bloodTestDocument)
+            ->firstOrFail();
 
         abort_unless(
             Storage::disk($bloodTestDocument->storage_disk)->exists($bloodTestDocument->storage_path),

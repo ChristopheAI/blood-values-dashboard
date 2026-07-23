@@ -44,7 +44,7 @@ it('user cannot download another users lab pdf', function () {
 
     $this->actingAs($otherUser)
         ->get(route('blood-test-documents.download', $document))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 it('user cannot view another users blood test document record', function () {
@@ -54,7 +54,7 @@ it('user cannot view another users blood test document record', function () {
 
     $this->actingAs($otherUser)
         ->get(route('blood-tests.show', $bloodTest))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 it('lab pdf page does not expose public storage url', function () {

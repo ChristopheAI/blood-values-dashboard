@@ -67,7 +67,7 @@
         </div>
 
         @error('document')
-            <flux:text class="text-red-600 dark:text-red-400">{{ $message }}</flux:text>
+            <flux:text class="mt-4 text-red-600 dark:text-red-400" data-test="upload-error">{{ $message }}</flux:text>
         @enderror
     </section>
 
@@ -136,10 +136,19 @@
                         method: 'POST',
                         body: new FormData(form),
                         headers: { 'Accept': 'application/x-ndjson', 'X-Intake-Stream': '1' },
+                        // A validation failure (non-PDF, too large) answers with a
+                        // 302 back to the form with the errors flashed. Without
+                        // 'manual' the fetch would silently follow it to a 200 HTML
+                        // page, slip past the guard below, and leave the progress
+                        // panel stuck. 'manual' turns that 302 into an opaque,
+                        // bodyless response so we fall through to a real GET
+                        // navigation where the document validation error is shown
+                        // again.
+                        redirect: 'manual',
                     });
 
                     if (! response.ok || ! response.body) {
-                        form.submit();
+                        this.redirectToIndex(form);
                         return;
                     }
 
@@ -167,7 +176,7 @@
                         redirected = this.handleProgressLine(buffer) || redirected;
                     }
                 } catch (error) {
-                    form.submit();
+                    this.redirectToIndex(form);
                     return;
                 } finally {
                     if (! redirected) {
@@ -179,6 +188,9 @@
                 this.isUploading = false;
                 this.$refs.chooseButton.disabled = false;
             },
+            redirectToIndex(form) {
+                window.location.href = form.action;
+            },
             handleProgressLine(line) {
                 const trimmed = line.trim();
 
@@ -186,7 +198,13 @@
                     return false;
                 }
 
-                const payload = JSON.parse(trimmed);
+                let payload;
+
+                try {
+                    payload = JSON.parse(trimmed);
+                } catch (error) {
+                    return false;
+                }
 
                 if (payload.stage && payload.state) {
                     this.progressStages[payload.stage] = payload.state;

@@ -52,6 +52,25 @@ it('uses the sanitized pdf filename as the upload-first title when no metadata i
         ->and($bloodTest->lab_name)->toBeNull();
 });
 
+it('rejects future blood test dates before storing the pdf', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $file = UploadedFile::fake()->create('future-lab-result.pdf', 64, 'application/pdf');
+
+    $this->actingAs($user)
+        ->post(route('blood-tests.store'), [
+            'document' => $file,
+            'test_date' => now()->addDay()->toDateString(),
+        ])
+        ->assertSessionHasErrors('test_date');
+
+    expect(BloodTest::query()->count())->toBe(0)
+        ->and(BloodTestDocument::query()->count())->toBe(0);
+
+    Storage::disk('local')->assertMissing('blood-test-documents/'.$user->id);
+});
+
 it('renders an upload-first empty intake dropzone without metadata or account fields', function () {
     $user = User::factory()->create();
 
@@ -118,6 +137,30 @@ it('lists blood tests by most recent blood test date first', function () {
         ->toBeLessThan(strpos($content, 'Older but later created record'));
 });
 
+it('paginates the blood test index', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 16) as $day) {
+        BloodTest::factory()->for($user)->create([
+            'title' => sprintf('Paged blood test %02d', $day),
+            'test_date' => sprintf('2026-01-%02d', $day),
+        ]);
+    }
+
+    $this->actingAs($user)
+        ->get(route('blood-tests.index'))
+        ->assertOk()
+        ->assertSee('Paged blood test 16')
+        ->assertDontSee('Paged blood test 01')
+        ->assertSee('data-test="blood-test-pagination"', false);
+
+    $this->actingAs($user)
+        ->get(route('blood-tests.index', ['page' => 2]))
+        ->assertOk()
+        ->assertSee('Paged blood test 01')
+        ->assertDontSee('Paged blood test 16');
+});
+
 it('renders the dropzone choose control as a button and keeps the input pdf only', function () {
     $user = User::factory()->create();
 
@@ -131,8 +174,14 @@ it('renders the dropzone choose control as a button and keeps the input pdf only
         ->toContain('fetch(form.action')
         ->toContain("'Accept': 'application/x-ndjson'")
         ->toContain("'X-Intake-Stream': '1'")
+        // A validation 302 must not be silently followed to a 200 HTML page,
+        // or the invalid-file error is swallowed and the panel hangs.
+        ->toContain("redirect: 'manual'")
         ->toContain('progressStages[payload.stage] = payload.state')
         ->toContain('window.location.href = payload.redirect')
+        ->toContain('this.redirectToIndex(form)')
+        ->toContain('payload = JSON.parse(trimmed)')
+        ->not->toContain('form.submit()')
         ->toContain('@drop.prevent="dragging = false; setFiles($event.dataTransfer.files); if (fileName) $nextTick(() => $el.closest(\'form\').requestSubmit())"')
         ->toContain('@change="fileName = $event.target.files[0]?.name ?? \'\'; if (fileName) $nextTick(() => $el.form.requestSubmit())"')
         ->toContain('data-test="selected-file-name"')

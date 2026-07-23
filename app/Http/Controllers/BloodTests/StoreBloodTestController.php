@@ -21,7 +21,7 @@ class StoreBloodTestController extends Controller
     {
         $validated = $request->validate([
             'document' => ['required', 'file', 'mimetypes:application/pdf', 'max:12000'],
-            'test_date' => ['nullable', 'date'],
+            'test_date' => ['nullable', 'date', 'before_or_equal:today'],
             'lab_name' => ['nullable', 'string', 'max:255'],
             'title' => ['nullable', 'string', 'max:255'],
         ]);

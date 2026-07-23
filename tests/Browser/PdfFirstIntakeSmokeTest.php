@@ -17,15 +17,7 @@ test('pdf first intake browser smoke keeps medical copy out of the core flow', f
     $password = 'password';
 
     $this->browse(function (Browser $browser) use ($email, $password) {
-        $browser->visit('/register')
-            ->type('name', 'Browser Smoke')
-            ->type('email', $email)
-            ->type('password', $password)
-            ->type('password_confirmation', $password)
-            ->press('Account aanmaken')
-            ->waitForLocation('/dashboard')
-            ->assertPathIs('/dashboard')
-            ->assertAuthenticated();
+        registerVerifiedBrowserUser($browser, 'Browser Smoke', $email, $password);
 
         assertNoForbiddenMedicalCopyAppears($browser);
 
@@ -91,14 +83,7 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
     $password = 'password';
 
     $this->browse(function (Browser $browser) use ($email, $password) {
-        $browser->visit('/register')
-            ->type('name', 'Dropzone Smoke')
-            ->type('email', $email)
-            ->type('password', $password)
-            ->type('password_confirmation', $password)
-            ->press('Account aanmaken')
-            ->waitForLocation('/dashboard')
-            ->assertAuthenticated();
+        registerVerifiedBrowserUser($browser, 'Dropzone Smoke', $email, $password);
 
         $user = User::query()->where('email', $email)->firstOrFail();
         $ferritin = Biomarker::factory()->for($user)->create(['name' => 'Ferritin']);
@@ -148,6 +133,27 @@ test('empty intake uploads through the dropzone and lands on auto-filled results
             ->assertDontSee('Nog geen bevestigde waarden.');
 
         assertNoForbiddenMedicalCopyAppears($browser);
+    });
+});
+
+test('an invalid dropzone upload shows the validation error instead of hanging on the progress panel', function () {
+    $email = 'browser-invalid-upload-'.Str::uuid().'@example.test';
+    $password = 'password';
+
+    $this->browse(function (Browser $browser) use ($email, $password) {
+        registerVerifiedBrowserUser($browser, 'Invalid Upload Smoke', $email, $password);
+
+        // A non-PDF fails server-side validation, which answers with a 302 back
+        // to the form. Regression guard for the stream fallback: the client must
+        // land back on the form with the error visible, never leave the intake
+        // progress panel stuck (which is what happened when the fetch silently
+        // followed the redirect to a 200 HTML page).
+        $browser->visit('/blood-tests')
+            ->waitFor('[data-test="lab-pdf-dropzone"]')
+            ->attach('document', base_path('tests/Fixtures/not-a-pdf.txt'))
+            ->waitFor('[data-test="upload-error"]')
+            ->assertPathIs('/blood-tests')
+            ->assertVisible('[data-test="upload-error"]');
     });
 });
 
@@ -313,12 +319,12 @@ test('synthetic qa scenario proves the full multi blood test follow up flow', fu
 
         assertNoForbiddenMedicalCopyAppears($browser);
 
-        expect(browserGetStatus($browser, route('blood-tests.show', $foreignBloodTest, false)))->toBe(403);
-        expect(browserGetStatus($browser, route('blood-test-documents.download', $foreignDocument, false)))->toBe(403);
+        expect(browserGetStatus($browser, route('blood-tests.show', $foreignBloodTest, false)))->toBe(404);
+        expect(browserGetStatus($browser, route('blood-test-documents.download', $foreignDocument, false)))->toBe(404);
         expect(browserGetStatus($browser, route('blood-tests.compare', [
             'first' => $olderBloodTest->id,
             'second' => $foreignBloodTest->id,
-        ], false)))->toBe(403);
+        ], false)))->toBe(404);
         expect(browserPostStatus($browser, route('consult-overview.index', [], false), [
             'blood_test_ids' => [$olderBloodTest->id, $foreignBloodTest->id],
             'include_attention' => '1',
@@ -611,6 +617,31 @@ JS,
     ));
 
     return (int) ($result[0] ?? 0);
+}
+
+function registerVerifiedBrowserUser(Browser $browser, string $name, string $email, string $password): void
+{
+    $verificationNoticePath = route('verification.notice', [], false);
+
+    $browser->visit('/register')
+        ->type('name', $name)
+        ->type('email', $email)
+        ->type('password', $password)
+        ->type('password_confirmation', $password)
+        ->press('button[data-test="register-user-button"]')
+        ->waitForLocation($verificationNoticePath)
+        ->assertPathIs($verificationNoticePath)
+        ->assertAuthenticated();
+
+    User::query()
+        ->where('email', $email)
+        ->firstOrFail()
+        ->forceFill(['email_verified_at' => now()])
+        ->save();
+
+    $browser->visit('/dashboard')
+        ->assertPathIs('/dashboard')
+        ->assertAuthenticated();
 }
 
 function assertNoForbiddenMedicalCopyAppears(Browser $browser): void

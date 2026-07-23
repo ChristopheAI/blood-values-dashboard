@@ -10,9 +10,12 @@ use Illuminate\Support\Facades\Auth;
 
 class PinBiomarkerController extends Controller
 {
-    public function __invoke(Request $request, Biomarker $biomarker): RedirectResponse
+    public function __invoke(Request $request, string $biomarker): RedirectResponse
     {
-        abort_unless($biomarker->user_id === Auth::id(), 403);
+        $biomarker = Biomarker::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($biomarker)
+            ->firstOrFail();
 
         $validated = $request->validate([
             'note' => ['nullable', 'string', 'max:2000'],

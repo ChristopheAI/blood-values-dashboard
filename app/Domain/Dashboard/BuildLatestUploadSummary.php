@@ -155,6 +155,7 @@ class BuildLatestUploadSummary
         $valueLabel = Format::biomarkerValue($result->value, $result->source_snippet, $result->value_comparator).' '.$result->unit;
 
         return [
+            'resultId' => (int) $result->id,
             'name' => $result->biomarker->name,
             'valueLabel' => $valueLabel,
             'status' => $result->status,
