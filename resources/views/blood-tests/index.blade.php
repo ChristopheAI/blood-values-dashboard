@@ -11,12 +11,6 @@
 @endphp
 
 <x-layouts::app :title="__('Bloedtesten')">
-    @php
-        $bloodTests = auth()->user()->bloodTests()->recentFirst()->get();
-        $latestBloodTest = $bloodTests->first();
-        $previousBloodTest = $bloodTests->skip(1)->first();
-    @endphp
-
     <section class="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header class="flex flex-col gap-2">
             <flux:heading size="xl">{{ __('Bloedtesten') }}</flux:heading>
